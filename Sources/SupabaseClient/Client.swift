@@ -6,6 +6,8 @@ import Foundation
 import XCTestDynamicOverlay
 
 extension DependencyValues {
+
+  /// Access the supbase client as a dependency in the application.
   public var supabaseClient: SupabaseClientDependency {
     get { self[SupabaseClientDependency.self] }
     set { self[SupabaseClientDependency.self] = newValue }
@@ -13,9 +15,18 @@ extension DependencyValues {
 }
 
 public struct SupabaseClientDependency {
+
+  /// The supabase client for the application.
   private let client: LockIsolated<Supabase.SupabaseClient>
+
+  /// The supabase authentication client for the application.
   public var auth: Auth
 
+  /// Create a new supabase client.
+  ///
+  /// - Parameters:
+  ///   - client: The supabase client for the application.
+  ///   - auth: The supabase authentication client dependency for the application.
   public init(
     client: Supabase.SupabaseClient,
     auth: Auth
@@ -24,6 +35,10 @@ public struct SupabaseClientDependency {
     self.auth = auth
   }
 
+  /// Performs a database request.
+  ///
+  /// - Parameters:
+  ///   - perform: The action to perform on the supabase database.
   @discardableResult
   public func withDatabase<R: Sendable>(
     perform: @escaping @Sendable (PostgrestClient) async throws -> R
@@ -34,12 +49,30 @@ public struct SupabaseClientDependency {
 
 // MARK: - Auth
 extension SupabaseClientDependency {
+  /// The supabase authentication client.
+  ///
+  /// Use this to manage authentication tasks for the application.  It can create user's, login, logout, and gives access to
+  /// the currently logged in user.
+  ///
   public struct Auth {
+
+    /// Create a new user in the database with the given credentials.
     public var createUser: (Credentials) async throws -> User
+
+    /// Access the currently logged in user.
     public var currentUser: () async -> User?
+
+    /// Access authentication events.
     public var events: () async -> AsyncStream<AuthChangeEvent>
+
+    /// Log in the user with the given credentials, if the credentials are `nil` then
+    /// login with previously saved credentials.
     public var _login: (Credentials?) async throws -> Session
+
+    /// Logout the current user.
     public var logout: () async -> Void
+
+    /// Access the current authentication session if the user has logged in.
     public var session: () async throws -> Session?
 
     public init(

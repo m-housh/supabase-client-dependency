@@ -12,7 +12,7 @@ extension SupabaseClientDependency {
       options: configuration.options
     )
 
-    let session = _ClientDependency(client: client)
+    let session = AuthDependency(client: client)
 
     return Self.init(
       client: client,
@@ -29,7 +29,7 @@ extension SupabaseClientDependency {
 
 }
 
-fileprivate actor _ClientDependency {
+fileprivate actor AuthDependency {
   private let client: SupabaseClient
 
   init(client: SupabaseClient) {

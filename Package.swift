@@ -10,7 +10,7 @@ let package = Package(
     .macOS(.v10_15)
   ],
   products: [
-    .library(name: "SupabaseClientDependency", targets: ["SupabaseClientDependency"]),
+    .library(name: "SupabaseClient", targets: ["SupabaseClient"]),
   ],
   dependencies: [
     .package(
@@ -21,23 +21,18 @@ let package = Package(
       url: "https://github.com/supabase-community/supabase-swift.git",
       from: "0.2.1"
     ),
-//    .package(
-//      url: "https://github.com/pointfreeco/xctest-dynamic-overlay.git",
-//      from: "1.0.2"
-//    ),
   ],
   targets: [
     .target(
-      name: "SupabaseClientDependency",
+      name: "SupabaseClient",
       dependencies: [
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
-//        .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay")
       ]
     ),
     .testTarget(
       name: "SupabaseClientTests",
-      dependencies: ["SupabaseClientDependency"]
+      dependencies: ["SupabaseClient"]
     ),
   ]
 )

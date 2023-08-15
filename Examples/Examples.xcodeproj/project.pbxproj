@@ -14,7 +14,7 @@
 		4CA0B1A72A8BC14A007F09A9 /* ExamplesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA0B1A62A8BC14A007F09A9 /* ExamplesTests.swift */; };
 		4CA0B1B12A8BC14A007F09A9 /* ExamplesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA0B1B02A8BC14A007F09A9 /* ExamplesUITests.swift */; };
 		4CA0B1B32A8BC14A007F09A9 /* ExamplesUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA0B1B22A8BC14A007F09A9 /* ExamplesUITestsLaunchTests.swift */; };
-		4CA0B1C12A8BC2A7007F09A9 /* SupabaseClientDependency in Frameworks */ = {isa = PBXBuildFile; productRef = 4CA0B1C02A8BC2A7007F09A9 /* SupabaseClientDependency */; };
+		4CA0B1C42A8C0161007F09A9 /* SupabaseClient in Frameworks */ = {isa = PBXBuildFile; productRef = 4CA0B1C32A8C0161007F09A9 /* SupabaseClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,7 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CA0B1C12A8BC2A7007F09A9 /* SupabaseClientDependency in Frameworks */,
+				4CA0B1C42A8C0161007F09A9 /* SupabaseClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,6 +81,7 @@
 				4CA0B1A52A8BC14A007F09A9 /* ExamplesTests */,
 				4CA0B1AF2A8BC14A007F09A9 /* ExamplesUITests */,
 				4CA0B1922A8BC146007F09A9 /* Products */,
+				4CA0B1C22A8C0161007F09A9 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,6 +132,13 @@
 			path = ExamplesUITests;
 			sourceTree = "<group>";
 		};
+		4CA0B1C22A8C0161007F09A9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -148,7 +156,7 @@
 			);
 			name = Examples;
 			packageProductDependencies = (
-				4CA0B1C02A8BC2A7007F09A9 /* SupabaseClientDependency */,
+				4CA0B1C32A8C0161007F09A9 /* SupabaseClient */,
 			);
 			productName = Examples;
 			productReference = 4CA0B1912A8BC146007F09A9 /* Examples.app */;
@@ -634,9 +642,9 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4CA0B1C02A8BC2A7007F09A9 /* SupabaseClientDependency */ = {
+		4CA0B1C32A8C0161007F09A9 /* SupabaseClient */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = SupabaseClientDependency;
+			productName = SupabaseClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -2,11 +2,26 @@ import Foundation
 import Supabase
 
 extension SupabaseClientDependency {
+
+  /// Represents the configuration for the supabase client dependency.
+  ///
   public struct Configuration {
+
+    /// The url to connect to supabase.
     let url: URL
+
+    /// The anonymous key used to connect to supabase.
     let anonKey: String
+
+    /// The supabase client options.
     let options: SupabaseClientOptions
 
+    /// Create a new supabase client configuration.
+    ///
+    /// - Parameters:
+    ///   - url: The url to connect to supabase.
+    ///   - anonKey: The anonymous key used to connect to supabase.
+    ///   - options: The supabase client options.
     public init(
       url: URL,
       anonKey: String,

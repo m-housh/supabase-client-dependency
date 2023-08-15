@@ -1,6 +1,6 @@
 import Dependencies
 import XCTest
-@testable import SupabaseClientDependency
+@testable import SupabaseClient
 
 @MainActor
 final class SupabaseClientTests: XCTestCase {
@@ -10,7 +10,7 @@ final class SupabaseClientTests: XCTestCase {
   }
 
   func testCreateUser() async throws {
-    try await withDependencies {
+    await withDependencies {
       $0.supabaseClient = .live()
     } operation: {
       @Dependency(\.supabaseClient) var client;
@@ -25,6 +25,9 @@ final class SupabaseClientTests: XCTestCase {
 
       let user = try? await client.auth.createUser(credentials)
 
+      // Testing session does not work because the `keychain` is not setup properly
+      // in a swift package.
+
 //      let session = try await client.auth.login(credentials: credentials)
 //
 //      currentUser = await client.auth.currentUser()
@@ -33,5 +36,16 @@ final class SupabaseClientTests: XCTestCase {
 //      await client.auth.logout()
 
     }
+  }
+
+  func testCredentialValidation() {
+    var credentials = Credentials.empty
+
+    XCTAssertFalse(credentials.isValid)
+
+    credentials.email = "test@example.com"
+    credentials.password = "$tr0ngPa$$w0rd"
+
+    XCTAssert(credentials.isValid)
   }
 }
