@@ -1,23 +1,43 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
-    name: "supabase-client-dependency",
-    products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "supabase-client-dependency",
-            targets: ["supabase-client-dependency"]),
-    ],
-    targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .target(
-            name: "supabase-client-dependency"),
-        .testTarget(
-            name: "supabase-client-dependencyTests",
-            dependencies: ["supabase-client-dependency"]),
-    ]
+  name: "supabase-client-dependency",
+  platforms: [
+    .iOS(.v13),
+    .macCatalyst(.v13),
+    .macOS(.v10_15)
+  ],
+  products: [
+    .library(name: "SupabaseClientDependency", targets: ["SupabaseClientDependency"]),
+  ],
+  dependencies: [
+    .package(
+      url: "https://github.com/pointfreeco/swift-dependencies.git",
+      from: "0.4.2"
+    ),
+    .package(
+      url: "https://github.com/supabase-community/supabase-swift.git",
+      from: "0.2.1"
+    ),
+//    .package(
+//      url: "https://github.com/pointfreeco/xctest-dynamic-overlay.git",
+//      from: "1.0.2"
+//    ),
+  ],
+  targets: [
+    .target(
+      name: "SupabaseClientDependency",
+      dependencies: [
+        .product(name: "Dependencies", package: "swift-dependencies"),
+        .product(name: "Supabase", package: "supabase-swift"),
+//        .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay")
+      ]
+    ),
+    .testTarget(
+      name: "SupabaseClientTests",
+      dependencies: ["SupabaseClientDependency"]
+    ),
+  ]
 )
