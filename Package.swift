@@ -15,11 +15,11 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/pointfreeco/swift-dependencies.git",
-      from: "0.4.2"
+      from: "1.0.0"
     ),
     .package(
       url: "https://github.com/supabase-community/supabase-swift.git",
-      from: "0.2.1"
+      from: "0.3.0"
     ),
   ],
   targets: [
