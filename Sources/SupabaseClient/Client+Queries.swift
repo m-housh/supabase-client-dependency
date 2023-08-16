@@ -211,6 +211,42 @@ extension SupabaseClientDependency {
     try await self.fetchOne(from: table, where: [filter], orderBy: order, as: R.self)
   }
   
+  // MARK: - Insert
+  
+  /// Helper for inserting a new value into the database.
+  ///
+  /// - Parameters:
+  ///   - table: The table to insert the values into.
+  ///   - values: The row values.
+  ///   - type: The return value type to decode from the response.
+  public func insert<V: Encodable, R: Decodable>(
+    into table: String,
+    values: V,
+    as type: R.Type = R.self
+  ) async throws -> R {
+    try await self.withDatabase { database in
+      try await database.from(table)
+        .insert(values: values, returning: .representation)
+        .single()
+        .execute()
+        .value
+    }
+  }
+  
+  /// Helper for inserting a new value into the database.
+  ///
+  /// - Parameters:
+  ///   - table: The table to insert the values into.
+  ///   - values: The row values.
+  ///   - type: The return value type to decode from the response.
+  public func insert<V: Encodable, R: Decodable, Table: TableRepresentable>(
+    into table: Table,
+    values: V,
+    as type: R.Type = R.self
+  ) async throws -> R {
+    try await insert(into: table.tableName, values: values, as: R.self)
+  }
+  
   // MARK: - Update
   
   /// A helper for updating an item in the database, using the table name and a filter for the item.
