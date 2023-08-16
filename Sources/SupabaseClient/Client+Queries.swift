@@ -257,7 +257,7 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - type: The type to decode from the response.
   @discardableResult
-  func update<Values: Encodable, R: Decodable>(
+  public func update<Values: Encodable, R: Decodable>(
     table: String,
     filteredBy filter: Filter,
     values: Values,
@@ -281,7 +281,7 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - type: The type to decode from the response.
   @discardableResult
-  func update<Values: Encodable, R: Decodable, Table: TableRepresentable>(
+  public func update<Values: Encodable, R: Decodable, Table: TableRepresentable>(
     table: Table,
     filteredBy filter: Filter,
     values: Values,
@@ -304,7 +304,7 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - type: The type to decode from the response.
   @discardableResult
-  func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable>(
+  public func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable>(
     id: ID,
     table: String,
     values: Values,
