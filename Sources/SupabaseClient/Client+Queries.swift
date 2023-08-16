@@ -317,4 +317,27 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
+  
+  /// A helper for updating an item in the database, using the table name and the item's id.
+  ///
+  /// - Parameters:
+  ///   - id: The item's id.
+  ///   - table: The table to update the row.
+  ///   - filter: The filter for the row query.
+  ///   - values: The values to updated in the row.
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable, Table: TableRepresentable>(
+    id: ID,
+    table: Table,
+    values: Values,
+    as type: R.Type = R.self
+  ) async throws -> R {
+    try await update(
+      table: table,
+      filteredBy: .id(id),
+      values: values,
+      as: R.self
+    )
+  }
 }
