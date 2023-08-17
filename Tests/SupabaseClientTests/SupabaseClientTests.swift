@@ -48,4 +48,48 @@ final class SupabaseClientTests: XCTestCase {
 
     XCTAssert(credentials.isValid)
   }
+  
+  func testCredentialValidationStrings() {
+    var credentials = Credentials.empty
+    XCTAssertFalse(credentials.isValid)
+    
+    do {
+      _ = try Credentials.validate(credentials)
+      XCTFail("Should have failed credential validation.")
+    } catch let credentialError as CredentialError {
+      XCTAssertEqual(
+        credentialError.localizedDescription,
+        CredentialError.invalidEmailAndPassword.localizedDescription
+      )
+    } catch {
+      XCTFail("Invalid error recieved: \(error)")
+    }
+    
+    credentials.email = "test@example.com"
+    do {
+      _ = try Credentials.validate(credentials)
+      XCTFail("Should have failed credential validation.")
+    } catch let credentialError as CredentialError {
+      XCTAssertEqual(
+        credentialError.localizedDescription,
+        CredentialError.invalidPassword.localizedDescription
+      )
+    } catch {
+      XCTFail("Invalid error recieved: \(error)")
+    }
+    
+    credentials.email = ""
+    credentials.password = "$tr0ngPa$$w0rd"
+    do {
+      _ = try Credentials.validate(credentials)
+      XCTFail("Should have failed credential validation.")
+    } catch let credentialError as CredentialError {
+      XCTAssertEqual(
+        credentialError.localizedDescription,
+        CredentialError.invalidEmail.localizedDescription
+      )
+    } catch {
+      XCTFail("Invalid error recieved: \(error)")
+    }
+  }
 }

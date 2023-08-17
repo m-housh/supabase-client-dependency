@@ -12,7 +12,11 @@ public struct Credentials: Codable, Equatable, Sendable {
   /// Whether the credentials are valid or not.
   ///
   /// - SeeAlso: ``Credentials.validate``
-  public var isValid: Bool { Credentials.validate(self) }
+  public var isValid: Bool {
+    guard ((try? Credentials.validate(self)) != nil)
+    else { return false }
+    return true
+  }
 
   /// Create a new credential.
   ///
@@ -37,18 +41,66 @@ public struct Credentials: Codable, Equatable, Sendable {
   ///
   ///  - Parameters:
   ///   - credentials: The credentials to validate.
-  public static func validate(_ credentials: Self) -> Bool {
-    guard credentials.email.range(
+  public static func validate(_ credentials: Self) throws -> Bool {
+    var error: CredentialError? = nil
+    if credentials.email.range(
       of: emailPattern,
       options: .regularExpression
-    ) != nil
-    else { return false }
-    guard credentials.password.range(
+    ) == nil 
+    {
+      error = .invalidEmail
+    }
+    if credentials.password.range(
       of: passwordPattern,
       options: .regularExpression
-    ) != nil
-    else { return false }
-    return true
+    ) == nil
+    {
+      if error != nil {
+        error = .invalidEmailAndPassword
+      } else {
+        error = .invalidPassword
+      }
+    }
+    guard let error else { return true }
+    throw error
+  }
+
+}
+
+public enum CredentialError: Error {
+  case invalidEmail
+  case invalidPassword
+  case invalidEmailAndPassword
+  
+  var invalidEmailString: String {
+  """
+  Invalid email: The email address should contain one or more characters followed
+  by an '@' symbol, then one or more characters followed by a '.' and finish with
+  one or more characters.
+  """
+  }
+  
+  var invalidPasswordString: String {
+  """
+  Invalid password: The password should be at least 8 characters long,
+  should contain at least one capital letter, at least one lowercase
+  letter, at least one digit, and at least one special character.
+  """
+  }
+  
+  public var localizedDescription: String {
+    switch self {
+    case .invalidEmail:
+      return invalidEmailString
+    case .invalidPassword:
+      return invalidPasswordString
+    case .invalidEmailAndPassword:
+      return """
+      \(invalidEmailString)
+      
+      \(invalidPasswordString)
+      """
+    }
   }
 
 }
