@@ -4,6 +4,42 @@ import PostgREST
 extension SupabaseClientDependency {
   
   // MARK: - Delete
+    
+  /// A helper for deleting a database item by it's id.
+  ///
+  /// - Parameters:
+  ///   - table: The table name to delete the item from.
+  ///   - filters: The filters for the row to be deleted from the database.
+  public func delete(
+    from table: String,
+    where filters: [Filter]
+  ) async throws {
+    try await self.withDatabase { database in
+      try await database.from(table)
+        .delete()
+        .filter(by: filters)
+        .execute()
+        .value
+    }
+  }
+  
+  /// A helper for deleting a database item by it's id.
+  ///
+  /// - Parameters:
+  ///   - table: The table name to delete the item from.
+  ///   - filters: The filters for the row to be deleted from the database.
+  public func delete(
+    from table: String,
+    filters: Filter...
+  ) async throws {
+    try await self.withDatabase { database in
+      try await database.from(table)
+        .delete()
+        .filter(by: filters)
+        .execute()
+        .value
+    }
+  }
   
   /// A helper for deleting a database item by it's id.
   ///
