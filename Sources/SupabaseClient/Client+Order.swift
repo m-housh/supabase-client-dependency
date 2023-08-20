@@ -2,7 +2,7 @@ import Foundation
 import PostgREST
 
 extension SupabaseClientDependency {
-  
+
   // Represents an order by clause used for a database query.
   public struct Order {
     public let column: String
@@ -33,7 +33,7 @@ extension SupabaseClientDependency {
       self.nullsFirst = nullsFirst
       self.foreignTable = foreignTable
     }
-    
+
     public init<C: ColumnRepresentable, T: TableRepresentable>(
       column: C,
       ascending: Bool = true,
@@ -49,7 +49,7 @@ extension SupabaseClientDependency {
 }
 
 extension PostgrestFilterBuilder {
-  
+
   public func order(by order: SupabaseClientDependency.Order?) -> PostgrestTransformBuilder {
     if let order {
       return self.order(

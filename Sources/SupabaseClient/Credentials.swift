@@ -13,7 +13,7 @@ public struct Credentials: Codable, Equatable, Sendable {
   ///
   /// - SeeAlso: ``Credentials.validate``
   public var isValid: Bool {
-    guard ((try? Credentials.validate(self)) != nil)
+    guard (try? Credentials.validate(self)) != nil
     else { return false }
     return true
   }
@@ -46,15 +46,13 @@ public struct Credentials: Codable, Equatable, Sendable {
     if credentials.email.range(
       of: emailPattern,
       options: .regularExpression
-    ) == nil 
-    {
+    ) == nil {
       error = .invalidEmail
     }
     if credentials.password.range(
       of: passwordPattern,
       options: .regularExpression
-    ) == nil
-    {
+    ) == nil {
       if error != nil {
         error = .invalidEmailAndPassword
       } else {
@@ -71,23 +69,23 @@ public enum CredentialError: Error {
   case invalidEmail
   case invalidPassword
   case invalidEmailAndPassword
-  
+
   var invalidEmailString: String {
-  """
-  Invalid email: The email address should contain one or more characters followed
-  by an '@' symbol, then one or more characters followed by a '.' and finish with
-  one or more characters.
-  """
+    """
+    Invalid email: The email address should contain one or more characters followed
+    by an '@' symbol, then one or more characters followed by a '.' and finish with
+    one or more characters.
+    """
   }
-  
+
   var invalidPasswordString: String {
-  """
-  Invalid password: The password should be at least 8 characters long,
-  should contain at least one capital letter, at least one lowercase
-  letter, at least one digit, and at least one special character.
-  """
+    """
+    Invalid password: The password should be at least 8 characters long,
+    should contain at least one capital letter, at least one lowercase
+    letter, at least one digit, and at least one special character.
+    """
   }
-  
+
   public var localizedDescription: String {
     switch self {
     case .invalidEmail:
@@ -96,10 +94,10 @@ public enum CredentialError: Error {
       return invalidPasswordString
     case .invalidEmailAndPassword:
       return """
-      \(invalidEmailString)
-      
-      \(invalidPasswordString)
-      """
+        \(invalidEmailString)
+
+        \(invalidPasswordString)
+        """
     }
   }
 
@@ -108,20 +106,20 @@ public enum CredentialError: Error {
 // One or more characters followed by an "@",
 // then one or more characters followed by a ".",
 // and finishing with one or more characters
-fileprivate let emailPattern = #"^\S+@\S+\.\S+$"#
+private let emailPattern = #"^\S+@\S+\.\S+$"#
 
-fileprivate let passwordPattern =
-// At least 8 characters
-#"(?=.{8,})"# +
+private let passwordPattern =
+  // At least 8 characters
+  #"(?=.{8,})"#
 
-// At least one capital letter
-#"(?=.*[A-Z])"# +
+  // At least one capital letter
+  + #"(?=.*[A-Z])"#
 
-// At least one lowercase letter
-#"(?=.*[a-z])"# +
+  // At least one lowercase letter
+  + #"(?=.*[a-z])"#
 
-// At least one digit
-#"(?=.*\d)"# +
+  // At least one digit
+  + #"(?=.*\d)"#
 
-// At least one special character
-#"(?=.*[ !$%&?._-])"#
+  // At least one special character
+  + #"(?=.*[ !$%&?._-])"#

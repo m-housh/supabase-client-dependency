@@ -1,8 +1,8 @@
 import Dependencies
 import Foundation
 @_exported import GoTrue
-@_exported import Supabase
 @_exported import PostgREST
+@_exported import Supabase
 import XCTestDynamicOverlay
 
 extension DependencyValues {
@@ -128,24 +128,24 @@ extension SupabaseClientDependency: TestDependencyKey {
 }
 
 #if DEBUG
-extension User {
-  public static let mock = Self.init(
-    id: UUID(0),
-    appMetadata: [:],
-    userMetadata: [:],
-    aud: "",
-    createdAt: Date(),
-    updatedAt: Date()
-  )
-}
+  extension User {
+    public static let mock = Self.init(
+      id: UUID(0),
+      appMetadata: [:],
+      userMetadata: [:],
+      aud: "",
+      createdAt: Date(),
+      updatedAt: Date()
+    )
+  }
 
-extension Session {
-  public static let mock = Self.init(
-    accessToken: "",
-    tokenType: "",
-    expiresIn: 1,
-    refreshToken: "",
-    user: .mock
-  )
-}
+  extension Session {
+    public static let mock = Self.init(
+      accessToken: "",
+      tokenType: "",
+      expiresIn: 1,
+      refreshToken: "",
+      user: .mock
+    )
+  }
 #endif

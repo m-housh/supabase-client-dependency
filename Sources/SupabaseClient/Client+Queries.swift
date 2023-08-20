@@ -2,9 +2,9 @@ import Foundation
 import PostgREST
 
 extension SupabaseClientDependency {
-  
+
   // MARK: - Delete
-    
+
   /// A helper for deleting a database item by it's id.
   ///
   /// - Parameters:
@@ -22,7 +22,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for deleting a database item by it's id.
   ///
   /// - Parameters:
@@ -40,7 +40,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for deleting a database item by it's id.
   ///
   /// - Parameters:
@@ -58,7 +58,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for deleting a database item by it's id.
   ///
   /// - Parameters:
@@ -76,7 +76,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for deleting a database item by it's id.
   ///
   /// - Parameters:
@@ -88,9 +88,9 @@ extension SupabaseClientDependency {
   ) async throws {
     try await self.delete(id: id, from: table.tableName)
   }
-  
+
   // MARK: - Fetch
-  
+
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// - Parameters:
@@ -114,7 +114,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// - Parameters:
@@ -135,7 +135,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
   ///
   /// - Parameters:
@@ -151,7 +151,7 @@ extension SupabaseClientDependency {
   ) async throws -> [R] {
     try await self.fetch(from: table, where: [filter], orderBy: order, as: R.self)
   }
-  
+
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
   ///
   /// - Parameters:
@@ -167,9 +167,9 @@ extension SupabaseClientDependency {
   ) async throws -> [R] {
     try await self.fetch(from: table, where: [filter], orderBy: order, as: R.self)
   }
-  
+
   // MARK: - Fetch One
-    
+
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// - Parameters:
@@ -193,7 +193,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// - Parameters:
@@ -214,7 +214,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
   ///
   /// - Parameters:
@@ -230,7 +230,7 @@ extension SupabaseClientDependency {
   ) async throws -> R {
     try await self.fetchOne(from: table, where: [filter], orderBy: order, as: R.self)
   }
-  
+
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
   ///
   /// - Parameters:
@@ -246,9 +246,9 @@ extension SupabaseClientDependency {
   ) async throws -> R {
     try await self.fetchOne(from: table, where: [filter], orderBy: order, as: R.self)
   }
-  
+
   // MARK: - Insert
-  
+
   /// Helper for inserting a new value into the database.
   ///
   /// - Parameters:
@@ -268,7 +268,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// Helper for inserting a new value into the database.
   ///
   /// - Parameters:
@@ -282,9 +282,9 @@ extension SupabaseClientDependency {
   ) async throws -> R {
     try await insert(into: table.tableName, values: values, as: R.self)
   }
-  
+
   // MARK: - Update
-  
+
   /// A helper for updating an item in the database, using the table name and a filter for the item.
   ///
   /// - Parameters:
@@ -308,7 +308,7 @@ extension SupabaseClientDependency {
         .value
     }
   }
-  
+
   /// A helper for updating an item in the database, using the table name and a filter for the item.
   ///
   /// - Parameters:
@@ -330,7 +330,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for updating an item in the database, using the table name and the item's id.
   ///
   /// - Parameters:
@@ -353,7 +353,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for updating an item in the database, using the table name and the item's id.
   ///
   /// - Parameters:
@@ -363,7 +363,9 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - type: The type to decode from the response.
   @discardableResult
-  public func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable, Table: TableRepresentable>(
+  public func update<
+    ID: URLQueryRepresentable, Values: Encodable, R: Decodable, Table: TableRepresentable
+  >(
     id: ID,
     table: Table,
     values: Values,

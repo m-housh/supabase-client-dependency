@@ -77,4 +77,4 @@ fileprivate actor AuthDependency {
   }
 }
 
-struct AuthenticationError: Error { }
+struct AuthenticationError: Error {}

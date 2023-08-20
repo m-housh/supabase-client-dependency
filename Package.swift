@@ -7,10 +7,12 @@ let package = Package(
   platforms: [
     .iOS(.v16),
     .macCatalyst(.v16),
-    .macOS(.v13)
+    .macOS(.v13),
+    .tvOS(.v16),
+    .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClient", targets: ["SupabaseClient"]),
+    .library(name: "SupabaseClient", targets: ["SupabaseClient"])
   ],
   dependencies: [
     .package(
@@ -24,7 +26,7 @@ let package = Package(
     .package(
       url: "https://github.com/m-housh/swift-identified-storage.git",
       from: "0.1.0"
-    )
+    ),
   ],
   targets: [
     .target(

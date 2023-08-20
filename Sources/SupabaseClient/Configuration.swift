@@ -35,7 +35,7 @@ extension SupabaseClientDependency {
 }
 
 extension SupabaseClient {
-  
+
   public convenience init(configuration: SupabaseClientDependency.Configuration) {
     self.init(
       supabaseURL: configuration.url,
@@ -49,5 +49,6 @@ extension SupabaseClientDependency.Configuration {
   public static let local = Self.init(url: supabaseURL, anonKey: localAnonKey)
 }
 
-fileprivate let supabaseURL = URL(string: "http://localhost:54321")!
-fileprivate let localAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+private let supabaseURL = URL(string: "http://localhost:54321")!
+private let localAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
