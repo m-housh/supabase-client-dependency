@@ -6,11 +6,7 @@ import Supabase
 extension SupabaseClientDependency {
 
   public static func live(configuration: Configuration = .local) -> Self {
-    let client = SupabaseClient(
-      supabaseURL: configuration.url,
-      supabaseKey: configuration.anonKey,
-      options: configuration.options
-    )
+    let client = SupabaseClient(configuration: configuration)
 
     let session = AuthDependency(client: client)
 

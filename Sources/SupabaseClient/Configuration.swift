@@ -34,6 +34,17 @@ extension SupabaseClientDependency {
   }
 }
 
+extension SupabaseClient {
+  
+  public convenience init(configuration: SupabaseClientDependency.Configuration) {
+    self.init(
+      supabaseURL: configuration.url,
+      supabaseKey: configuration.anonKey,
+      options: configuration.options
+    )
+  }
+}
+
 extension SupabaseClientDependency.Configuration {
   public static let local = Self.init(url: supabaseURL, anonKey: localAnonKey)
 }
