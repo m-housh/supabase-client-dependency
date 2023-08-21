@@ -175,12 +175,10 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table name to fetch the values from.
   ///   - filters: Filters to apply to the query.
-  ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
   public func fetchOne<R: Decodable>(
     from table: String,
     where filters: [Filter] = [],
-    orderBy order: Order? = nil,
     as type: R.Type = R.self
   ) async throws -> R {
     try await self.withDatabase { database in
@@ -188,7 +186,6 @@ extension SupabaseClientDependency {
         .from(table)
         .select()
         .filter(by: filters)
-        .order(by: order)
         .execute()
         .value
     }
@@ -199,18 +196,15 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table to fetch the values from.
   ///   - filters: Filters to apply to the query.
-  ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
   public func fetchOne<R: Decodable, Table: TableRepresentable>(
     from table: Table,
     where filters: [Filter] = [],
-    orderBy order: Order? = nil,
     as type: R.Type = R.self
   ) async throws -> R {
     try await self.fetchOne(
       from: table.tableName,
       where: filters,
-      orderBy: order,
       as: R.self
     )
   }
@@ -220,15 +214,17 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table to fetch the values from.
   ///   - filter: Filter to apply to the query.
-  ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
   public func fetchOne<R: Decodable>(
     from table: String,
     filteredBy filter: Filter,
-    orderBy order: Order? = nil,
     as type: R.Type = R.self
   ) async throws -> R {
-    try await self.fetchOne(from: table, where: [filter], orderBy: order, as: R.self)
+    try await self.fetchOne(
+      from: table,
+      where: [filter],
+      as: R.self
+    )
   }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
@@ -236,15 +232,53 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table to fetch the values from.
   ///   - filter: Filter to apply to the query.
-  ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
   public func fetchOne<R: Decodable, Table: TableRepresentable>(
     from table: Table,
     filteredBy filter: Filter,
-    orderBy order: Order? = nil,
     as type: R.Type = R.self
   ) async throws -> R {
-    try await self.fetchOne(from: table, where: [filter], orderBy: order, as: R.self)
+    try await self.fetchOne(
+      from: table,
+      where: [filter],
+      as: R.self
+    )
+  }
+  
+  /// A helper for fetching items from the database, using the table name and an id of an element.
+  ///
+  /// - Parameters:
+  ///   - id: The id of the item to fetch from the database.
+  ///   - table: The table to fetch the values from.
+  ///   - type: The return value type to decode.
+  public func fetchOne<R: Decodable>(
+    id: R.ID,
+    from table: String,
+    as type: R.Type = R.self
+  ) async throws -> R where R: Identifiable, R.ID: URLQueryRepresentable {
+    try await self.fetchOne(
+      from: table,
+      where: [.id(id)],
+      as: R.self
+    )
+  }
+  
+  /// A helper for fetching items from the database, using the table name and an id of an element.
+  ///
+  /// - Parameters:
+  ///   - id: The id of the item to fetch from the database.
+  ///   - table: The table to fetch the values from.
+  ///   - type: The return value type to decode.
+  public func fetchOne<R: Decodable, Table: TableRepresentable>(
+    id: R.ID,
+    from table: Table,
+    as type: R.Type = R.self
+  ) async throws -> R where R: Identifiable, R.ID: URLQueryRepresentable {
+    try await self.fetchOne(
+      from: table,
+      where: [.id(id)],
+      as: R.self
+    )
   }
 
   // MARK: - Insert

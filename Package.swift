@@ -27,6 +27,10 @@ let package = Package(
       url: "https://github.com/m-housh/swift-identified-storage.git",
       from: "0.1.0"
     ),
+    .package(
+      url: "https://github.com/apple/swift-docc-plugin.git",
+      from: "1.0.0"
+    ),
   ],
   targets: [
     .target(

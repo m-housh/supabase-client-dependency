@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C5D7C822A92DDB400B81363 /* DatabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D7C812A92DDB400B81363 /* DatabaseClient.swift */; };
+		4C5D7C842A92DDEC00B81363 /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D7C832A92DDEC00B81363 /* TodoModel.swift */; };
+		4C5D7C882A92E18F00B81363 /* SupabaseClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D7C872A92E18F00B81363 /* SupabaseClient+Live.swift */; };
 		4CA0B1952A8BC146007F09A9 /* ExamplesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA0B1942A8BC146007F09A9 /* ExamplesApp.swift */; };
 		4CA0B1972A8BC146007F09A9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA0B1962A8BC146007F09A9 /* ContentView.swift */; };
 		4CA0B1992A8BC14A007F09A9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4CA0B1982A8BC14A007F09A9 /* Assets.xcassets */; };
@@ -35,6 +38,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4C5D7C812A92DDB400B81363 /* DatabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseClient.swift; sourceTree = "<group>"; };
+		4C5D7C832A92DDEC00B81363 /* TodoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoModel.swift; sourceTree = "<group>"; };
+		4C5D7C872A92E18F00B81363 /* SupabaseClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupabaseClient+Live.swift"; sourceTree = "<group>"; };
 		4CA0B1912A8BC146007F09A9 /* Examples.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Examples.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CA0B1942A8BC146007F09A9 /* ExamplesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamplesApp.swift; sourceTree = "<group>"; };
 		4CA0B1962A8BC146007F09A9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -74,6 +80,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4C5D7C852A92DF8100B81363 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4C5D7C832A92DDEC00B81363 /* TodoModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4C5D7C862A92DF8A00B81363 /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				4C5D7C812A92DDB400B81363 /* DatabaseClient.swift */,
+				4C5D7C872A92E18F00B81363 /* SupabaseClient+Live.swift */,
+			);
+			path = Dependencies;
+			sourceTree = "<group>";
+		};
 		4CA0B1882A8BC146007F09A9 = {
 			isa = PBXGroup;
 			children = (
@@ -98,6 +121,8 @@
 		4CA0B1932A8BC146007F09A9 /* Examples */ = {
 			isa = PBXGroup;
 			children = (
+				4C5D7C862A92DF8A00B81363 /* Dependencies */,
+				4C5D7C852A92DF8100B81363 /* Models */,
 				4CA0B1942A8BC146007F09A9 /* ExamplesApp.swift */,
 				4CA0B1962A8BC146007F09A9 /* ContentView.swift */,
 				4CA0B1982A8BC14A007F09A9 /* Assets.xcassets */,
@@ -276,7 +301,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				4CA0B1972A8BC146007F09A9 /* ContentView.swift in Sources */,
+				4C5D7C882A92E18F00B81363 /* SupabaseClient+Live.swift in Sources */,
+				4C5D7C842A92DDEC00B81363 /* TodoModel.swift in Sources */,
 				4CA0B1952A8BC146007F09A9 /* ExamplesApp.swift in Sources */,
+				4C5D7C822A92DDB400B81363 /* DatabaseClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

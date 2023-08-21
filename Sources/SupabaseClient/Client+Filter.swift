@@ -50,6 +50,13 @@ extension SupabaseClientDependency {
   }
 }
 
+extension ColumnRepresentable {
+  
+  public func equals(_ value: URLQueryRepresentable) -> SupabaseClientDependency.Filter {
+    .equals(column: self.columnName, value: value)
+  }
+}
+
 extension PostgrestFilterBuilder {
 
   @discardableResult
