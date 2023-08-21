@@ -5,7 +5,7 @@ struct TodoFeature: Reducer {
   
   struct State: Equatable {
     @PresentationState var destination: Destination.State?
-    var todos: IdentifiedArrayOf<TodoModel> = []
+    var todos: IdentifiedArrayOf<TodoModel>?
     var isLoadingTodos: Bool = false
   }
   
@@ -70,11 +70,17 @@ struct TodoFeature: Reducer {
         
       case let .receiveSavedTodo(.success(todo)):
         state.destination = nil
-        state.todos[id: todo.id] = todo
+        if state.todos?[id: todo.id] != nil {
+          // We are updating the todo, so replace it in the list.
+          state.todos?[id: todo.id] = todo
+        } else {
+          // We are inserting a new todo, so put it at the head of the list.
+          state.todos?.insert(todo, at: 0)
+        }
         return .none
         
       case let .rowTapped(id: id):
-        guard let todo = state.todos[id: id]
+        guard let todo = state.todos?[id: id]
         else {
           XCTFail("Recieved a row tapped action for an invalid id: \(id)")
           return .none
@@ -98,7 +104,7 @@ struct TodoFeature: Reducer {
           // Confirm the form has an id, we can find the original todo in our state,
           // and that the form is valid.
           guard let todoId = form.id,
-                let originalTodo = state.todos[id: todoId],
+                let originalTodo = state.todos?[id: todoId],
                 form.isValid
           else { return .none }
           // Update the todo.
@@ -112,7 +118,7 @@ struct TodoFeature: Reducer {
        
       case .task:
         // Check if the todos have been populated or not.
-        guard state.todos.isEmpty else { return .none }
+        guard state.todos == nil else { return .none }
         state.isLoadingTodos = true
         return .run { send in
           await send(.receiveTodos(
@@ -160,42 +166,39 @@ struct TodoView: View {
   var body: some View {
     WithViewStore(store, observe: { $0 }) { viewStore in
       NavigationStack {
-        List {
-          ForEach(viewStore.todos) { todo in
-            Button {
-              viewStore.send(.rowTapped(id: todo.id))
-            } label: {
-              HStack {
-                Text(todo.description)
-                Spacer()
-                Image(systemName: todo.isComplete ? "checkmark.square" : "square")
-                Image(systemName: "chevron.right")
-                  .foregroundStyle(Color.secondary)
+        if let todos = viewStore.todos {
+          List {
+            ForEach(todos) { todo in
+              Button {
+                viewStore.send(.rowTapped(id: todo.id))
+              } label: {
+                HStack {
+                  Text(todo.description)
+                  Spacer()
+                  Image(systemName: todo.isComplete ? "checkmark.square" : "square")
+                  Image(systemName: "chevron.right")
+                    .foregroundStyle(Color.secondary)
+                }
+
               }
-              
+              .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
           }
-        }
-        .navigationTitle("Todos")
-        .navigationDestination(
-          store: store.scope(state: \.$destination, action: { .destination($0) })
-        ) { store in
-          DestinationView(store: store)
-            .toolbar {
-              ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                  viewStore.send(.saveTodoFormButtonTapped)
+          .navigationTitle("Todos")
+          .navigationDestination(
+            store: store.scope(state: \.$destination, action: { .destination($0) })
+          ) { store in
+            DestinationView(store: store)
+              .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                  Button("Save") {
+                    viewStore.send(.saveTodoFormButtonTapped)
+                  }
                 }
               }
-            }
-        }
-        .task { await viewStore.send(.task).finish() }
-        .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            if viewStore.isLoadingTodos {
-              ProgressView()
-            } else {
+          }
+          .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
               Button {
                 viewStore.send(.addTodoButtonTapped)
               } label: {
@@ -203,6 +206,10 @@ struct TodoView: View {
               }
             }
           }
+        } else {
+          ProgressView()
+            .navigationTitle("Todos")
+            .task { await viewStore.send(.task).finish() }
         }
       }
     }

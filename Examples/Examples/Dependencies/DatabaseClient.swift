@@ -71,8 +71,8 @@ extension DatabaseClient: DependencyKey {
           }
         },
         fetchOne: { try await client.fetchOne(id: $0, from: Table.todos) },
-        insert: { try await client.insert(into: Table.todos, values: $0) },
-        update: { try await client.update(id: $0, table: Table.todos, values: $1) }
+        insert: { try await client.insert($0, into: Table.todos) },
+        update: { try await client.update(id: $0, in: Table.todos, with: $1) }
       )
     )
   }

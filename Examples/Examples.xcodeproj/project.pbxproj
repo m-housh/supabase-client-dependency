@@ -21,6 +21,8 @@
 		4C0799C22A9304D500699C91 /* TodoForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799C12A9304D500699C91 /* TodoForm.swift */; };
 		4C467B192A938C75006A21FC /* DatabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B182A938C75006A21FC /* DatabaseClient.swift */; };
 		4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1B2A938C8E006A21FC /* TodoModel.swift */; };
+		4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1D2A93BCE7006A21FC /* AuthView.swift */; };
+		4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1F2A93BF46006A21FC /* ErrorText.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +59,8 @@
 		4C0799C12A9304D500699C91 /* TodoForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoForm.swift; sourceTree = "<group>"; };
 		4C467B182A938C75006A21FC /* DatabaseClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DatabaseClient.swift; sourceTree = "<group>"; };
 		4C467B1B2A938C8E006A21FC /* TodoModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TodoModel.swift; sourceTree = "<group>"; };
+		4C467B1D2A93BCE7006A21FC /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		4C467B1F2A93BF46006A21FC /* ErrorText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorText.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,6 +119,8 @@
 				4C0799852A92FBC500699C91 /* ContentView.swift */,
 				4C0799BF2A93010A00699C91 /* TodoView.swift */,
 				4C0799C12A9304D500699C91 /* TodoForm.swift */,
+				4C467B1D2A93BCE7006A21FC /* AuthView.swift */,
+				4C467B1F2A93BF46006A21FC /* ErrorText.swift */,
 				4C0799872A92FBC900699C91 /* Assets.xcassets */,
 				4C0799892A92FBC900699C91 /* Examples.entitlements */,
 				4C07998A2A92FBC900699C91 /* Preview Content */,
@@ -305,9 +311,11 @@
 				4C467B192A938C75006A21FC /* DatabaseClient.swift in Sources */,
 				4C0799C02A93010A00699C91 /* TodoView.swift in Sources */,
 				4C0799C22A9304D500699C91 /* TodoForm.swift in Sources */,
+				4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */,
 				4C0799862A92FBC500699C91 /* ContentView.swift in Sources */,
 				4C0799BC2A92FCF000699C91 /* SupabaseClient+Live.swift in Sources */,
 				4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */,
+				4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */,
 				4C0799842A92FBC500699C91 /* ExamplesApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

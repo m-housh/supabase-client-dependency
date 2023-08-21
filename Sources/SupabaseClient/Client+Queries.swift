@@ -456,8 +456,8 @@ extension SupabaseClientDependency {
   ///
   /// ```swift
   /// let todo = try await databaseClient.insert(
+  ///   TodoInsertRequest(description: "New Todo", complete: false),
   ///   into: "todos",
-  ///   values: TodoInsertRequest(description: "New Todo", complete: false),
   ///   returning: .representation,
   ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
@@ -469,8 +469,8 @@ extension SupabaseClientDependency {
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The return value type to decode from the response.
   public func insert<V: Encodable, R: Decodable>(
+    _ values: V,
     into table: String,
-    values: V,
     returning returningOptions: PostgrestReturningOptions? = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
@@ -502,14 +502,14 @@ extension SupabaseClientDependency {
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The return value type to decode from the response.
   public func insert<V: Encodable, R: Decodable, Table: TableRepresentable>(
+    _ values: V,
     into table: Table,
-    values: V,
     returning returningOptions: PostgrestReturningOptions? = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
     try await insert(
+      values,
       into: table.tableName,
-      values: values,
       returning: returningOptions,
       as: R.self
     )
