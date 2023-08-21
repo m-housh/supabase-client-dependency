@@ -35,7 +35,20 @@ public struct SupabaseClientDependency {
     self.auth = auth
   }
 
-  /// Performs a database request.
+  /// Perform a database request on the postgres client.
+  ///
+  ///  This is useful when you need to perform a custom query beyond what is provided by this library.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  ///  try await client.withDatabase { database in
+  ///     database.from("todos")
+  ///       .select()
+  ///       .execute()
+  ///       .value
+  ///  }
+  /// ```
   ///
   /// - Parameters:
   ///   - perform: The action to perform on the supabase database.
@@ -91,14 +104,35 @@ extension SupabaseClientDependency {
       self.session = session
     }
 
+    /// Attempt to login with credentials stored in the user's key-chain, if they've logged in
+    /// in the past.
+    ///
     @discardableResult
     public func login() async throws -> Session {
       try await self._login(nil)
     }
 
+    /// Login with the supplied credentials for the user. This is generally only needed once and after
+    /// that the credentials will be stored in the user's key-chain for future login's.
+    ///
+    /// - Parameters:
+    ///   - credentials: The credentials used to login.
+    ///
     @discardableResult
     public func login(credentials: Credentials) async throws -> Session {
       try await self._login(credentials)
+    }
+
+    /// A helper that will throw an error if there is not a current user logged in.
+    ///
+    /// This is useful for requiring authentication to certain views / routes in your application.
+    ///
+    @discardableResult
+    public func requireCurrentUser() async throws -> User {
+      guard let user = await currentUser() else {
+        throw AuthenticationError()
+      }
+      return user
     }
   }
 }

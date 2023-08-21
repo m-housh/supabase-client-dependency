@@ -111,6 +111,8 @@ struct TodoFeature: Reducer {
         }
        
       case .task:
+        // Check if the todos have been populated or not.
+        guard state.todos.isEmpty else { return .none }
         state.isLoadingTodos = true
         return .run { send in
           await send(.receiveTodos(
@@ -237,9 +239,9 @@ struct TodoView: View {
 #Preview {
   TodoView(
     store: .init(initialState: .init()) {
-      TodoFeature()
+      TodoFeature()._printChanges()
     } withDependencies: {
-      $0.uuid = .incrementing
+      $0.uuid = .init { UUID() }
     }
   )
 }

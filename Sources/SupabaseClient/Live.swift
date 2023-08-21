@@ -5,7 +5,15 @@ import Supabase
 
 extension SupabaseClientDependency {
 
-  public static func live(configuration: Configuration = .local) -> Self {
+  /// A helper to generate a live ``SupabaseClientDependency``.
+  ///
+  /// This is generally used to conform the supabase client dependency to `DependencyKey` and
+  /// provide it's `liveValue` in your project.
+  ///
+  /// - Parameters:
+  ///   - configuration: The configuration for the supabase client.
+  ///
+  public static func live(configuration: Configuration) -> Self {
     let client = SupabaseClient(configuration: configuration)
 
     let session = AuthDependency(client: client)

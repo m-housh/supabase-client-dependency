@@ -1,6 +1,8 @@
 import Foundation
 
 /// Represents credentials used to create or login a user to the supabase client.
+///
+///
 public struct Credentials: Codable, Equatable, Sendable {
 
   /// The user's email address.
@@ -65,9 +67,18 @@ public struct Credentials: Codable, Equatable, Sendable {
 
 }
 
+/// Represents errors thrown while validating a ``Credentials`` instance.
+///
+///
 public enum CredentialError: Error {
+
+  /// The credentials have an invalid email address.
   case invalidEmail
+
+  /// The credentials have an invalid password.
   case invalidPassword
+
+  /// The credentials have an invalid email and an invalid password.
   case invalidEmailAndPassword
 
   var invalidEmailString: String {

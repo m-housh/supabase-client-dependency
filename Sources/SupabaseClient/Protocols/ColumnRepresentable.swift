@@ -1,6 +1,12 @@
 import Foundation
 
+/// A helper type that allows you to model a table's columns generally as an enum.
+///
+/// This can help prevent mis-spellings by not using strings in database queries.
+///
 public protocol ColumnRepresentable {
+
+  /// The column's name.
   var columnName: String { get }
 }
 

@@ -11,7 +11,7 @@ final class SupabaseClientTests: XCTestCase {
 
   func testCreateUser() async throws {
     await withDependencies {
-      $0.supabaseClient = .live()
+      $0.supabaseClient = .live(configuration: .local)
     } operation: {
       @Dependency(\.supabaseClient) var client;
 

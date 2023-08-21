@@ -6,10 +6,22 @@ extension SupabaseClientDependency {
   /// Represents a filter for use in database queries.
   ///
   public struct Filter {
+
+    /// The column to filter the results by.
     public let column: String
+
+    /// The operator to use to filter the results by.
     public let `operator`: PostgrestFilterBuilder.Operator
+
+    /// The value used to compare the column value to.
     public let value: URLQueryRepresentable
 
+    /// Create a new filter.
+    ///
+    /// - Parameters:
+    ///   - column: The column name to filter the results by.
+    ///   - operator: The operator to use to compare the column value to.
+    ///   - value: The value to use for the column filter.
     public init(
       column: String,
       operator postgrestOperator: PostgrestFilterBuilder.Operator,
@@ -20,6 +32,12 @@ extension SupabaseClientDependency {
       self.value = value
     }
 
+    /// Create a new filter.
+    ///
+    /// - Parameters:
+    ///   - column: The column to filter the results by.
+    ///   - operator: The operator to use to compare the column value to.
+    ///   - value: The value to use for the column filter.
     public init<C: ColumnRepresentable>(
       column: C,
       operator postgrestOperator: PostgrestFilterBuilder.Operator,

@@ -11,7 +11,7 @@ extension SupabaseClientDependency {
     let url: URL
 
     /// The anonymous key used to connect to supabase.
-    let anonKey: String
+    let anonymousKey: String
 
     /// The supabase client options.
     let options: SupabaseClientOptions
@@ -24,29 +24,42 @@ extension SupabaseClientDependency {
     ///   - options: The supabase client options.
     public init(
       url: URL,
-      anonKey: String,
+      anonymousKey: String,
       options: SupabaseClientOptions = .init()
     ) {
       self.url = url
-      self.anonKey = anonKey
+      self.anonymousKey = anonymousKey
       self.options = options
     }
+
+    /// Generate's a `Supabase.SupabaseClient` from the configuration.
+    public var client: SupabaseClient { .init(configuration: self) }
+
   }
+
 }
 
 extension SupabaseClient {
 
+  /// Create a new client from the configuration.
+  ///
+  /// - Parameters:
+  ///   - configuration: The configuration values used to generate the client.
   public convenience init(configuration: SupabaseClientDependency.Configuration) {
     self.init(
       supabaseURL: configuration.url,
-      supabaseKey: configuration.anonKey,
+      supabaseKey: configuration.anonymousKey,
       options: configuration.options
     )
   }
 }
 
 extension SupabaseClientDependency.Configuration {
-  public static let local = Self.init(url: supabaseURL, anonKey: localAnonKey)
+
+  /// A configuration for a local supabase instance.
+  ///
+  /// In general this may not be the same for different machines and should not be used in production.
+  public static let local = Self.init(url: supabaseURL, anonymousKey: localAnonKey)
 }
 
 private let supabaseURL = URL(string: "http://localhost:54321")!

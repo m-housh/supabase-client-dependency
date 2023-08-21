@@ -6,6 +6,14 @@ import Supabase
 
 extension SupabaseClientDependency.Auth {
 
+  /// Create a mock authentication client for the supabase client dependency.
+  ///
+  /// This is useful for previews or tests.
+  ///
+  ///  - Parameters:
+  ///   - allowedCredentials: Restrict the credentials allowed to login if needed (defaults to `any`).
+  ///   - session: Supply a custom session object, when supplied this will automatically login when credentials are not supplied to the `login` method.
+  ///
   public static func mock(
     allowedCredentials: AllowedCredentials = .any,
     session: Session? = .mock
