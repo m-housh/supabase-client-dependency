@@ -33,8 +33,9 @@ extension SupabaseClientDependency.Auth {
       initialValues: session != nil ? [session!] : [],
       timeDelays: nil
     )
-    
-    let (authEventStream, authEventStreamContinuation) = AsyncStream.makeStream(of: AuthChangeEvent.self)
+
+    let (authEventStream, authEventStreamContinuation) = AsyncStream.makeStream(
+      of: AuthChangeEvent.self)
 
     return .init(
       createUser: {
@@ -55,7 +56,7 @@ extension SupabaseClientDependency.Auth {
         }
       },
       events: { authEventStream },
-      initialize: { 
+      initialize: {
         _ = try? await AuthHelpers.login(
           authEventStreamContinuation: authEventStreamContinuation,
           credentials: nil,
@@ -64,11 +65,11 @@ extension SupabaseClientDependency.Auth {
         )
       },
       login: { optionalCredentials in
-        
+
         guard allowedCredentials.isAllowedToAuthenticate(credentials: optionalCredentials) else {
           throw AuthenticationError()
         }
-        
+
         return try await AuthHelpers.login(
           authEventStreamContinuation: authEventStreamContinuation,
           credentials: optionalCredentials,
@@ -144,7 +145,7 @@ private enum AuthHelpers {
     )
     return session
   }
-  
+
   @discardableResult
   fileprivate static func login(
     authEventStreamContinuation: AsyncStream<AuthChangeEvent>.Continuation,
@@ -160,7 +161,7 @@ private enum AuthHelpers {
       authEventStreamContinuation.yield(.signedIn)
       return session
     }
-    
+
     // Check if there's a user stored with the credentials.
     let optionalUser = await userStorage.withValues(
       perform: { $0.first(where: { $0.email == credentials.email }) }
@@ -168,14 +169,14 @@ private enum AuthHelpers {
     guard let user = optionalUser else {
       throw AuthenticationError()
     }
-    
+
     authEventStreamContinuation.yield(.signedIn)
     return await AuthHelpers.createSession(
       for: user,
       in: sessionStorage
     )
   }
-  
+
   fileprivate struct SessionInsertRequest: InsertRequestConvertible {
 
     typealias ID = User.ID

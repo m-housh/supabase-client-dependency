@@ -77,7 +77,7 @@ extension SupabaseClientDependency {
 
     /// Access authentication events.
     public var events: () async -> AsyncStream<AuthChangeEvent>
-    
+
     public var initialize: () async -> Void
 
     /// Log in the user with the given credentials, if the credentials are `nil` then

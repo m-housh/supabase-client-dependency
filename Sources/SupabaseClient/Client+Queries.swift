@@ -391,7 +391,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for fetching items from the database, using the table name and an id of an element.
   ///
   /// ### Example
@@ -419,7 +419,7 @@ extension SupabaseClientDependency {
       as: R.self
     )
   }
-  
+
   /// A helper for fetching items from the database, using the table name and an id of an element.
   ///
   /// ### Example

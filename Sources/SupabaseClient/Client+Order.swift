@@ -56,7 +56,7 @@ extension SupabaseClientDependency {
       self.nullsFirst = nullsFirst
       self.foreignTable = foreignTable
     }
-    
+
     /// Create a new order by clause for the result with the specified `column`.
     ///
     /// - Parameters:
@@ -79,7 +79,7 @@ extension SupabaseClientDependency {
 }
 
 extension ColumnRepresentable {
-  
+
   public func ascending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
@@ -91,14 +91,14 @@ extension ColumnRepresentable {
       foreignTable: foreignTable
     )
   }
-  
+
   public func ascending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
   ) -> SupabaseClientDependency.Order {
     self.ascending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
   }
-  
+
   public func descending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
@@ -110,7 +110,7 @@ extension ColumnRepresentable {
       foreignTable: foreignTable
     )
   }
-  
+
   public func descending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
