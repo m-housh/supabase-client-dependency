@@ -29,6 +29,10 @@ struct DatabaseClient {
     struct UpdateRequest: Encodable {
       var description: String?
       var complete: Bool?
+      
+      var hasChanges: Bool {
+        description != nil || complete != nil
+      }
     }
   }
 }

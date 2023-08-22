@@ -14,15 +14,22 @@ extension DependencyValues {
   }
 }
 
+/// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate
+/// with supabase.
+///
+/// This adds some niceties around database operations and also includes an `auth` client.
+///
 public struct SupabaseClientDependency {
 
   /// The supabase client for the application.
   private let client: LockIsolated<Supabase.SupabaseClient>
 
   /// The supabase authentication client for the application.
+  ///
+  /// - SeeAlso: ``SupabaseClientDependency/Auth-swift.struct``
   public var auth: Auth
 
-  /// Create a new supabase client.
+  /// Create a new supabase client dependency.
   ///
   /// - Parameters:
   ///   - client: The supabase client for the application.
@@ -33,6 +40,18 @@ public struct SupabaseClientDependency {
   ) {
     self.client = .init(client)
     self.auth = auth
+  }
+  
+  /// Create a new supabase client dependency.
+  ///
+  /// - Parameters:
+  ///   - configuration: The supabase client configuration for the application.
+  ///   - auth: The supabase authentication client dependency for the application.
+  public init(
+    configuration: Configuration,
+    auth: Auth
+  ) {
+    self.init(client: configuration.client, auth: auth)
   }
 
   /// Perform a database request on the postgres client.
@@ -75,9 +94,14 @@ extension SupabaseClientDependency {
     /// Access the currently logged in user.
     public var currentUser: () async -> User?
 
-    /// Access authentication events.
+    /// Access the authentication event stream.
     public var events: () async -> AsyncStream<AuthChangeEvent>
-
+    
+    /// Initialize the client session from storage.
+    ///
+    /// This method is called automatically when instantiating the client, but it's recommended to
+    /// call this method on the app startup, for making sure that the client is fully initialized
+    /// before proceeding.
     public var initialize: () async -> Void
 
     /// Log in the user with the given credentials, if the credentials are `nil` then
@@ -90,6 +114,16 @@ extension SupabaseClientDependency {
     /// Access the current authentication session if the user has logged in.
     public var session: () async throws -> Session?
 
+    /// Create a new auth client.
+    ///
+    /// - Parameters:
+    ///   - createUser: Create a new user.
+    ///   - currentUser: Get the current authenticated user.
+    ///   - events: Access authentication event stream.
+    ///   - initialize: Ensure the auth client is initialized for the application.
+    ///   - login: Login a user.
+    ///   - logout: Logout a user.
+    ///   - session: Access the current authentication session if the user has logged in.
     public init(
       createUser: @escaping (Credentials) async throws -> User,
       currentUser: @escaping () async -> User?,
@@ -142,6 +176,8 @@ extension SupabaseClientDependency {
 }
 
 extension SupabaseClientDependency.Auth {
+  
+  /// The unimplemented version of the auth client for usage in tests.
   static let unimplemented = Self.init(
     createUser: XCTestDynamicOverlay.unimplemented("\(Self.self).createUser", placeholder: .mock),
     currentUser: XCTestDynamicOverlay.unimplemented("\(Self.self).currentUser", placeholder: nil),
@@ -155,6 +191,7 @@ extension SupabaseClientDependency.Auth {
 
 extension SupabaseClientDependency: TestDependencyKey {
 
+  /// The unimplemented supabase client dependency for usage in tests.
   public static var testValue: Self {
     Self.init(
       client: unimplemented(

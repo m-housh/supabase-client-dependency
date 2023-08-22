@@ -13,7 +13,7 @@ public struct Credentials: Codable, Equatable, Sendable {
 
   /// Whether the credentials are valid or not.
   ///
-  /// - SeeAlso: ``Credentials.validate``
+  /// - SeeAlso: ``validate(_:)``
   public var isValid: Bool {
     guard (try? Credentials.validate(self)) != nil
     else { return false }

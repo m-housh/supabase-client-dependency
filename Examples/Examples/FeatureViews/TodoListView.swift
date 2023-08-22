@@ -160,9 +160,7 @@ struct TodoListFeature: Reducer {
     )
 
     // Check that there are changes to be saved or not.
-    guard updateRequest.description != nil || updateRequest.complete != nil else {
-      return nil
-    }
+    guard updateRequest.hasChanges else { return nil }
 
     // Save the updates.
     return await TaskResult {

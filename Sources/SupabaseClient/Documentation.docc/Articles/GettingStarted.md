@@ -1,13 +1,6 @@
-# supabase-client-dependency
+# GettingStarted
 
-A [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) client for supabase integrations.
-
-This dependency wraps the [supabase-swift](https://github.com/supabase-community/supabase-swift) client,
-database, and auth for convenience methods for use in `TCA` based apps.
-
-This package adds some niceties around database queries as well as holds onto an `authentication` client.
-In general you use this package / dependency to build your database clients for usage in a
-[swift-composable-architecture](https://github.com/pointfreeco/swift-composable-architecture) based application.
+This article explains how to integrate the supabase client dependency into your project.
 
 ## Installation
 
@@ -254,12 +247,3 @@ extension DatabaseClient: DependencyKey {
 
 See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.
-
-## Documentation
-
-The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabaseclientdependency/)
-
-## License
-
-All modules are released under the MIT license. See [LICENSE](https://github.com/m-housh/supabase-client-dependency/blob/main/LICENSE) for details.
-

@@ -617,12 +617,14 @@ extension SupabaseClientDependency {
     table: Table,
     filteredBy filters: Filter...,
     values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
     try await update(
       table: table.tableName,
       where: filters,
       values: values,
+      returning: returningOptions,
       as: R.self
     )
   }
@@ -698,6 +700,7 @@ extension SupabaseClientDependency {
       table: table,
       filteredBy: .id(id),
       values: values,
+      returning: returningOptions,
       as: R.self
     )
   }
