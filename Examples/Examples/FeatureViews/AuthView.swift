@@ -32,6 +32,25 @@ struct AuthFeature: Reducer {
           self = .signIn
         }
       }
+      
+      static func == (lhs: Mode, rhs: Mode) -> Bool {
+        switch lhs {
+        case .signIn:
+          switch rhs {
+          case .signIn:
+            return true
+          case .signUp:
+            return false
+          }
+        case .signUp:
+          switch rhs {
+          case .signIn:
+            return false
+          case .signUp:
+            return true
+          }
+        }
+      }
     }
 
     static func == (lhs: AuthFeature.State, rhs: AuthFeature.State) -> Bool {
@@ -46,6 +65,7 @@ struct AuthFeature: Reducer {
     case changeModeButtonTapped
     case receiveSession(TaskResult<Session>)
     case submitButtonTapped
+    case task
   }
 
   @Dependency(\.supabaseClient) var supabaseClient;
@@ -79,11 +99,19 @@ struct AuthFeature: Reducer {
               case .signIn:
                 return try await supabaseClient.auth.login(credentials: credentials)
               case .signUp:
-                let user = try await supabaseClient.auth.createUser(credentials)
+                _ = try await supabaseClient.auth.createUser(credentials)
                 return try await supabaseClient.auth.login(credentials: credentials)
               }
             }
           ))
+        }
+        
+      case .task:
+        return .run { send in
+          // Attempts to login with already saved credentials.
+          if let session = try? await supabaseClient.auth.login() {
+            await send(.receiveSession(.success(session)))
+          }
         }
       }
     }
@@ -95,47 +123,53 @@ struct AuthView: View {
 
   var body: some View {
     WithViewStore(store, observe: { $0 }) { viewStore in
-      Form {
-        Section {
-          TextField("Email", text: viewStore.$credentials.email)
-            .keyboardType(.emailAddress)
-            .textContentType(.emailAddress)
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
-
-          SecureField("Password", text: viewStore.$credentials.password)
-            .textContentType(.password)
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
-
-          Button(viewStore.mode.title) {
-            viewStore.send(.submitButtonTapped)
+      NavigationStack {
+        Form {
+          Section {
+            TextField("Email", text: viewStore.$credentials.email)
+              .keyboardType(.emailAddress)
+              .textContentType(.emailAddress)
+              .autocorrectionDisabled()
+              .textInputAutocapitalization(.never)
+            
+            SecureField("Password", text: viewStore.$credentials.password)
+              .textContentType(.password)
+              .autocorrectionDisabled()
+              .textInputAutocapitalization(.never)
+            
+            Button(viewStore.mode.title) {
+              viewStore.send(.submitButtonTapped)
+            }
+            
+            if let error = viewStore.error {
+              ErrorText(error)
+            }
           }
-
-          if let error = viewStore.error {
-            ErrorText(error)
+          
+          Section {
+            Button(
+              viewStore.mode == .signIn ? "Don't have an account? Sign up." :
+                "Already have an account? Sign in."
+            ) {
+              viewStore.send(.changeModeButtonTapped)
+            }
           }
         }
-
-        Section {
-          Button(
-            viewStore.mode == .signIn ? "Don't have an account? Sign up." :
-              "Already have an account? Sign in."
-          ) {
-            viewStore.send(.changeModeButtonTapped)
-          }
-        }
+        .navigationTitle(viewStore.mode.title)
+        .task { await viewStore.send(.task).finish() }
       }
     }
   }
 }
 
 #Preview {
-  AuthView(
-    store: .init(initialState: .init()) {
-      AuthFeature()
-    } withDependencies: {
-      $0.supabaseClient.auth = .mock()
-    }
-  )
+  NavigationStack {
+    AuthView(
+      store: .init(initialState: .init()) {
+        AuthFeature()
+      } withDependencies: {
+        $0.supabaseClient.auth = .mock()
+      }
+    )
+  }
 }

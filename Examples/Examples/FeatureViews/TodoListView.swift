@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct TodoFeature: Reducer {
+struct TodoListFeature: Reducer {
   
   struct State: Equatable {
     @PresentationState var destination: Destination.State?
@@ -160,8 +160,8 @@ struct TodoFeature: Reducer {
   }
 }
 
-struct TodoView: View {
-  let store: StoreOf<TodoFeature>
+struct TodoListView: View {
+  let store: StoreOf<TodoListFeature>
   
   var body: some View {
     WithViewStore(store, observe: { $0 }) { viewStore in
@@ -216,23 +216,23 @@ struct TodoView: View {
   }
   
   struct DestinationView: View {
-    let store: StoreOf<TodoFeature.Destination>
+    let store: StoreOf<TodoListFeature.Destination>
     
     var body: some View {
       SwitchStore(store) { state in
         switch state {
         case .addTodo:
           CaseLet(
-            /TodoFeature.Destination.State.addTodo,
-             action: TodoFeature.Destination.Action.addTodo
+            /TodoListFeature.Destination.State.addTodo,
+             action: TodoListFeature.Destination.Action.addTodo
           ) { store in
             TodoForm(store: store)
               .navigationTitle("Add Todo")
           }
         case .editTodo:
           CaseLet(
-            /TodoFeature.Destination.State.editTodo,
-             action: TodoFeature.Destination.Action.editTodo
+            /TodoListFeature.Destination.State.editTodo,
+             action: TodoListFeature.Destination.Action.editTodo
           ) { store in
             TodoForm(store: store)
               .navigationTitle("Edit Todo")
@@ -244,9 +244,9 @@ struct TodoView: View {
 }
 
 #Preview {
-  TodoView(
+  TodoListView(
     store: .init(initialState: .init()) {
-      TodoFeature()._printChanges()
+      TodoListFeature()._printChanges()
     } withDependencies: {
       $0.uuid = .init { UUID() }
     }

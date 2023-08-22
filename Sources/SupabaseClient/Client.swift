@@ -77,6 +77,8 @@ extension SupabaseClientDependency {
 
     /// Access authentication events.
     public var events: () async -> AsyncStream<AuthChangeEvent>
+    
+    public var initialize: () async -> Void
 
     /// Log in the user with the given credentials, if the credentials are `nil` then
     /// login with previously saved credentials.
@@ -92,6 +94,7 @@ extension SupabaseClientDependency {
       createUser: @escaping (Credentials) async throws -> User,
       currentUser: @escaping () async -> User?,
       events: @escaping () async -> AsyncStream<AuthChangeEvent>,
+      initialize: @escaping () async -> Void,
       login: @escaping (Credentials?) async throws -> Session,
       logout: @escaping () async -> Void,
       session: @escaping () async throws -> Session?
@@ -99,6 +102,7 @@ extension SupabaseClientDependency {
       self.createUser = createUser
       self.currentUser = currentUser
       self.events = events
+      self.initialize = initialize
       self._login = login
       self.logout = logout
       self.session = session
@@ -142,6 +146,7 @@ extension SupabaseClientDependency.Auth {
     createUser: XCTestDynamicOverlay.unimplemented("\(Self.self).createUser", placeholder: .mock),
     currentUser: XCTestDynamicOverlay.unimplemented("\(Self.self).currentUser", placeholder: nil),
     events: XCTestDynamicOverlay.unimplemented("\(Self.self).events"),
+    initialize: XCTestDynamicOverlay.unimplemented("\(Self.self).initialize"),
     login: XCTestDynamicOverlay.unimplemented("\(Self.self).login", placeholder: .mock),
     logout: XCTestDynamicOverlay.unimplemented("\(Self.self).logout"),
     session: XCTestDynamicOverlay.unimplemented("\(Self.self).session", placeholder: nil)

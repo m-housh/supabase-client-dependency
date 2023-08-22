@@ -24,6 +24,7 @@ extension SupabaseClientDependency {
         createUser: { try await session.createUser(credentials: $0) },
         currentUser: { await session.currentUser },
         events: { await session.authEvents },
+        initialize: { await client.auth.initialize() },
         login: { try await session.login(credentials: $0) },
         logout: { await session.logout() },
         session: { await session.session }

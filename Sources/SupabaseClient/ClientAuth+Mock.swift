@@ -31,9 +31,12 @@ extension SupabaseClientDependency.Auth {
       initialValues: session != nil ? [session!] : [],
       timeDelays: nil
     )
+    
+    let (authEventStream, authEventStreamContinuation) = AsyncStream.makeStream(of: AuthChangeEvent.self)
 
     return .init(
-      createUser: { credentials in
+      createUser: {
+        credentials in
         guard allowedCredentials.isAllowedToAuthenticate(credentials: credentials) else {
           throw AuthenticationError()
         }
@@ -49,38 +52,31 @@ extension SupabaseClientDependency.Auth {
           $0.first?.user
         }
       },
-      events: {
-        AsyncStream { nil }
+      events: { authEventStream },
+      initialize: { 
+        _ = try? await AuthHelpers.login(
+          authEventStreamContinuation: authEventStreamContinuation,
+          credentials: nil,
+          sessionStorage: sessionStorage,
+          userStorage: userStorage
+        )
       },
       login: { optionalCredentials in
-        if let credentials = optionalCredentials {
-          guard allowedCredentials.isAllowedToAuthenticate(credentials: credentials) else {
-            throw AuthenticationError()
-          }
-
-          guard
-            let user = await userStorage.withValues(
-              perform: { $0.first(where: { $0.email == credentials.email }) }
-            )
-          else {
-            throw AuthenticationError()
-          }
-          return await AuthHelpers.createSession(
-            for: user,
-            in: sessionStorage
-          )
-        }
-        guard
-          let session = await sessionStorage.withValues(
-            perform: { $0.first }
-          )
-        else {
+        
+        guard allowedCredentials.isAllowedToAuthenticate(credentials: optionalCredentials) else {
           throw AuthenticationError()
         }
-        return session
+        
+        return try await AuthHelpers.login(
+          authEventStreamContinuation: authEventStreamContinuation,
+          credentials: optionalCredentials,
+          sessionStorage: sessionStorage,
+          userStorage: userStorage
+        )
       },
       logout: {
         await sessionStorage.set(elements: .init(id: \.user.id))
+        authEventStreamContinuation.yield(.signedOut)
       },
       session: {
         await sessionStorage.withValues {
@@ -94,7 +90,8 @@ extension SupabaseClientDependency.Auth {
     case any
     case only([Credentials])
 
-    func isAllowedToAuthenticate(credentials: Credentials) -> Bool {
+    func isAllowedToAuthenticate(credentials: Credentials?) -> Bool {
+      guard let credentials else { return true }
       switch self {
       case .any:
         return true
@@ -143,7 +140,38 @@ private enum AuthHelpers {
     )
     return session
   }
-
+  
+  @discardableResult
+  fileprivate static func login(
+    authEventStreamContinuation: AsyncStream<AuthChangeEvent>.Continuation,
+    credentials: Credentials?,
+    sessionStorage: IdentifiedStorage<User.ID, Session>,
+    userStorage: IdentifiedStorageOf<User>
+  ) async throws -> Session {
+    guard let credentials else {
+      // Check if there's a session.
+      guard let session = await sessionStorage.first else {
+        throw AuthenticationError()
+      }
+      authEventStreamContinuation.yield(.signedIn)
+      return session
+    }
+    
+    // Check if there's a user stored with the credentials.
+    let optionalUser = await userStorage.withValues(
+      perform: { $0.first(where: { $0.email == credentials.email }) }
+    )
+    guard let user = optionalUser else {
+      throw AuthenticationError()
+    }
+    
+    authEventStreamContinuation.yield(.signedIn)
+    return await AuthHelpers.createSession(
+      for: user,
+      in: sessionStorage
+    )
+  }
+  
   fileprivate struct SessionInsertRequest: InsertRequestConvertible {
 
     typealias ID = User.ID
@@ -153,5 +181,11 @@ private enum AuthHelpers {
     func transform() -> Session {
       session
     }
+  }
+}
+
+extension IdentifiedStorage {
+  var first: Element? {
+    get async { await withValues { $0.first } }
   }
 }
