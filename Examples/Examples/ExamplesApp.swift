@@ -7,7 +7,7 @@ struct ExamplesApp: App {
     WindowGroup {
       RootView(
         store: .init(initialState: .loggedOut(.init())) {
-          RootFeature()
+          RootFeature()._printChanges()
         }
       )
     }

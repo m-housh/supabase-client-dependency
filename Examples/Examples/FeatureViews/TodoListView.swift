@@ -32,6 +32,7 @@ struct TodoListFeature: Reducer {
   
   enum Action: Equatable {
     case addTodoButtonTapped
+    case delete(id: TodoModel.ID)
     case destination(PresentationAction<Destination.Action>)
     case receiveTodos(TaskResult<IdentifiedArrayOf<TodoModel>>)
     case receiveSavedTodo(TaskResult<TodoModel>)
@@ -49,6 +50,12 @@ struct TodoListFeature: Reducer {
       case .addTodoButtonTapped:
         state.destination = .addTodo(.init())
         return .none
+        
+      case let .delete(id: todoId):
+        state.todos?.remove(id: todoId)
+        return .run { _ in
+          try await database.todos.delete(todoId)
+        }
         
       case .destination:
         return .none
@@ -169,19 +176,21 @@ struct TodoListView: View {
         if let todos = viewStore.todos {
           List {
             ForEach(todos) { todo in
-              Button {
-                viewStore.send(.rowTapped(id: todo.id))
-              } label: {
-                HStack {
-                  Text(todo.description)
-                  Spacer()
-                  Image(systemName: todo.isComplete ? "checkmark.square" : "square")
-                  Image(systemName: "chevron.right")
-                    .foregroundStyle(Color.secondary)
-                }
-
+              HStack {
+                Text(todo.description)
+                Spacer()
+                Image(systemName: todo.isComplete ? "checkmark.square" : "square")
+                Image(systemName: "chevron.right")
+                  .foregroundStyle(Color.secondary)
               }
-              .buttonStyle(.plain)
+              .onTapGesture { viewStore.send(.rowTapped(id: todo.id)) }
+              .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                  viewStore.send(.delete(id: todo.id))
+                } label: {
+                  Label("Delete", systemImage: "trash")
+                }
+              }
             }
           }
           .navigationTitle("Todos")

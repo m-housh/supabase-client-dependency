@@ -17,25 +17,10 @@ struct DatabaseClient {
   
   struct Todos {
     var delete: (TodoModel.ID) async throws -> Void
-    var fetch: (FetchRequest) async throws -> IdentifiedArrayOf<TodoModel>
-    var fetchOne: (TodoModel.ID) async throws -> TodoModel?
+    var fetch: () async throws -> IdentifiedArrayOf<TodoModel>
     var insert: (InsertRequest) async throws -> TodoModel
     var update: (TodoModel.ID, UpdateRequest) async throws -> TodoModel
-    
-    func fetch() async throws -> IdentifiedArrayOf<TodoModel> {
-      try await self.fetch(.all)
-    }
-    
-    enum FetchRequest {
-      case all
-      case filtered(by: Filter)
-      
-      enum Filter {
-        case complete
-        case incomplete
-      }
-    }
-    
+   
     struct InsertRequest: Encodable {
       var description: String
       var complete: Bool
@@ -55,23 +40,50 @@ extension DatabaseClient: DependencyKey {
     return Self.init(
       todos: DatabaseClient.Todos(
         delete: { try await client.delete(id: $0, from: Table.todos) },
-        fetch: { request in
-          switch request {
-          case .all:
-            return .init(
-              uniqueElements: try await client.fetch(from: Table.todos)
+        fetch: {
+          
+          // get the current authenticated user.
+          let user = try await client.auth.requireCurrentUser()
+         
+          // Return the todos.
+          return try await .init(
+            uniqueElements: client.fetch(
+              from: Table.todos,
+              filteredBy: TodoColumn.ownerId.equals(user.id),
+              orderBy: TodoColumn.complete.ascending()
             )
-          case let .filtered(by: filter):
-            return .init(
-              uniqueElements: try await client.fetch(
-                from: Table.todos,
-                filteredBy:  TodoColumn.complete.equals(filter == .complete ? true : false)
-              )
-            )
-          }
+          )
         },
-        fetchOne: { try await client.fetchOne(id: $0, from: Table.todos) },
-        insert: { try await client.insert($0, into: Table.todos) },
+        insert: { request in
+          
+          // A helper type that includes the authenticated user's
+          // id as the owner of the todo in the database, which is
+          // required by the row level security.
+          //
+          // This allows this implementation detail to be hidden away
+          // from the user and requires that the user is authenticated
+          // when inserting a todo.
+          struct InsertValues: Encodable {
+            let complete: Bool
+            let description: String
+            let ownerId: UUID
+            
+            enum CodingKeys: String, CodingKey {
+              case complete
+              case description
+              case ownerId = "owner_id"
+            }
+          }
+          
+          return try await client.insert(
+            InsertValues(
+              complete: request.complete,
+              description: request.description,
+              ownerId: client.auth.requireCurrentUser().id
+            ),
+            into: Table.todos
+          )
+        },
         update: { try await client.update(id: $0, in: Table.todos, with: $1) }
       )
     )
@@ -84,8 +96,7 @@ extension DatabaseClient: DependencyKey {
     return Self.init(
       todos: DatabaseClient.Todos(
         delete: { try await storage.delete(id: $0) },
-        fetch: { try await storage.fetch(request: $0) },
-        fetchOne: { try await storage.fetchOne(id: $0) },
+        fetch: { try await storage.fetch() },
         insert: { try await storage.insert(request: $0) },
         update: { try await storage.update(id: $0, request: $1) }
       )
@@ -97,7 +108,6 @@ extension DatabaseClient: DependencyKey {
       todos: DatabaseClient.Todos(
         delete: unimplemented(),
         fetch: unimplemented(placeholder: []),
-        fetchOne: unimplemented(placeholder: nil),
         insert: unimplemented(placeholder: TodoModel.mocks[0]),
         update: unimplemented(placeholder: TodoModel.mocks[0])
       )
@@ -113,22 +123,7 @@ fileprivate enum Table: String, TableRepresentable {
 
 fileprivate enum TodoColumn: String, ColumnRepresentable {
   case complete
-}
-
-// MARK: - Mock Helpers
-extension DatabaseClient.Todos.FetchRequest: FetchRequestConvertible {
-  typealias ID = TodoModel.ID
-  
-  func fetch(
-    from values: IdentifiedArray<TodoModel.ID, TodoModel>
-  ) -> IdentifiedArray<TodoModel.ID, TodoModel> {
-    switch self {
-    case .all:
-      return values
-    case let .filtered(by: filter):
-      return values.filter { $0.isComplete == (filter == .complete ? true : false) }
-    }
-  }
+  case ownerId = "owner_id"
 }
 
 extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {

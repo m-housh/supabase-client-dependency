@@ -10,6 +10,8 @@ extension SupabaseClientDependency.Auth {
   ///
   /// This is useful for previews or tests.
   ///
+  ///  > Note: The auth event stream for the mock auth client only sends `AuthChangeEvent.signIn` and `AuthChangeEventsignOut` events.
+  ///
   ///  - Parameters:
   ///   - allowedCredentials: Restrict the credentials allowed to login if needed (defaults to `any`).
   ///   - session: Supply a custom session object, when supplied this will automatically login when credentials are not supplied to the `login` method.
@@ -90,6 +92,8 @@ extension SupabaseClientDependency.Auth {
     case any
     case only([Credentials])
 
+    // A helper that validates whether credentials can either be added to
+    // the user storage or to authenticate a session for the mock client.
     func isAllowedToAuthenticate(credentials: Credentials?) -> Bool {
       guard let credentials else { return true }
       switch self {

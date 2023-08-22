@@ -78,6 +78,47 @@ extension SupabaseClientDependency {
   }
 }
 
+extension ColumnRepresentable {
+  
+  public func ascending(
+    nullsFirst: Bool = false,
+    foreignTable: String? = nil
+  ) -> SupabaseClientDependency.Order {
+    .init(
+      column: self,
+      ascending: true,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+  
+  public func ascending<T: TableRepresentable>(
+    nullsFirst: Bool = false,
+    foreignTable: T? = nil
+  ) -> SupabaseClientDependency.Order {
+    self.ascending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
+  }
+  
+  public func descending(
+    nullsFirst: Bool = false,
+    foreignTable: String? = nil
+  ) -> SupabaseClientDependency.Order {
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+  
+  public func descending<T: TableRepresentable>(
+    nullsFirst: Bool = false,
+    foreignTable: T? = nil
+  ) -> SupabaseClientDependency.Order {
+    self.descending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
+  }
+}
+
 extension PostgrestFilterBuilder {
 
   /// Applies an optional order by clause to a database query.
