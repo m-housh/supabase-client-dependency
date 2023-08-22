@@ -42,7 +42,7 @@ struct TodoListFeature: Reducer {
   }
   
   @Dependency(\.database) var database;
-  
+
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
@@ -122,7 +122,7 @@ struct TodoListFeature: Reducer {
           }
           
         }
-       
+
       case .task:
         // Check if the todos have been populated or not.
         guard state.todos == nil else { return .none }
@@ -152,15 +152,19 @@ struct TodoListFeature: Reducer {
     form: TodoFormFeature.State,
     original: TodoModel
   ) async -> TaskResult<TodoModel>? {
+
+    // Create the update request with changes from the original todo.
     let updateRequest = DatabaseClient.Todos.UpdateRequest(
       description: form.description == original.description ? nil : form.description,
       complete: form.isComplete == original.isComplete ? nil : form.isComplete
     )
-    
+
+    // Check that there are changes to be saved or not.
     guard updateRequest.description != nil || updateRequest.complete != nil else {
       return nil
     }
-    
+
+    // Save the updates.
     return await TaskResult {
       try await database.todos.update(original.id, updateRequest)
     }
@@ -169,57 +173,55 @@ struct TodoListFeature: Reducer {
 
 struct TodoListView: View {
   let store: StoreOf<TodoListFeature>
-  
+
   var body: some View {
     WithViewStore(store, observe: { $0 }) { viewStore in
-      NavigationStack {
-        if let todos = viewStore.todos {
-          List {
-            ForEach(todos) { todo in
-              HStack {
-                Text(todo.description)
-                Spacer()
-                Image(systemName: todo.isComplete ? "checkmark.square" : "square")
-                Image(systemName: "chevron.right")
-                  .foregroundStyle(Color.secondary)
-              }
-              .onTapGesture { viewStore.send(.rowTapped(id: todo.id)) }
-              .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button(role: .destructive) {
-                  viewStore.send(.delete(id: todo.id))
-                } label: {
-                  Label("Delete", systemImage: "trash")
-                }
-              }
+      if let todos = viewStore.todos {
+        List {
+          ForEach(todos) { todo in
+            HStack {
+              Text(todo.description)
+              Spacer()
+              Image(systemName: todo.isComplete ? "checkmark.square" : "square")
+              Image(systemName: "chevron.right")
+                .foregroundStyle(Color.secondary)
             }
-          }
-          .navigationTitle("Todos")
-          .navigationDestination(
-            store: store.scope(state: \.$destination, action: { .destination($0) })
-          ) { store in
-            DestinationView(store: store)
-              .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                  Button("Save") {
-                    viewStore.send(.saveTodoFormButtonTapped)
-                  }
-                }
-              }
-          }
-          .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-              Button {
-                viewStore.send(.addTodoButtonTapped)
+            .onTapGesture { viewStore.send(.rowTapped(id: todo.id)) }
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+              Button(role: .destructive) {
+                viewStore.send(.delete(id: todo.id))
               } label: {
-                Label("Add Todo", systemImage: "plus")
+                Label("Delete", systemImage: "trash")
               }
             }
           }
-        } else {
-          ProgressView()
-            .navigationTitle("Todos")
-            .task { await viewStore.send(.task).finish() }
         }
+        .navigationTitle("Todos")
+        .navigationDestination(
+          store: store.scope(state: \.$destination, action: { .destination($0) })
+        ) { store in
+          DestinationView(store: store)
+            .toolbar {
+              ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                  viewStore.send(.saveTodoFormButtonTapped)
+                }
+              }
+            }
+        }
+        .toolbar {
+          ToolbarItem(placement: .confirmationAction) {
+            Button {
+              viewStore.send(.addTodoButtonTapped)
+            } label: {
+              Label("Add Todo", systemImage: "plus")
+            }
+          }
+        }
+      } else {
+        ProgressView()
+          .navigationTitle("Todos")
+          .task { await viewStore.send(.task).finish() }
       }
     }
   }

@@ -123,41 +123,43 @@ struct AuthView: View {
 
   var body: some View {
     WithViewStore(store, observe: { $0 }) { viewStore in
-      NavigationStack {
-        Form {
-          Section {
-            TextField("Email", text: viewStore.$credentials.email)
-              .keyboardType(.emailAddress)
-              .textContentType(.emailAddress)
-              .autocorrectionDisabled()
-              .textInputAutocapitalization(.never)
-            
-            SecureField("Password", text: viewStore.$credentials.password)
-              .textContentType(.password)
-              .autocorrectionDisabled()
-              .textInputAutocapitalization(.never)
-            
-            Button(viewStore.mode.title) {
-              viewStore.send(.submitButtonTapped)
-            }
-            
-            if let error = viewStore.error {
-              ErrorText(error)
-            }
+      Form {
+        Section {
+          TextField("Email", text: viewStore.$credentials.email)
+            .autocorrectionDisabled()
+            #if os(iOS)
+            .textContentType(.emailAddress)
+            .keyboardType(.emailAddress)
+            .textInputAutocapitalization(.never)
+            #endif
+
+          SecureField("Password", text: viewStore.$credentials.password)
+            .autocorrectionDisabled()
+            #if os(iOS)
+            .textContentType(.password)
+            .textInputAutocapitalization(.never)
+            #endif
+
+          Button(viewStore.mode.title) {
+            viewStore.send(.submitButtonTapped)
           }
-          
-          Section {
-            Button(
-              viewStore.mode == .signIn ? "Don't have an account? Sign up." :
-                "Already have an account? Sign in."
-            ) {
-              viewStore.send(.changeModeButtonTapped)
-            }
+
+          if let error = viewStore.error {
+            ErrorText(error)
           }
         }
-        .navigationTitle(viewStore.mode.title)
-        .task { await viewStore.send(.task).finish() }
+
+        Section {
+          Button(
+            viewStore.mode == .signIn ? "Don't have an account? Sign up." :
+              "Already have an account? Sign in."
+          ) {
+            viewStore.send(.changeModeButtonTapped)
+          }
+        }
       }
+      .navigationTitle(viewStore.mode.title)
+      .task { await viewStore.send(.task).finish() }
     }
   }
 }
