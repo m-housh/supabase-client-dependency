@@ -77,7 +77,82 @@ public struct SupabaseClientDependency {
   ) async rethrows -> R {
     try await perform(self.client.database)
   }
+
+  public struct DatabaseClient {
+
+    var delete: VoidExecutor<DeleteRequest>
+    var fetch: DecodableExecutor<FetchRequest>
+
+    public struct DeleteRequest {
+      public let table: TableRepresentable
+      public let filters: [Filter]
+
+      public init(table: TableRepresentable, filters: [Filter]) {
+        self.table = table
+        self.filters = filters
+      }
+    }
+
+    public struct FetchRequest {
+      public let table: TableRepresentable
+      public let filters: [Filter]
+      public let order: Order?
+
+      public init(
+        table: TableRepresentable,
+        filters: [Filter],
+        order: Order?
+      ) {
+        self.table = table
+        self.filters = filters
+        self.order = order
+      }
+    }
+  }
+
 }
+
+
+public struct VoidExecutor<Request> {
+  var execute: () async throws -> Void
+}
+
+extension VoidExecutor where Request == SupabaseClientDependency.DatabaseClient.DeleteRequest {
+  static func delete(_ request: Request, using client: PostgrestClient) -> Self {
+    .init {
+      try await client.from(request.table.tableName)
+        .delete(returning: .minimal)
+        .filter(by: request.filters)
+        .execute()
+        .value
+    }
+  }
+}
+
+public struct DecodableExecutor<Request> {
+
+  struct DecoderF<Model: Decodable> {
+
+  }
+}
+
+extension DecodableExecutor where Request == SupabaseClientDependency.DatabaseClient.FetchRequest {
+
+  func fetch<Response: Decodable>(
+    _ request: Request,
+    using client: PostgrestClient,
+    decoding type: Response.Type = Response.self
+  ) async throws -> Response {
+    try await client.from(request.table.tableName)
+      .select()
+      .filter(by: request.filters)
+      .order(by: request.order)
+      .execute()
+      .value
+  }
+}
+
+
 
 extension SupabaseClientDependency: TestDependencyKey {
 
