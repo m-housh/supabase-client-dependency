@@ -16,25 +16,26 @@ extension SupabaseClientDependency {
   public static func live(configuration: Configuration) -> Self {
     let client = SupabaseClient(configuration: configuration)
 
-    let session = AuthDependency(client: client)
+//    let session = AuthDependency(client: client)
 
     return Self.init(
       client: client,
-      auth: .init(
-        createUser: { try await session.createUser(credentials: $0) },
-        currentUser: { await session.currentUser },
-        events: { await session.authEvents },
-        initialize: { await client.auth.initialize() },
-        login: { try await session.login(credentials: $0) },
-        logout: { await session.logout() },
-        session: { await session.session }
-      )
+      auth: .live(client: client.auth)
+//          .init(
+//        createUser: { try await session.createUser(credentials: $0) },
+//        currentUser: { await session.currentUser },
+//        events: { await session.authEvents },
+//        initialize: { await client.auth.initialize() },
+//        login: { try await session.login(credentials: $0) },
+//        logout: { await session.logout() },
+//        session: { await session.session }
+//      )
     )
   }
 
 }
 
-extension Auth2 {
+extension SupabaseClientDependency.Auth {
   static func live(client: GoTrueClient) -> Self {
     Self.init(
       events: {
@@ -49,35 +50,12 @@ extension Auth2 {
         )
       },
       initialize: { await client.initialize() },
-      refreshSession: { token in
-        try await client.refreshSession(refreshToken: token)
-      },
-      session: { sessionRequest in
-        guard let sessionRequest else {
+      login: { loginRequest in
+        guard let loginRequest else {
+          // Attempt to login with previously saved credentials.
           return try await client.session
         }
-        switch sessionRequest {
-          
-        case let .oAuth(oAuthURL, storeSession: storeSession):
-          return try await client.session(
-            from: oAuthURL,
-            storeSession: storeSession
-          )
-          
-        case let .refresh(token):
-          return try await client.refreshSession(
-            refreshToken: token
-          )
-          
-        case let .set(accessToken: accessToken, refreshToken: refreshToken):
-          return try await client.setSession(
-            accessToken: accessToken,
-            refreshToken: refreshToken
-          )
-        }
-        
-      },
-      login: { loginRequest in
+
         switch loginRequest {
           
         case let .email(email, password: password):
@@ -115,6 +93,38 @@ extension Auth2 {
         
       },
       logout: { try await client.signOut() },
+      resetPassword: { request in
+        try await client.resetPasswordForEmail(
+          request.email,
+          redirectTo: request.redirectURL,
+          captchaToken: request.captchaToken
+        )
+      },
+      session: { sessionRequest in
+        guard let sessionRequest else {
+          return try await client.session
+        }
+        switch sessionRequest {
+
+        case let .oAuth(oAuthURL, storeSession: storeSession):
+          return try await client.session(
+            from: oAuthURL,
+            storeSession: storeSession
+          )
+
+        case let .refresh(token):
+          return try await client.refreshSession(
+            refreshToken: token
+          )
+
+        case let .set(accessToken: accessToken, refreshToken: refreshToken):
+          return try await client.setSession(
+            accessToken: accessToken,
+            refreshToken: refreshToken
+          )
+        }
+
+      },
       signUp: { signUpRequest in
         switch signUpRequest {
           
@@ -178,57 +188,57 @@ fileprivate extension AuthResponse {
     }
   }
 }
-
-fileprivate actor AuthDependency {
-  private let client: SupabaseClient
-
-  init(client: SupabaseClient) {
-    self.client = client
-  }
-
-  var session: Session? {
-    get async {
-      try? await client.auth.session
-    }
-  }
-
-  var authEvents: AsyncStream<AuthChangeEvent> { client.auth.authEventChange }
-
-  func createUser(credentials: Credentials) async throws -> User {
-    let response = try await client.auth.signUp(
-      email: credentials.email,
-      password: credentials.password
-    )
-
-    switch response {
-    case let .session(session):
-      return session.user
-    case let .user(user):
-      return user
-    }
-  }
-
-  var currentUser: User? {
-    get async { await self.session?.user }
-  }
-
-  func login(credentials: Credentials?) async throws -> Session {
-    if let credentials {
-      return try await client.auth.signIn(
-        email: credentials.email,
-        password: credentials.password
-      )
-    }
-
-    guard let session = await self.session
-    else { throw AuthenticationError() }
-
-    return session
-  }
-
-  func logout() async {
-    try? await client.auth.signOut()
-  }
-}
-
+//
+//fileprivate actor AuthDependency {
+//  private let client: SupabaseClient
+//
+//  init(client: SupabaseClient) {
+//    self.client = client
+//  }
+//
+//  var session: Session? {
+//    get async {
+//      try? await client.auth.session
+//    }
+//  }
+//
+//  var authEvents: AsyncStream<AuthChangeEvent> { client.auth.authEventChange }
+//
+//  func createUser(credentials: Credentials) async throws -> User {
+//    let response = try await client.auth.signUp(
+//      email: credentials.email,
+//      password: credentials.password
+//    )
+//
+//    switch response {
+//    case let .session(session):
+//      return session.user
+//    case let .user(user):
+//      return user
+//    }
+//  }
+//
+//  var currentUser: User? {
+//    get async { await self.session?.user }
+//  }
+//
+//  func login(credentials: Credentials?) async throws -> Session {
+//    if let credentials {
+//      return try await client.auth.signIn(
+//        email: credentials.email,
+//        password: credentials.password
+//      )
+//    }
+//
+//    guard let session = await self.session
+//    else { throw AuthenticationError() }
+//
+//    return session
+//  }
+//
+//  func logout() async {
+//    try? await client.auth.signOut()
+//  }
+//}
+//
 struct AuthenticationError: Error {}

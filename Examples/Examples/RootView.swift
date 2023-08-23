@@ -60,12 +60,12 @@ struct RootFeature: Reducer {
 
       case .signOutButtonTapped:
         return .run { _ in
-          await auth.logout()
+          try await auth.logout()
         }
 
       case .task:
         return .run { send in
-          for await event in await auth.events() {
+          for await event in auth.events() {
             await send(.receiveAuthEvent(event))
           }
           await auth.initialize()

@@ -1,5 +1,5 @@
 import Dependencies
-import SupabaseClient
+@_spi(Mock) import SupabaseClient
 import XCTest
 
 final class MockAuthTests: XCTestCase {
@@ -31,7 +31,7 @@ final class MockAuthTests: XCTestCase {
   
   func testLogoutDeletesSession() async throws {
     let auth = makeAuthMock()
-    await auth.logout()
+    try await auth.logout()
     do {
       try await auth.login()
       XCTFail()
@@ -43,16 +43,17 @@ final class MockAuthTests: XCTestCase {
   func testOnlyAllowedCredentials() async throws {
     let credentials = Credentials(email: "test@example.com", password: "test-password")
     let auth = makeAuthMock(
-      allowedCredentials: .only([credentials]),
+      allowedCredentials: .only([.credentials(credentials)]),
       session: nil
     )
     
-    let user = try await auth.createUser(credentials)
+    let user = try await auth.signUp(.credentials(credentials))
     let session = try await auth.login(credentials: credentials)
-    XCTAssertEqual(session.user, user)
-    
+    XCTAssertNotNil(session)
+    XCTAssertEqual(session!.user, user)
+
     do {
-      _ = try await auth.createUser(.init(email: "bad@example.com", password: "bad-password"))
+      _ = try await auth.signUp(.email("bad@example.com", password: "bad-password"))
       XCTFail()
     } catch {
       XCTAssert(true)

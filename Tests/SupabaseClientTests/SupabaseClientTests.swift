@@ -15,7 +15,7 @@ final class SupabaseClientTests: XCTestCase {
     } operation: {
       @Dependency(\.supabaseClient) var client;
 
-      var currentUser = await client.auth.currentUser()
+      let currentUser = await client.auth.currentUser()
       XCTAssertNil(currentUser)
 
       let credentials = Credentials(
@@ -23,7 +23,7 @@ final class SupabaseClientTests: XCTestCase {
         password: "secret-password"
       )
 
-      let user = try? await client.auth.createUser(credentials)
+      let user = try? await client.auth.signUp(.credentials(credentials))
 
       // Testing session does not work because the `keychain` is not setup properly
       // in a swift package.
