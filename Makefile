@@ -74,14 +74,14 @@ build-documentation:
 	swift package \
 		--allow-writing-to-directory ./docs \
 		generate-documentation \
-		--target IdentifiedStorage \
+		--target SupabaseClient \
 		--disable-indexing \
 		--transform-for-static-hosting \
-		--hosting-base-path swift-identified-storage \
+		--hosting-base-path supabase-client-dependency \
 		--output-path ./docs
 
 preview-documentation:
 	swift package \
 		--disable-sandbox \
 		preview-documentation \
-		--target IdentifiedStorage
+		--target SupabaseClient
