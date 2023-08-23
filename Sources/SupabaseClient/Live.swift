@@ -34,6 +34,151 @@ extension SupabaseClientDependency {
 
 }
 
+extension Auth2 {
+  static func live(client: GoTrueClient) -> Self {
+    Self.init(
+      events: {
+        client.authEventChange
+      },
+      getOAuthURL: { request in
+        try client.getOAuthSignInURL(
+          provider: request.provider,
+          scopes: request.scopes,
+          redirectTo: request.redirectURL,
+          queryParams: request.queryParams.map { ($0.name, $0.value) }
+        )
+      },
+      initialize: { await client.initialize() },
+      refreshSession: { token in
+        try await client.refreshSession(refreshToken: token)
+      },
+      session: { sessionRequest in
+        guard let sessionRequest else {
+          return try await client.session
+        }
+        switch sessionRequest {
+          
+        case let .oAuth(oAuthURL, storeSession: storeSession):
+          return try await client.session(
+            from: oAuthURL,
+            storeSession: storeSession
+          )
+          
+        case let .refresh(token):
+          return try await client.refreshSession(
+            refreshToken: token
+          )
+          
+        case let .set(accessToken: accessToken, refreshToken: refreshToken):
+          return try await client.setSession(
+            accessToken: accessToken,
+            refreshToken: refreshToken
+          )
+        }
+        
+      },
+      login: { loginRequest in
+        switch loginRequest {
+          
+        case let .email(email, password: password):
+          return try await client.signIn(email: email, password: password)
+        
+        case let .phone(phone, password: password):
+          return try await client.signIn(phone: phone, password: password)
+          
+        // SPI guarded.
+//        case let .idToken(token):
+//          fatalError()
+          
+        case let .otp(otpRequest, shouldCreateUser: shouldCreateUser, options: options):
+          switch otpRequest {
+           
+          case let .email(email):
+            try await client.signInWithOTP(
+              email: email,
+              redirectTo: options.redirectURL,
+              shouldCreateUser: shouldCreateUser,
+              data: options.data,
+              captchaToken: options.captchaToken
+            )
+            return nil
+          case let .phone(phone):
+            try await client.signInWithOTP(
+              phone: phone,
+              shouldCreateUser: shouldCreateUser,
+              data: options.data,
+              captchaToken: options.captchaToken
+            )
+            return nil
+          }
+        }
+        
+      },
+      logout: { try await client.signOut() },
+      signUp: { signUpRequest in
+        switch signUpRequest {
+          
+        case let .email(email, password: password, options: options):
+          return try await client.signUp(
+            email: email,
+            password: password,
+            data: options.data,
+            redirectTo: options.redirectURL,
+            captchaToken: options.captchaToken
+          )
+          .user
+          
+        case let .phone(phone, password: password, options: options):
+          return try await client.signUp(
+            phone: phone,
+            password: password,
+            data: options.data,
+            captchaToken: options.captchaToken
+          )
+          .user
+          
+        }
+      },
+      update: { userAttributes in
+        try await client.update(user: userAttributes)
+      },
+      verifyOTP: { otpRequest in
+        switch otpRequest {
+        case let .email(email, options: options):
+          return try await client.verifyOTP(
+            email: email,
+            token: options.token,
+            type: options.type,
+            redirectTo: options.redirectURL,
+            captchaToken: options.captchaToken
+          )
+          .user
+          
+        case let .phone(phone, options: options):
+          return try await client.verifyOTP(
+            phone: phone,
+            token: options.token,
+            type: options.type,
+            captchaToken: options.captchaToken
+          )
+          .user
+        }
+      }
+    )
+  }
+}
+
+fileprivate extension AuthResponse {
+  var user: User {
+    switch self {
+    case let .session(session):
+      return session.user
+    case let .user(user):
+      return user
+    }
+  }
+}
+
 fileprivate actor AuthDependency {
   private let client: SupabaseClient
 

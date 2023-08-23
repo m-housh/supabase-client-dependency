@@ -22,7 +22,7 @@ extension DependencyValues {
 public struct SupabaseClientDependency {
 
   /// The supabase client for the application.
-  private let client: LockIsolated<Supabase.SupabaseClient>
+  private let client: Supabase.SupabaseClient
 
   /// The supabase authentication client for the application.
   ///
@@ -38,7 +38,7 @@ public struct SupabaseClientDependency {
     client: Supabase.SupabaseClient,
     auth: Auth
   ) {
-    self.client = .init(client)
+    self.client = client
     self.auth = auth
   }
   
@@ -172,6 +172,7 @@ extension SupabaseClientDependency {
       }
       return user
     }
+
   }
 }
 
@@ -200,6 +201,180 @@ extension SupabaseClientDependency: TestDependencyKey {
       ),
       auth: .unimplemented
     )
+  }
+}
+
+public struct Auth2 {
+  
+  public var events: @Sendable () -> AsyncStream<AuthChangeEvent>
+  public var getOAuthURL: @Sendable (OAuthRequest) throws -> URL
+  public var initialize: @Sendable () async -> Void
+  public var refreshSession: @Sendable (String) async throws -> Session
+  public var session: @Sendable (SessionRequest?) async throws -> Session
+  public var login: @Sendable (SignInRequest) async throws -> Session?
+  public var logout: @Sendable () async throws -> Void
+  public var signUp: @Sendable (SignUpRequest) async throws -> User
+  public var update: @Sendable (UserAttributes) async throws -> User
+  public var verifyOTP: @Sendable (VerifyOTPRequest) async throws -> User
+  
+  public init(
+    events: @escaping @Sendable () -> AsyncStream<AuthChangeEvent>,
+    getOAuthURL: @escaping @Sendable (OAuthRequest) throws -> URL,
+    initialize: @escaping @Sendable () async  -> Void,
+    refreshSession: @escaping @Sendable (String) async throws -> Session,
+    session: @escaping @Sendable (SessionRequest?) async throws -> Session,
+    login: @escaping @Sendable (SignInRequest) async throws -> Session?,
+    logout: @escaping @Sendable () async throws -> Void,
+    signUp: @escaping @Sendable (SignUpRequest) async throws -> User, 
+    update: @escaping @Sendable (UserAttributes) async throws -> User,
+    verifyOTP: @escaping @Sendable (VerifyOTPRequest) async throws -> User
+  ) {
+    self.events = events
+    self.getOAuthURL = getOAuthURL
+    self.initialize = initialize
+    self.refreshSession = refreshSession
+    self.session = session
+    self.login = login
+    self.logout = logout
+    self.signUp = signUp
+    self.update = update
+    self.verifyOTP = verifyOTP
+  }
+  
+  public func session() async throws -> Session {
+    try await session(nil)
+  }
+  
+  public struct OAuthRequest: Equatable {
+    let provider: Provider
+    let queryParams: [QueryParam]
+    let redirectURL: URL?
+    let scopes: String?
+    
+    public init(
+      provider: Provider,
+      queryParams: [QueryParam] = [],
+      redirectURL: URL? = nil,
+      scopes: String? = nil
+    ) {
+      self.provider = provider
+      self.queryParams = queryParams
+      self.redirectURL = redirectURL
+      self.scopes = scopes
+    }
+        
+    public struct QueryParam: Equatable {
+      let name: String
+      let value: String?
+      
+      public init(name: String, value: String?) {
+        self.name = name
+        self.value = value
+      }
+    }
+  }
+  
+  public enum SessionRequest: Equatable {
+    case oAuth(URL, storeSession: Bool = true)
+    case refresh(String)
+    case set(accessToken: String, refreshToken: String)
+  }
+
+  
+  public enum SignInRequest: Equatable {
+    
+    case email(String, password: String)
+    case phone(String, password: String)
+//    case idToken(OpenIDConnectCredentials)
+    case otp(
+      OTPRequest,
+      shouldCreateUser: Bool? = nil,
+      options: SignUpOptions = .init()
+    )
+    
+    public func email(credentials: Credentials) -> Self {
+      .email(credentials.email, password: credentials.password)
+    }
+
+    
+    public enum OTPRequest: Equatable {
+      case email(String)
+      case phone(String)
+      
+      public var value: String {
+        switch self {
+        case let .email(email):
+          return email
+        case let .phone(phone):
+          return phone
+        }
+      }
+    }
+  }
+   
+  public struct SignUpOptions: Equatable {
+    let captchaToken: String?
+    let data: [String: AnyJSON]?
+    let redirectURL: URL?
+    
+    public init(
+      captchaToken: String? = nil,
+      data: [String : AnyJSON]? = nil,
+      redirectURL: URL? = nil
+    ) {
+      self.captchaToken = captchaToken
+      self.data = data
+      self.redirectURL = redirectURL
+    }
+  } 
+  
+  public enum SignUpRequest: Equatable {
+    case email(
+      String,
+      password: String,
+      options: SignUpOptions = .init()
+    )
+    
+    public static func email(
+      credentials: Credentials,
+      options: SignUpOptions = .init()
+    ) -> Self {
+      .email(
+        credentials.email,
+        password: credentials.password,
+        options: options
+      )
+    }
+    
+    case phone(
+      String,
+      password: String,
+      options: SignUpOptions = .init()
+    )
+  }
+  
+  public enum VerifyOTPRequest: Equatable {
+    case email(String, options: Options)
+    case phone(String, options: Options)
+    
+    public struct Options: Equatable {
+      let captchaToken: String?
+      let redirectURL: URL?
+      let token: String
+      let type: OTPType
+      
+      public init(
+        captchaToken: String?,
+        redirectURL: URL?,
+        token: String,
+        type: OTPType
+      ) {
+        self.captchaToken = captchaToken
+        self.redirectURL = redirectURL
+        self.token = token
+        self.type = type
+      }
+    }
   }
 }
 
