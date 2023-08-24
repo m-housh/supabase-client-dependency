@@ -1,7 +1,7 @@
 import Dependencies
 import Foundation
 import IdentifiedStorage
-import SupabaseClientDependency
+import SupabaseClientDependencies
 import XCTestDynamicOverlay
 
 extension DependencyValues {

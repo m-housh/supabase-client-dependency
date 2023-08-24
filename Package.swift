@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClientDependency", targets: ["SupabaseClientDependency"]),
+    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
   ],
   dependencies: [
     .package(
@@ -34,7 +34,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SupabaseClientDependency",
+      name: "SupabaseClientDependencies",
       dependencies: [
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
@@ -43,7 +43,7 @@ let package = Package(
     ),
     .testTarget(
       name: "SupabaseClientTests",
-      dependencies: ["SupabaseClientDependency"]
+      dependencies: ["SupabaseClientDependencies"]
     ),
   ]
 )

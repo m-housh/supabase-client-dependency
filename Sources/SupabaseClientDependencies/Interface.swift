@@ -407,7 +407,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a delete request, it is generally not used directly, unless you're
     /// overriding the delete operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
     ///
     public var delete: (DeleteRequest) async throws -> Void
 
@@ -416,7 +416,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a fetch request, it is generally not used directly, unless you're
     /// overriding the fetch operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:as:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:as:)``.
     ///
     public var fetch: (FetchRequest) async throws -> [[String: AnyJSON]]
 
@@ -425,7 +425,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a fetch-one request, it is generally not used directly, unless you're
     /// overriding the fetch-one operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/fetchOne(id:from:as:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/fetchOne(id:from:as:)``.
     ///
     public var fetchOne: (FetchOneRequest) async throws -> [String: AnyJSON]
 
@@ -434,7 +434,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to build a database query, it is generally not used directly, unless you're
     /// overriding the build operations on the dependency. You generally would use the helper method
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/from(_:decoding:perform:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/from(_:decoding:perform:)``.
     ///
     public var from: (String) -> PostgrestQueryBuilder
 
@@ -443,7 +443,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert request, it is generally not used directly, unless you're
     /// overriding the insert operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``insert(_:into:returning:as:)-13iui``
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``
     ///
     public var insert: (InsertRequest) async throws -> [String: AnyJSON]
 
@@ -452,7 +452,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert-many request, it is generally not used directly, unless you're
     /// overriding the insert-many operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``insert(_:into:returning:as:)-sxhx``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
     ///
     public var insertMany: (InsertManyRequest) async throws -> [[String: AnyJSON]]
 
@@ -461,7 +461,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to build a remote function call, it is generally not used directly, unless you're
     /// overriding the build operations on the dependency. You generally would use the helper method
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
     ///
     public var rpc: (RpcRequest) -> PostgrestTransformBuilder
 
@@ -470,7 +470,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an update request, it is generally not used directly, unless you're
     /// overriding the update operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:as:)``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:as:)``.
     ///
     public var update: (UpdateRequest) async throws -> [String: AnyJSON]
 
@@ -640,7 +640,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``insert(_:into:returning:as:)-13iui``
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``
     ///
     public struct InsertRequest {
 
@@ -656,7 +656,7 @@ public struct SupabaseClientDependency {
       /// Create a new insert request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)``.
+      /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``.
       ///
       /// - Parameters:
       ///   - table: The table to insert the values into.
@@ -676,7 +676,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert many request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``insert(_:into:returning:as:)-sxhx``.
+    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
     ///
     public struct InsertManyRequest {
 
@@ -692,7 +692,7 @@ public struct SupabaseClientDependency {
       /// Create a new insert request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)``.
+      /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
       ///
       /// - Parameters:
       ///   - table: The table to insert the values into.

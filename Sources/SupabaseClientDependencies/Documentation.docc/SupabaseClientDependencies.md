@@ -1,4 +1,4 @@
-# ``SupabaseClientDependency``
+# ``SupabaseClientDependencies``
 
 
 A dependency that adds some niceties around the `Supabase` database and includes an `auth` client.

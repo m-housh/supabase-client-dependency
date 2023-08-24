@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import SupabaseClientDependency
+import SupabaseClientDependencies
 import SwiftUI
 
 struct AuthFeature: Reducer {
@@ -172,7 +172,7 @@ struct AuthView: View {
 }
 
 #if DEBUG
-@_spi(Mock) import SupabaseClientDependency
+@_spi(Mock) import SupabaseClientDependencies
 
 #Preview {
   NavigationStack {

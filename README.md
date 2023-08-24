@@ -259,7 +259,7 @@ project for a full working example.
 
 ## Documentation
 
-The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabaseclientdependency/)
+The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabaseclientdependencies/)
 
 ## License
 
