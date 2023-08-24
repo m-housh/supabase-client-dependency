@@ -1,4 +1,5 @@
 import Foundation
+import IdentifiedCollections
 import GoTrue
 
 private let dateFormatterWithFractionalSeconds = { () -> ISO8601DateFormatter in
@@ -58,6 +59,7 @@ extension Dictionary where Key == String, Value == AnyJSON {
 }
 
 extension Array where Element == [String: AnyJSON] {
+
   func decoding<T: Decodable>(as type: T.Type) throws -> [T] {
     try self.map { try $0.decoding(as: T.self) }
   }

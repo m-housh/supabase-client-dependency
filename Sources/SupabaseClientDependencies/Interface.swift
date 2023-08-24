@@ -137,7 +137,7 @@ public struct SupabaseClientDependency {
     ///
     public func requireCurrentUser() async throws -> User {
       guard let user = await currentUser() else {
-        throw AuthenticationError()
+        throw AuthenticationError.notAuthenticated
       }
       return user
     }
@@ -407,7 +407,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a delete request, it is generally not used directly, unless you're
     /// overriding the delete operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
+    /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
     ///
     public var delete: (DeleteRequest) async throws -> Void
 
@@ -416,7 +416,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a fetch request, it is generally not used directly, unless you're
     /// overriding the fetch operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:as:)``.
+    /// ``fetch(from:filteredBy:orderBy:decoding:)``.
     ///
     public var fetch: (FetchRequest) async throws -> [[String: AnyJSON]]
 
@@ -425,7 +425,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform a fetch-one request, it is generally not used directly, unless you're
     /// overriding the fetch-one operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/fetchOne(id:from:as:)``.
+    /// ``fetchOne(from:filteredBy:decoding:)``.
     ///
     public var fetchOne: (FetchOneRequest) async throws -> [String: AnyJSON]
 
@@ -434,7 +434,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to build a database query, it is generally not used directly, unless you're
     /// overriding the build operations on the dependency. You generally would use the helper method
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/from(_:decoding:perform:)``.
+    /// ``from(_:decoding:perform:)``.
     ///
     public var from: (String) -> PostgrestQueryBuilder
 
@@ -443,7 +443,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert request, it is generally not used directly, unless you're
     /// overriding the insert operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``
+    /// ``insert(_:into:returning:decoding:)-731w6``
     ///
     public var insert: (InsertRequest) async throws -> [String: AnyJSON]
 
@@ -452,7 +452,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert-many request, it is generally not used directly, unless you're
     /// overriding the insert-many operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
+    /// ``insert(_:into:returning:decoding:)-1qutu``.
     ///
     public var insertMany: (InsertManyRequest) async throws -> [[String: AnyJSON]]
 
@@ -461,7 +461,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to build a remote function call, it is generally not used directly, unless you're
     /// overriding the build operations on the dependency. You generally would use the helper method
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
+    /// ``rpc(_:params:count:decoding:perform:)``.
     ///
     public var rpc: (RpcRequest) -> PostgrestTransformBuilder
 
@@ -470,7 +470,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an update request, it is generally not used directly, unless you're
     /// overriding the update operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:as:)``.
+    /// ``update(id:in:with:returning:decoding:)``.
     ///
     public var update: (UpdateRequest) async throws -> [String: AnyJSON]
 
@@ -547,7 +547,7 @@ public struct SupabaseClientDependency {
     /// Represents the parameters for a delete request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
+    /// ``delete(id:from:)``.
     ///
     public struct DeleteRequest {
 
@@ -560,7 +560,7 @@ public struct SupabaseClientDependency {
       /// Create a new delete request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
+      /// ``delete(id:from:)``.
       ///
       ///  - Parameters:
       ///   - table: The table to perform the delete request on.
@@ -574,7 +574,7 @@ public struct SupabaseClientDependency {
     /// Represents the requst parameters for a database fetch request.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:as:)``.
+    /// ``fetch(from:filteredBy:orderBy:decoding:)``.
     ///
     public struct FetchRequest {
 
@@ -590,7 +590,7 @@ public struct SupabaseClientDependency {
       /// Create a new fetch request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:as:)``.
+      /// ``SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:decoding:)``.
       ///
       /// - Parameters:
       ///   - table: The table to perform the fetch requst on.
@@ -610,7 +610,7 @@ public struct SupabaseClientDependency {
     /// Represents a single row fetch request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/fetchOne(id:from:as:)``.
+    /// ``fetchOne(id:from:decoding:)``.
     ///
     public struct FetchOneRequest {
 
@@ -623,7 +623,7 @@ public struct SupabaseClientDependency {
       /// Create a new single row fetch request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/fetchOne(id:from:as:)``.
+      /// ``SupabaseClientDependency/DatabaseClient/fetchOne(id:from:decoding:)``.
       ///
       /// - Parameters:
       ///   - table: The table to perform the request on.
@@ -640,7 +640,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``
+    /// ``insert(_:into:returning:decoding:)-731w6``
     ///
     public struct InsertRequest {
 
@@ -656,7 +656,7 @@ public struct SupabaseClientDependency {
       /// Create a new insert request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-4k24x``.
+      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-731w6``.
       ///
       /// - Parameters:
       ///   - table: The table to insert the values into.
@@ -676,7 +676,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert many request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
+    /// ``insert(_:into:returning:decoding:)-1qutu``.
     ///
     public struct InsertManyRequest {
 
@@ -692,7 +692,7 @@ public struct SupabaseClientDependency {
       /// Create a new insert request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)-7kipp``.
+      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-1qutu``.
       ///
       /// - Parameters:
       ///   - table: The table to insert the values into.
@@ -712,7 +712,7 @@ public struct SupabaseClientDependency {
     /// Represents the parameters need for a remote function call on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
+    /// ``rpc(_:params:count:decoding:perform:)``.
     ///
     public struct RpcRequest {
 
@@ -750,7 +750,7 @@ public struct SupabaseClientDependency {
     /// Represents an update request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:as:)``.
+    /// ``update(id:in:with:returning:decoding:)``.
     ///
     public struct UpdateRequest {
 
@@ -769,7 +769,7 @@ public struct SupabaseClientDependency {
       /// Create a new update request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:as:)``.
+      /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:decoding:)``.
       ///
       /// - Parameters:
       ///   - table: The table to perform the request on.

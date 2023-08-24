@@ -245,5 +245,7 @@ extension DatabaseClient: DependencyKey {
 }
 ```
 
+See <doc:DatabaseOperations> for database common operations.
+
 See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.

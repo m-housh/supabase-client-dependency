@@ -13,7 +13,7 @@ public struct Credentials: Codable, Equatable, Sendable {
 
   /// Whether the credentials are valid or not.
   ///
-  /// - SeeAlso: ``validate(_:)``
+  /// - SeeAlso: ``validate(_:emailPattern:passwordPattern:)``
   public var isValid: Bool {
     guard (try? Credentials.validate(self)) != nil
     else { return false }
@@ -43,22 +43,39 @@ public struct Credentials: Codable, Equatable, Sendable {
   ///
   ///  - Parameters:
   ///   - credentials: The credentials to validate.
-  public static func validate(_ credentials: Self) throws -> Bool {
+  ///   - emailPattern: Override the default email pattern with a custom pattern.
+  ///   - passwordPattern: Override the default password pattern with a custom pattern.
+  public static func validate(
+    _ credentials: Self,
+    emailPattern: (pattern: String, errorDescription: String)? = nil,
+    passwordPattern: (pattern: String, errorDescription: String)? = nil
+  ) throws -> Bool {
     var error: CredentialError? = nil
     if credentials.email.range(
-      of: emailPattern,
+      of: emailPattern?.pattern ?? SupabaseClientDependencies.emailPattern,
       options: .regularExpression
     ) == nil {
-      error = .invalidEmail
+      if let customMessage = emailPattern?.errorDescription {
+        error = .customInvalidEmail(customMessage)
+      } else {
+        error = .invalidEmail
+      }
     }
     if credentials.password.range(
-      of: passwordPattern,
+      of: passwordPattern?.pattern ?? SupabaseClientDependencies.passwordPattern,
       options: .regularExpression
     ) == nil {
       if error != nil {
-        error = .invalidEmailAndPassword
+        error = .invalidEmailAndPassword(
+          emailError: error!.localizedDescription,
+          passwordError: passwordPattern?.errorDescription ?? CredentialError.invalidPassword.localizedDescription
+        )
       } else {
-        error = .invalidPassword
+        if let passwordPattern {
+          error = .customInvalidPassword(passwordPattern.errorDescription)
+        } else {
+          error = .invalidPassword
+        }
       }
     }
     guard let error else { return true }
@@ -75,11 +92,22 @@ public enum CredentialError: Error, Equatable {
   /// The credentials have an invalid email address.
   case invalidEmail
 
+  case customInvalidEmail(String)
+
   /// The credentials have an invalid password.
   case invalidPassword
 
+  case customInvalidPassword(String)
+
   /// The credentials have an invalid email and an invalid password.
-  case invalidEmailAndPassword
+  case invalidEmailAndPassword(emailError: String, passwordError: String)
+
+  public static func invalidEmailAndPassword() -> Self {
+    .invalidEmailAndPassword(
+      emailError: Self.invalidEmail.localizedDescription,
+      passwordError: Self.invalidPassword.localizedDescription
+    )
+  }
 
   var invalidEmailString: String {
     """
@@ -101,13 +129,17 @@ public enum CredentialError: Error, Equatable {
     switch self {
     case .invalidEmail:
       return invalidEmailString
+    case let .customInvalidEmail(emailString):
+      return emailString
     case .invalidPassword:
       return invalidPasswordString
-    case .invalidEmailAndPassword:
+    case let .customInvalidPassword(passwordString):
+      return passwordString
+    case let .invalidEmailAndPassword(emailString, passwordString):
       return """
-        \(invalidEmailString)
+        \(emailString)
 
-        \(invalidPasswordString)
+        \(passwordString)
         """
     }
   }

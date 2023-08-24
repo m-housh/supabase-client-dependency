@@ -1,6 +1,6 @@
 import Dependencies
 import XCTest
-@testable import SupabaseClientDependencies
+import SupabaseClientDependencies
 
 @MainActor
 final class SupabaseClientTests: XCTestCase {
@@ -59,7 +59,7 @@ final class SupabaseClientTests: XCTestCase {
     } catch let credentialError as CredentialError {
       XCTAssertEqual(
         credentialError.localizedDescription,
-        CredentialError.invalidEmailAndPassword.localizedDescription
+        CredentialError.invalidEmailAndPassword().localizedDescription
       )
     } catch {
       XCTFail("Invalid error recieved: \(error)")

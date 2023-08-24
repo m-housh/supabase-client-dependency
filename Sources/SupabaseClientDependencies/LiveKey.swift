@@ -25,7 +25,13 @@ extension SupabaseClientDependency {
 }
 
 extension SupabaseClientDependency.AuthClient {
-  static func live(client: GoTrueClient) -> Self {
+
+  /// Create a new ``SupabaseClientDependencies/SupabaseClientDependency/AuthClient`` instance.
+  ///
+  /// - Parameters:
+  ///   - client: The go-true client used to build the live dependency.
+  ///
+  public static func live(client: GoTrueClient) -> Self {
     Self.init(
       events: {
         client.authEventChange
@@ -168,7 +174,12 @@ extension SupabaseClientDependency.AuthClient {
 }
 
 extension SupabaseClientDependency.DatabaseClient {
-  static func live(client: PostgrestClient) -> Self {
+  /// Create a live ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient`` instance.
+  ///
+  /// - Parameters:
+  ///   - client: The postgres client used to build the live client.
+  ///   
+  public static func live(client: PostgrestClient) -> Self {
     .init(
       delete: { request in
         try await client.from(request.table.tableName)

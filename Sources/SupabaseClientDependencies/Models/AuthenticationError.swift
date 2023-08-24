@@ -1,4 +1,12 @@
 import Foundation
 
 /// Represents errors thrown during authentication.
-public struct AuthenticationError: Error, Equatable {}
+///
+public enum AuthenticationError: Error, Equatable {
+  case authenticationNotAllowed
+  case invalidOAuthOption
+  case notAuthenticated
+  case sessionNotFound
+  case signupNotAllowed
+  case userNotFound
+}

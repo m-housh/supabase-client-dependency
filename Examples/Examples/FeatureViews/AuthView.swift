@@ -172,8 +172,6 @@ struct AuthView: View {
 }
 
 #if DEBUG
-@_spi(Mock) import SupabaseClientDependencies
-
 #Preview {
   NavigationStack {
     AuthView(

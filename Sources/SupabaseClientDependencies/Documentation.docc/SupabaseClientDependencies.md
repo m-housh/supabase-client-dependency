@@ -19,6 +19,7 @@ In general you use this package / dependency to build your database clients for 
 ## Articles
 
 - <doc:GettingStarted>
+- <doc:DatabaseOperations>
 
 ## Topics
 
@@ -32,6 +33,7 @@ In general you use this package / dependency to build your database clients for 
 - ``Credentials``
 
 ### Errors
+
 -  ``AuthenticationError``
 - ``CredentialError``
 

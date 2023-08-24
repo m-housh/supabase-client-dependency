@@ -1,9 +1,14 @@
 import Foundation
+import Get
+import PostgREST
 import Supabase
 
 extension SupabaseClientDependency {
 
   /// Represents the configuration for the supabase client dependency.
+  ///
+  /// You generally extend this type in the project that uses the ``SupabaseClientDependency`` and
+  /// use it to build the live dependencies for your project.
   ///
   public struct Configuration {
 
@@ -50,6 +55,32 @@ extension SupabaseClient {
       supabaseURL: configuration.url,
       supabaseKey: configuration.anonymousKey,
       options: configuration.options
+    )
+  }
+}
+
+extension PostgrestClient {
+
+  /// Create a new client from the configuration.
+  ///
+  /// - Parameters:
+  ///   - configuration: The configuration values used to generate the client.
+  ///   - schema: An optional schem for the database connection.
+  ///   - apiClientDelegate: Custom APIClientDelegate for the underlying APIClient.
+  public convenience init(
+    configuration: SupabaseClientDependency.Configuration,
+    schema: String? = nil,
+    apiClientDelegate: APIClientDelegate? = nil
+  ) {
+    self.init(
+      url: configuration.url
+        .appending(component: "rest")
+        .appending(component: "v1"),
+      headers: [
+        "apiKey": configuration.anonymousKey
+      ],
+      schema: schema,
+      apiClientDelegate: nil
     )
   }
 }

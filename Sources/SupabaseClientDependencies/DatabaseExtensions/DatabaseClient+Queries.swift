@@ -52,7 +52,8 @@ extension SupabaseClientDependency.DatabaseClient {
     try await delete(from: table, where: filters)
   }
 
-  /// A helper for deleting a database item by it's id.
+  /// A helper for deleting a database item by it's id. This method requires the column name in the database to be "id" for
+  /// matching the id value against.
   ///
   /// ### Example
   ///
@@ -83,7 +84,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   from: Table.todos,
   ///   where: [.equals("complete", "false")],
   ///   orderBy: .init(column: "description").ascending(),
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -96,7 +97,7 @@ extension SupabaseClientDependency.DatabaseClient {
     from table: Table,
     where filters: [Filter] = [],
     orderBy order: Order? = nil,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> [Model] {
     try await self.fetch(
       .init(table: table, filters: filters, order: order)
@@ -113,7 +114,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   from: Table.todos,
   ///   filteredBy: TodoColumn.complete.equals(false),
   ///   orderBy: TodoColumn.description.ascending(),
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -126,9 +127,14 @@ extension SupabaseClientDependency.DatabaseClient {
     from table: Table,
     filteredBy filters: Filter...,
     orderBy order: Order? = nil,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> [Model] {
-    try await self.fetch(from: table, where: filters, orderBy: order, as: Model.self)
+    try await self.fetch(
+      from: table,
+      where: filters,
+      orderBy: order,
+      decoding: Model.self
+    )
   }
 
   // MARK: - Fetch One
@@ -141,7 +147,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// let todo = try await databaseClient.fetch(
   ///   from: Table.todos,
   ///   where: [TodoColumn.id.equals(UUID(0))],
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -152,7 +158,7 @@ extension SupabaseClientDependency.DatabaseClient {
   public func fetchOne<Model: Decodable, Table: TableRepresentable>(
     from table: Table,
     where filters: [Filter],
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await self.fetchOne(
       .init(
@@ -171,7 +177,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// let todo = try await databaseClient.fetch(
   ///   from: Table.todos,
   ///   filteredBy: TodoColumn.id.equals(UUID(0)),
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -182,16 +188,17 @@ extension SupabaseClientDependency.DatabaseClient {
   public func fetchOne<Model: Decodable, Table: TableRepresentable>(
     from table: Table,
     filteredBy filters: Filter...,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await self.fetchOne(
       from: table,
       where: filters,
-      as: Model.self
+      decoding: Model.self
     )
   }
 
-  /// A helper for fetching items from the database, using the table name and an id of an element.
+  /// A helper for fetching items from the database, using the table name and an id of an element. This method requires the column name 
+  /// in the database to be "id" for matching the id value against.
   ///
   /// ### Example
   ///
@@ -199,7 +206,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// let todo = try await databaseClient.fetch(
   ///   id: UUID(0),
   ///   from: Table.todos,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -210,12 +217,12 @@ extension SupabaseClientDependency.DatabaseClient {
   public func fetchOne<Model: Decodable, Table: TableRepresentable>(
     id: Model.ID,
     from table: Table,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model where Model: Identifiable, Model.ID: URLQueryRepresentable {
     try await self.fetchOne(
       from: table,
       filteredBy: .id(id),
-      as: Model.self
+      decoding: Model.self
     )
   }
 
@@ -227,10 +234,10 @@ extension SupabaseClientDependency.DatabaseClient {
   ///
   /// ```swift
   /// let todo = try await databaseClient.insert(
+  ///   TodoInsertRequest(description: "New Todo", complete: false),
   ///   into: Table.todos,
-  ///   values: TodoInsertRequest(description: "New Todo", complete: false),
   ///   returning: .representation,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
   /// ```
   ///
@@ -243,7 +250,7 @@ extension SupabaseClientDependency.DatabaseClient {
     _ values: Values,
     into table: Table,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await self.insert(
       .init(
@@ -267,7 +274,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///     TodoInsertRequest(description: "Another new todo", complete: true)
   ///   ],
   ///   returning: .representation,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
   /// ```
   ///
@@ -280,7 +287,7 @@ extension SupabaseClientDependency.DatabaseClient {
     _ values: [Values],
     into table: Table,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> [Model] {
     try await self.insertMany(
       .init(
@@ -304,7 +311,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   where: [.equals("id", UUID(0))],
   ///   values: TodoUpdateRequest(complete: true),
   ///   returning: .representation,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
   /// ```
   ///
@@ -320,7 +327,7 @@ extension SupabaseClientDependency.DatabaseClient {
     where filters: [Filter],
     values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await self.update(
       .init(
@@ -343,7 +350,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   filteredBy: .equals("id", UUID(0)),
   ///   values: TodoUpdateRequest(complete: true),
   ///   returning: .representation,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
   /// ```
   ///
@@ -359,18 +366,19 @@ extension SupabaseClientDependency.DatabaseClient {
     filteredBy filters: Filter...,
     values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await update(
       table: table.tableName,
       where: filters,
       values: values,
       returning: returningOptions,
-      as: Model.self
+      decoding: Model.self
     )
   }
 
-  /// A helper for updating an item in the database, using the table name and the item's id.
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name 
+  /// in the database to be "id" for matching the id value against.
   ///
   /// ### Example
   ///
@@ -380,7 +388,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   in: Table.todo,
   ///   with: TodoUpdateRequest(complete: true),
   ///   returning: .representation,
-  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
   /// )
   /// ```
   ///
@@ -398,14 +406,14 @@ extension SupabaseClientDependency.DatabaseClient {
     in table: Table,
     with values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: Model.Type = Model.self
+    decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await update(
       table: table,
       filteredBy: .id(id),
       values: values,
       returning: returningOptions,
-      as: Model.self
+      decoding: Model.self
     )
   }
 }

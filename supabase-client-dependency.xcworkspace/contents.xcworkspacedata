@@ -2,6 +2,12 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:Sources/SupabaseClientDependencies/Documentation.docc/Articles/DatabaseOperations.md">
+   </FileRef>
+   <FileRef
+      location = "group:Sources/SupabaseClientDependencies/Documentation.docc/DatabaseClient.md">
+   </FileRef>
+   <FileRef
       location = "group:">
    </FileRef>
    <FileRef

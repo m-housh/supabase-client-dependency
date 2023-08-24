@@ -1,5 +1,5 @@
 import Dependencies
-@_spi(Mock) import SupabaseClientDependencies
+import SupabaseClientDependencies
 import XCTest
 
 final class MockAuthTests: XCTestCase {

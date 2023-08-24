@@ -17,7 +17,6 @@ extension SupabaseClientDependency.AuthClient {
   ///    - oAuthURL: A url returned from the `getOAuthURL` method.
   ///    - session: Supply a custom session object, when supplied this will automatically login when credentials are not supplied to the `login` method.
   ///    - verifyOTP: A custom verify otp method.
-  @_spi(Mock)
   public static func mock(
     allowedCredentials: AllowedCredentials = .any,
     oAuthURL: URL = URL(string: "/")!,
@@ -57,7 +56,7 @@ extension SupabaseClientDependency.AuthClient {
       },
       login: { optionalRequest in
         guard allowedCredentials.isAllowedToAuthenticate(.login(optionalRequest)) else {
-          throw AuthenticationError()
+          throw AuthenticationError.authenticationNotAllowed
         }
         return try await AuthHelpers.login(
           authEventStreamContinuation: authEventStreamContinuation,
@@ -74,7 +73,7 @@ extension SupabaseClientDependency.AuthClient {
       session: { optionalRequest in
         guard let request = optionalRequest else {
           guard let session = await sessionStorage.first else {
-            throw AuthenticationError()
+            throw AuthenticationError.sessionNotFound
           }
           return session
         }
@@ -82,7 +81,7 @@ extension SupabaseClientDependency.AuthClient {
 
         case .oAuth(_, let storeSession):
           guard storeSession else {
-            throw AuthenticationError()
+            throw AuthenticationError.invalidOAuthOption
           }
           return await AuthHelpers.createSession(
             for: .mock,
@@ -90,7 +89,7 @@ extension SupabaseClientDependency.AuthClient {
           )
         case let .refresh(token):
           guard var session = await sessionStorage.first else {
-            throw AuthenticationError()
+            throw AuthenticationError.sessionNotFound
           }
           session.refreshToken = token
           await sessionStorage.set(elements: .init(uniqueElements: [session], id: \.user.id))
@@ -114,7 +113,7 @@ extension SupabaseClientDependency.AuthClient {
 
       signUp: { request in
         guard allowedCredentials.isAllowedToAuthenticate(.signUp(request)) else {
-          throw AuthenticationError()
+          throw AuthenticationError.signupNotAllowed
         }
         return await AuthHelpers.createUser(
           in: userStorage,
@@ -125,7 +124,7 @@ extension SupabaseClientDependency.AuthClient {
       },
       update: { attributes in
         guard var user = await userStorage.first else {
-          throw AuthenticationError()
+          throw AuthenticationError.userNotFound
         }
         user.email = attributes.email ?? user.email
         user.phone = attributes.phone ?? user.phone
@@ -140,10 +139,33 @@ extension SupabaseClientDependency.AuthClient {
     )
   }
 
-  @_spi(Mock)
+  /// Represents credentials that are allowed to be used in the mock ``SupabaseClientDependencies/SupabaseClientDependency/AuthClient/mock(allowedCredentials:oAuthURL:session:verifyOTP:)`` implementation.
+  ///
+  ///
   public enum AllowedCredentials {
+
+    /// Allow's any credentials to authenticate.
     case any
+
+    /// Allow's only the supplied credentials to authenticate.
+    ///
+    /// ### Example
+    /// ```swift
+    /// .only([.credentials(email: "blob@example.com", password: "secret-password!"])
+    /// ```
+    ///
     case only([LoginRequest])
+
+    /// Allow's only the supplied credentials to authenticate.
+    ///
+    /// ### Example
+    /// ```swift
+    /// .only(.credentials(email: "blob@example.com", password: "secret-password!")
+    /// ```
+    ///
+    public static func only(_ values: LoginRequest...) -> Self {
+      .only(values)
+    }
 
     // A helper that validates whether credentials can either be added to
     // the user storage or to authenticate a session for the mock client.
@@ -208,7 +230,7 @@ private enum AuthHelpers {
     guard let request else {
       // Check if there's a session.
       guard let session = await sessionStorage.first else {
-        throw AuthenticationError()
+        throw AuthenticationError.sessionNotFound
       }
       authEventStreamContinuation.yield(.signedIn)
       return session
@@ -217,7 +239,7 @@ private enum AuthHelpers {
     // Check if there's a user stored with the credentials.
     let optionalUser = await userStorage.first(matching: request)
     guard let user = optionalUser else {
-      throw AuthenticationError()
+      throw AuthenticationError.userNotFound
     }
 
     authEventStreamContinuation.yield(.signedIn)
