@@ -1,5 +1,5 @@
 import Foundation
-import Supabase
+import PostgREST
 
 extension SupabaseClientDependency.DatabaseClient {
 

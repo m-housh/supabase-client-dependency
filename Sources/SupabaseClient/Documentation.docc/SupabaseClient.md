@@ -24,7 +24,6 @@ In general you use this package / dependency to build your database clients for 
 - ``SupabaseClientDependency``
 - ``SupabaseClientDependency/AuthClient``
 - ``SupabaseClientDependency/DatabaseClient``
-- ``SupabaseClientDependency/Configuration``
 - ``SupabaseClientDependency/DatabaseClient/Filter``
 - ``SupabaseClientDependency/DatabaseClient/Order``
 - ``Credentials``
@@ -32,4 +31,5 @@ In general you use this package / dependency to build your database clients for 
 ### Protocols
 
 - ``ColumnRepresentable``
+- ``RpcRepresentable``
 - ``TableRepresentable``

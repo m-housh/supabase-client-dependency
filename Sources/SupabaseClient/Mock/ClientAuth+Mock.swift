@@ -2,7 +2,7 @@ import Dependencies
 import Foundation
 import GoTrue
 import IdentifiedStorage
-import Supabase
+import PostgREST
 
 extension SupabaseClientDependency.AuthClient {
 

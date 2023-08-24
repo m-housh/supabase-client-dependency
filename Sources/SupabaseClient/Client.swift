@@ -22,12 +22,12 @@ public struct SupabaseClientDependency {
 
   /// The supabase authentication client for the application.
   ///
-  /// - SeeAlso: ``SupabaseClientDependency/AuthClient``
+  /// - SeeAlso: ``AuthClient``
   public var auth: AuthClient
 
   /// The supabase database client for the applicaiton.
   ///
-  /// - SeeAlso: ``SupabaseClientDependency/DatabaseClient``
+  /// - SeeAlso: ``DatabaseClient``
   public var database: DatabaseClient
 
   /// Create a new supabase client dependency.
@@ -451,7 +451,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to build a remote function call, it is generally not used directly, unless you're
     /// overriding the build operations on the dependency. You generally would use the helper method
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/rpc(_:decoding:perform:)``.
+    /// ``SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
     ///
     public var rpc: (RpcRequest) -> PostgrestTransformBuilder
 

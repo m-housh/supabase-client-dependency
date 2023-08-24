@@ -1,6 +1,6 @@
 import Dependencies
 import Foundation
-import SupabaseClient
+import SupabaseClientLive
 
 extension SupabaseClientDependency: DependencyKey {
   public static var liveValue: SupabaseClientDependency {

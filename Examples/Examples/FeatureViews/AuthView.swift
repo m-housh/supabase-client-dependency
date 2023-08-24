@@ -103,7 +103,7 @@ struct AuthFeature: Reducer {
                 }
                 return session
               case .signUp:
-                _ = try await supabaseClient.auth.signUp(.email(credentials: credentials))
+                _ = try await supabaseClient.auth.signUp(.credentials(credentials))
                 guard let session = try await supabaseClient.auth.login(credentials: credentials) else {
                   throw AuthenticationError()
                 }

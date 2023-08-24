@@ -8,8 +8,7 @@
 
 ### Initializers
 
-- ``SupabaseClientDependency/init(client:auth:)``
-- ``SupabaseClientDependency/init(configuration:auth:)``
+- ``SupabaseClientDependency/init(auth:database:)``
 
 ### Authentication Management
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C059A8A2A97049D000A63A7 /* SupabaseClientLive in Frameworks */ = {isa = PBXBuildFile; productRef = 4C059A892A97049D000A63A7 /* SupabaseClientLive */; };
 		4C0799842A92FBC500699C91 /* ExamplesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799832A92FBC500699C91 /* ExamplesApp.swift */; };
 		4C0799882A92FBC900699C91 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C0799872A92FBC900699C91 /* Assets.xcassets */; };
 		4C07998C2A92FBC900699C91 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C07998B2A92FBC900699C91 /* Preview Assets.xcassets */; };
@@ -68,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C059A8A2A97049D000A63A7 /* SupabaseClientLive in Frameworks */,
 				4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */,
 				4C0799B02A92FC1300699C91 /* SupabaseClient in Frameworks */,
 			);
@@ -90,6 +92,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4C059A882A97049D000A63A7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		4C0799772A92FBC500699C91 = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +106,7 @@
 				4C0799942A92FBC900699C91 /* ExamplesTests */,
 				4C07999E2A92FBC900699C91 /* ExamplesUITests */,
 				4C0799812A92FBC500699C91 /* Products */,
+				4C059A882A97049D000A63A7 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -205,6 +215,7 @@
 			packageProductDependencies = (
 				4C0799AF2A92FC1300699C91 /* SupabaseClient */,
 				4C0799B22A92FC4700699C91 /* ComposableArchitecture */,
+				4C059A892A97049D000A63A7 /* SupabaseClientLive */,
 			);
 			productName = Examples;
 			productReference = 4C0799802A92FBC500699C91 /* Examples.app */;
@@ -709,6 +720,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4C059A892A97049D000A63A7 /* SupabaseClientLive */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SupabaseClientLive;
+		};
 		4C0799AF2A92FC1300699C91 /* SupabaseClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SupabaseClient;
