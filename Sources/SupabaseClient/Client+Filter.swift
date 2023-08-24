@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-extension SupabaseClientDependency {
+extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents a filter for use in database queries.
   ///
@@ -70,7 +70,7 @@ extension SupabaseClientDependency {
 
 extension ColumnRepresentable {
 
-  public func equals(_ value: URLQueryRepresentable) -> SupabaseClientDependency.Filter {
+  public func equals(_ value: URLQueryRepresentable) -> SupabaseClientDependency.DatabaseClient.Filter {
     .equals(column: self.columnName, value: value)
   }
 }
@@ -78,7 +78,7 @@ extension ColumnRepresentable {
 extension PostgrestFilterBuilder {
 
   @discardableResult
-  public func filter(by filters: [SupabaseClientDependency.Filter]) -> Self {
+  public func filter(by filters: [SupabaseClientDependency.DatabaseClient.Filter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
         column: filter.column,
@@ -90,12 +90,12 @@ extension PostgrestFilterBuilder {
   }
 
   @discardableResult
-  public func filter(_ filters: SupabaseClientDependency.Filter...) -> Self {
+  public func filter(_ filters: SupabaseClientDependency.DatabaseClient.Filter...) -> Self {
     self.filter(by: filters)
   }
 
   @discardableResult
-  public func filter(by filter: SupabaseClientDependency.Filter) -> Self {
+  public func filter(by filter: SupabaseClientDependency.DatabaseClient.Filter) -> Self {
     self.filter(by: [filter])
   }
 }

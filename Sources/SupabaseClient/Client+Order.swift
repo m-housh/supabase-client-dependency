@@ -1,7 +1,7 @@
 import Foundation
 import PostgREST
 
-extension SupabaseClientDependency {
+extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents an order by clause used for a database query.
   ///
@@ -83,7 +83,7 @@ extension ColumnRepresentable {
   public func ascending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
-  ) -> SupabaseClientDependency.Order {
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     .init(
       column: self,
       ascending: true,
@@ -95,14 +95,14 @@ extension ColumnRepresentable {
   public func ascending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
-  ) -> SupabaseClientDependency.Order {
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     self.ascending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
   }
 
   public func descending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
-  ) -> SupabaseClientDependency.Order {
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     .init(
       column: self,
       ascending: false,
@@ -114,7 +114,7 @@ extension ColumnRepresentable {
   public func descending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
-  ) -> SupabaseClientDependency.Order {
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     self.descending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
   }
 }
@@ -125,7 +125,7 @@ extension PostgrestFilterBuilder {
   ///
   ///  - Parameters:
   ///   - order: The optional order by clause to apply to the query if applicable.
-  public func order(by order: SupabaseClientDependency.Order?) -> PostgrestTransformBuilder {
+  public func order(by order: SupabaseClientDependency.DatabaseClient.Order?) -> PostgrestTransformBuilder {
     if let order {
       return self.order(
         column: order.column,

@@ -1,7 +1,7 @@
 import Foundation
 import PostgREST
 
-extension SupabaseClientDependency {
+extension SupabaseClientDependency.DatabaseClient {
 
   // MARK: - Delete
 
@@ -22,18 +22,18 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table name to delete the item from.
   ///   - filters: The filters for the row to be deleted from the database.
-  public func delete(
-    from table: String,
-    where filters: [Filter]
-  ) async throws {
-    try await self.withDatabase { database in
-      try await database.from(table)
-        .delete(returning: .minimal)
-        .filter(by: filters)
-        .execute()
-        .value
-    }
-  }
+//  public func delete(
+//    from table: String,
+//    where filters: [Filter]
+//  ) async throws {
+//    try await self.withDatabase { database in
+//      try await database.from(table)
+//        .delete(returning: .minimal)
+//        .filter(by: filters)
+//        .execute()
+//        .value
+//    }
+//  }
 
   /// A helper for deleting a database item by the provided filters.
   ///
@@ -56,7 +56,7 @@ extension SupabaseClientDependency {
     from table: Table,
     where filters: [Filter]
   ) async throws {
-    try await delete(from: table.tableName, where: filters)
+    try await self.delete(.init(table: table, filters: filters))
   }
 
   /// A helper for deleting a database item by the provided filters.
@@ -75,12 +75,12 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - table: The table name to delete the item from.
   ///   - filters: The filters for the row to be deleted from the database.
-  public func delete(
-    from table: String,
-    filteredBy filters: Filter...
-  ) async throws {
-    try await delete(from: table, where: filters)
-  }
+//  public func delete(
+//    from table: String,
+//    filteredBy filters: Filter...
+//  ) async throws {
+//    try await delete(from: table, where: filters)
+//  }
 
   /// A helper for deleting a database item by the provided filters.
   ///
@@ -118,18 +118,18 @@ extension SupabaseClientDependency {
   /// - Parameters:
   ///   - id: The database item's id.
   ///   - table: The table name to delete the item from.
-  public func delete<ID: URLQueryRepresentable>(
-    id: ID,
-    from table: String
-  ) async throws {
-    try await self.withDatabase { database in
-      try await database.from(table)
-        .delete()
-        .filter(by: .id(id))
-        .execute()
-        .value
-    }
-  }
+//  public func delete<ID: URLQueryRepresentable>(
+//    id: ID,
+//    from table: String
+//  ) async throws {
+//    try await self.withDatabase { database in
+//      try await database.from(table)
+//        .delete()
+//        .filter(by: .id(id))
+//        .execute()
+//        .value
+//    }
+//  }
 
   /// A helper for deleting a database item by it's id.
   ///
@@ -148,7 +148,7 @@ extension SupabaseClientDependency {
     id: ID,
     from table: Table
   ) async throws {
-    try await self.delete(id: id, from: table.tableName)
+    try await self.delete(from: table.tableName, filteredBy: .id(id))
   }
 
   // MARK: - Fetch
@@ -171,22 +171,22 @@ extension SupabaseClientDependency {
   ///   - filters: Filters to apply to the query.
   ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
-  public func fetch<R: Decodable>(
-    from table: String,
-    where filters: [Filter],
-    orderBy order: Order? = nil,
-    as type: R.Type = R.self
-  ) async throws -> [R] {
-    try await self.withDatabase { database in
-      try await database
-        .from(table)
-        .select()
-        .filter(by: filters)
-        .order(by: order)
-        .execute()
-        .value
-    }
-  }
+//  public func fetch<R: Decodable>(
+//    from table: String,
+//    where filters: [Filter],
+//    orderBy order: Order? = nil,
+//    as type: R.Type = R.self
+//  ) async throws -> [R] {
+//    try await self.withDatabase { database in
+//      try await database
+//        .from(table)
+//        .select()
+//        .filter(by: filters)
+//        .order(by: order)
+//        .execute()
+//        .value
+//    }
+//  }
 
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
@@ -213,11 +213,15 @@ extension SupabaseClientDependency {
     as type: R.Type = R.self
   ) async throws -> [R] {
     try await self.fetch(
-      from: table.tableName,
-      where: filters,
-      orderBy: order,
-      as: R.self
+      .init(table: table, filters: filters, order: order)
     )
+    .decoding(as: R.self)
+//    try await self.fetch(
+//      from: table.tableName,
+//      where: filters,
+//      orderBy: order,
+//      as: R.self
+//    )
   }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
@@ -238,14 +242,14 @@ extension SupabaseClientDependency {
   ///   - filters: Filter(s) to apply to the query.
   ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
-  public func fetch<R: Decodable>(
-    from table: String,
-    filteredBy filters: Filter...,
-    orderBy order: Order? = nil,
-    as type: R.Type = R.self
-  ) async throws -> [R] {
-    try await self.fetch(from: table, where: filters, orderBy: order, as: R.self)
-  }
+//  public func fetch<R: Decodable>(
+//    from table: String,
+//    filteredBy filters: Filter...,
+//    orderBy order: Order? = nil,
+//    as type: R.Type = R.self
+//  ) async throws -> [R] {
+//    try await self.fetch(from: table, where: filters, orderBy: order, as: R.self)
+//  }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
   ///
@@ -292,21 +296,21 @@ extension SupabaseClientDependency {
   ///   - table: The table name to fetch the values from.
   ///   - filters: Filters to apply to the query.
   ///   - type: The return value type to decode.
-  public func fetchOne<R: Decodable>(
-    from table: String,
-    where filters: [Filter],
-    as type: R.Type = R.self
-  ) async throws -> R {
-    try await self.withDatabase { database in
-      try await database
-        .from(table)
-        .select()
-        .filter(by: filters)
-        .single()
-        .execute()
-        .value
-    }
-  }
+//  public func fetchOne<R: Decodable>(
+//    from table: String,
+//    where filters: [Filter],
+//    as type: R.Type = R.self
+//  ) async throws -> R {
+//    try await self.withDatabase { database in
+//      try await database
+//        .from(table)
+//        .select()
+//        .filter(by: filters)
+//        .single()
+//        .execute()
+//        .value
+//    }
+//  }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
   ///
@@ -330,10 +334,12 @@ extension SupabaseClientDependency {
     as type: R.Type = R.self
   ) async throws -> R {
     try await self.fetchOne(
-      from: table.tableName,
-      where: filters,
-      as: R.self
+      .init(
+        table: table,
+        filters: filters
+      )
     )
+    .decoding(as: R.self)
   }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
@@ -352,17 +358,17 @@ extension SupabaseClientDependency {
   ///   - table: The table name to fetch the values from.
   ///   - filters: Filters to apply to the query.
   ///   - type: The return value type to decode.
-  public func fetchOne<R: Decodable>(
-    from table: String,
-    filteredBy filters: Filter...,
-    as type: R.Type = R.self
-  ) async throws -> R {
-    try await self.fetchOne(
-      from: table,
-      where: filters,
-      as: R.self
-    )
-  }
+//  public func fetchOne<R: Decodable>(
+//    from table: String,
+//    filteredBy filters: Filter...,
+//    as type: R.Type = R.self
+//  ) async throws -> R {
+//    try await self.fetchOne(
+//      from: table,
+//      where: filters,
+//      as: R.self
+//    )
+//  }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
   ///
@@ -408,17 +414,17 @@ extension SupabaseClientDependency {
   ///   - id: The id of the item to fetch from the database.
   ///   - table: The table to fetch the values from.
   ///   - type: The return value type to decode.
-  public func fetchOne<R: Decodable>(
-    id: R.ID,
-    from table: String,
-    as type: R.Type = R.self
-  ) async throws -> R where R: Identifiable, R.ID: URLQueryRepresentable {
-    try await self.fetchOne(
-      from: table,
-      where: [.id(id)],
-      as: R.self
-    )
-  }
+//  public func fetchOne<R: Decodable>(
+//    id: R.ID,
+//    from table: String,
+//    as type: R.Type = R.self
+//  ) async throws -> R where R: Identifiable, R.ID: URLQueryRepresentable {
+//    try await self.fetchOne(
+//      from: table,
+//      where: [.id(id)],
+//      as: R.self
+//    )
+//  }
 
   /// A helper for fetching items from the database, using the table name and an id of an element.
   ///
@@ -468,20 +474,20 @@ extension SupabaseClientDependency {
   ///   - values: The row values.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The return value type to decode from the response.
-  public func insert<V: Encodable, R: Decodable>(
-    _ values: V,
-    into table: String,
-    returning returningOptions: PostgrestReturningOptions? = .representation,
-    as type: R.Type = R.self
-  ) async throws -> R {
-    try await self.withDatabase { database in
-      try await database.from(table)
-        .insert(values: values, returning: returningOptions)
-        .single()
-        .execute()
-        .value
-    }
-  }
+//  public func insert<V: Encodable, R: Decodable>(
+//    _ values: V,
+//    into table: String,
+//    returning returningOptions: PostgrestReturningOptions? = .representation,
+//    as type: R.Type = R.self
+//  ) async throws -> R {
+//    try await self.withDatabase { database in
+//      try await database.from(table)
+//        .insert(values: values, returning: returningOptions)
+//        .single()
+//        .execute()
+//        .value
+//    }
+//  }
 
   /// Helper for inserting a new value into the database.
   ///
@@ -507,12 +513,14 @@ extension SupabaseClientDependency {
     returning returningOptions: PostgrestReturningOptions? = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
-    try await insert(
-      values,
-      into: table.tableName,
-      returning: returningOptions,
-      as: R.self
+    try await self.insert(
+      .init(
+        table: table,
+        returningOptions: returningOptions,
+        values: values
+      )
     )
+    .decoding(as: R.self)
   }
 
   // MARK: - Update
@@ -538,21 +546,30 @@ extension SupabaseClientDependency {
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The type to decode from the response.
   @discardableResult
-  public func update<Values: Encodable, R: Decodable>(
-    table: String,
+  public func update<Values: Encodable, R: Decodable, T: TableRepresentable>(
+    table: T,
     where filters: [Filter],
     values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
-    return try await self.withDatabase { database in
-      try await database.from(table)
-        .update(values: values, returning: returningOptions)
-        .filter(by: filters)
-        .single()
-        .execute()
-        .value
-    }
+    try await self.update(
+      .init(
+        table: table,
+        filters: filters,
+        returningOptions: returningOptions,
+        values: values
+      )
+    )
+    .decoding(as: R.self)
+//    return try await self.withDatabase { database in
+//      try await database.from(table)
+//        .update(values: values, returning: returningOptions)
+//        .filter(by: filters)
+//        .single()
+//        .execute()
+//        .value
+//    }
   }
 
   /// A helper for updating an item in the database, using the table name and a filter for the item.
@@ -575,22 +592,22 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The type to decode from the response.
-  @discardableResult
-  public func update<Values: Encodable, R: Decodable>(
-    table: String,
-    filteredBy filters: Filter...,
-    values: Values,
-    returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: R.Type = R.self
-  ) async throws -> R {
-    try await update(
-      table: table,
-      where: filters,
-      values: values,
-      returning: returningOptions,
-      as: R.self
-    )
-  }
+//  @discardableResult
+//  public func update<Values: Encodable, R: Decodable>(
+//    table: String,
+//    filteredBy filters: Filter...,
+//    values: Values,
+//    returning returningOptions: PostgrestReturningOptions = .representation,
+//    as type: R.Type = R.self
+//  ) async throws -> R {
+//    try await update(
+//      table: table,
+//      where: filters,
+//      values: values,
+//      returning: returningOptions,
+//      as: R.self
+//    )
+//  }
 
   /// A helper for updating an item in the database, using the table name and a filter for the item.
   ///
@@ -649,22 +666,22 @@ extension SupabaseClientDependency {
   ///   - values: The values to updated in the row.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The type to decode from the response.
-  @discardableResult
-  public func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable>(
-    id: ID,
-    in table: String,
-    with values: Values,
-    returning returningOptions: PostgrestReturningOptions = .representation,
-    as type: R.Type = R.self
-  ) async throws -> R {
-    try await update(
-      table: table,
-      filteredBy: .id(id),
-      values: values,
-      returning: returningOptions,
-      as: R.self
-    )
-  }
+//  @discardableResult
+//  public func update<ID: URLQueryRepresentable, Values: Encodable, R: Decodable>(
+//    id: ID,
+//    in table: String,
+//    with values: Values,
+//    returning returningOptions: PostgrestReturningOptions = .representation,
+//    as type: R.Type = R.self
+//  ) async throws -> R {
+//    try await update(
+//      table: table,
+//      filteredBy: .id(id),
+//      values: values,
+//      returning: returningOptions,
+//      as: R.self
+//    )
+//  }
 
   /// A helper for updating an item in the database, using the table name and the item's id.
   ///

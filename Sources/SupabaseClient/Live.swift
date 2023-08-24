@@ -19,8 +19,9 @@ extension SupabaseClientDependency {
 //    let session = AuthDependency(client: client)
 
     return Self.init(
-      client: client,
-      auth: .live(client: client.auth)
+//      client: client,
+      auth: .live(client: client.auth),
+      database: .live(client: client.database)
 //          .init(
 //        createUser: { try await session.createUser(credentials: $0) },
 //        currentUser: { await session.currentUser },

@@ -13,3 +13,8 @@ public protocol TableRepresentable {
 extension RawRepresentable where RawValue == String, Self: TableRepresentable {
   public var tableName: String { self.rawValue }
 }
+
+extension String: TableRepresentable {
+  
+  public var tableName: String { self }
+}
