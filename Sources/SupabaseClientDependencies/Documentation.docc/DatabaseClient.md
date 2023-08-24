@@ -39,7 +39,7 @@ The following methods are convenience methods for inserting single items into th
 
 The following methods are convenience methods for inserting multiple items into the database.
 
-- ``insert(_:into:returning:decoding:)-1qutu``
+- ``insert(_:into:returning:decoding:)-630da``
 
 ### Updating Items
 

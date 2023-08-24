@@ -68,7 +68,8 @@ public struct Credentials: Codable, Equatable, Sendable {
       if error != nil {
         error = .invalidEmailAndPassword(
           emailError: error!.localizedDescription,
-          passwordError: passwordPattern?.errorDescription ?? CredentialError.invalidPassword.localizedDescription
+          passwordError: passwordPattern?.errorDescription
+            ?? CredentialError.invalidPassword.localizedDescription
         )
       } else {
         if let passwordPattern {

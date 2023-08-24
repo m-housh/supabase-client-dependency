@@ -197,7 +197,7 @@ extension SupabaseClientDependency.DatabaseClient {
     )
   }
 
-  /// A helper for fetching items from the database, using the table name and an id of an element. This method requires the column name 
+  /// A helper for fetching items from the database, using the table name and an id of an element. This method requires the column name
   /// in the database to be "id" for matching the id value against.
   ///
   /// ### Example
@@ -377,7 +377,7 @@ extension SupabaseClientDependency.DatabaseClient {
     )
   }
 
-  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name 
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
   /// in the database to be "id" for matching the id value against.
   ///
   /// ### Example

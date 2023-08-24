@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
+    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"])
   ],
   dependencies: [
     .package(

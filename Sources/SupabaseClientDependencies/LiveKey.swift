@@ -178,7 +178,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///
   /// - Parameters:
   ///   - client: The postgres client used to build the live client.
-  ///   
+  ///
   public static func live(client: PostgrestClient) -> Self {
     .init(
       delete: { request in

@@ -1,6 +1,6 @@
 import Foundation
-import IdentifiedCollections
 import GoTrue
+import IdentifiedCollections
 
 private let dateFormatterWithFractionalSeconds = { () -> ISO8601DateFormatter in
   let formatter = ISO8601DateFormatter()

@@ -398,7 +398,7 @@ public struct SupabaseClientDependency {
   /// Exposes database operations.
   ///
   /// This type mimicks the `PostgrestClient` and also adds some niceties around commonly used
-  /// `CRUD` operations. See ``<doc:DatabaseOperations>`` for common database operation usage.
+  /// `CRUD` operations.
   ///
   public struct DatabaseClient {
 
@@ -452,7 +452,7 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert-many request, it is generally not used directly, unless you're
     /// overriding the insert-many operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-1qutu``.
+    /// ``insert(_:into:returning:decoding:)-630da``.
     ///
     public var insertMany: (InsertManyRequest) async throws -> Data
 
@@ -676,7 +676,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert many request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-1qutu``.
+    /// ``insert(_:into:returning:decoding:)-630da``.
     ///
     public struct InsertManyRequest {
 
@@ -692,7 +692,7 @@ public struct SupabaseClientDependency {
       /// Create a new insert request.
       ///
       /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-1qutu``.
+      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-630da``.
       ///
       /// - Parameters:
       ///   - table: The table to insert the values into.

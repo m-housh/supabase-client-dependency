@@ -5,10 +5,7 @@
       "name" : "Test Scheme Action",
       "options" : {
         "environmentVariableEntries" : [
-          {
-            "key" : "INTEGRATION_TESTS",
-            "value" : "1"
-          }
+
         ]
       }
     }
