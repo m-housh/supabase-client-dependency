@@ -398,7 +398,7 @@ public struct SupabaseClientDependency {
   /// Exposes database operations.
   ///
   /// This type mimicks the `PostgrestClient` and also adds some niceties around commonly used
-  /// `CRUD` operations.
+  /// `CRUD` operations.  See <doc:DatabaseOperations> for common database operation usage.
   ///
   public struct DatabaseClient {
 

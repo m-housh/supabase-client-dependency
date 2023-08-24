@@ -48,14 +48,12 @@ extension DatabaseClient: DependencyKey {
           
           // get the current authenticated user.
           let user = try await client.auth.requireCurrentUser()
-         
+          
           // Return the todos.
-          return try await .init(
-            uniqueElements: client.database.fetch(
-              from: Table.todos,
-              filteredBy: TodoColumn.ownerId.equals(user.id),
-              orderBy: TodoColumn.complete.ascending()
-            )
+          return try await client.database.fetch(
+            from: Table.todos,
+            filteredBy: TodoColumn.ownerId.equals(user.id),
+            orderBy: TodoColumn.complete.ascending()
           )
         },
         insert: { request in
