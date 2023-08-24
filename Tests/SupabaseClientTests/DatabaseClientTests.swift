@@ -1,5 +1,6 @@
 import XCTest
 import Dependencies
+import IdentifiedCollections
 import SupabaseClientDependencies
 
 @MainActor
@@ -46,7 +47,7 @@ final class DatabaseClientTests: XCTestCase {
   public func testIntegration() async throws {
     @Dependency(\.supabaseClient.database) var database;
 
-    var todos: [Todo] = try await database.fetch(from: Table.todos)
+    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(from: Table.todos)
     XCTAssertEqual(todos, [])
 
     let insertedTodo: Todo = try await database.insert(

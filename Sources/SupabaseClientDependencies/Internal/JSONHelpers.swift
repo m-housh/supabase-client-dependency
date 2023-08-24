@@ -49,19 +49,9 @@ extension JSONEncoder {
   }()
 }
 
-extension Dictionary where Key == String, Value == AnyJSON {
-
+extension Data {
   func decoding<T: Decodable>(as type: T.Type) throws -> T {
-    print("Decoding dictionary: \(self)")
-    let encoded = try JSONEncoder.databaseClient.encode(self)
-    return try JSONDecoder.databaseClient.decode(T.self, from: encoded)
-  }
-}
-
-extension Array where Element == [String: AnyJSON] {
-
-  func decoding<T: Decodable>(as type: T.Type) throws -> [T] {
-    try self.map { try $0.decoding(as: T.self) }
+    try JSONDecoder.databaseClient.decode(T.self, from: self)
   }
 }
 

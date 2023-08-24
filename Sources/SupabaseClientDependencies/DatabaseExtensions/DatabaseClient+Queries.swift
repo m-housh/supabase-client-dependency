@@ -84,7 +84,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   from: Table.todos,
   ///   where: [.equals("complete", "false")],
   ///   orderBy: .init(column: "description").ascending(),
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: [TodoModel].self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -93,16 +93,16 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   - filters: Filters to apply to the query.
   ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
-  public func fetch<Model: Decodable, Table: TableRepresentable>(
+  public func fetch<Response: Decodable, Table: TableRepresentable>(
     from table: Table,
     where filters: [Filter] = [],
     orderBy order: Order? = nil,
-    decoding type: Model.Type = Model.self
-  ) async throws -> [Model] {
+    decoding type: Response.Type = Response.self
+  ) async throws -> Response {
     try await self.fetch(
       .init(table: table, filters: filters, order: order)
     )
-    .decoding(as: Model.self)
+    .decoding(as: Response.self)
   }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
@@ -114,7 +114,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   from: Table.todos,
   ///   filteredBy: TodoColumn.complete.equals(false),
   ///   orderBy: TodoColumn.description.ascending(),
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
+  ///   decoding: [TodoModel].self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
   ///
@@ -123,17 +123,17 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   - filters: Filter(s) to apply to the query.
   ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
-  public func fetch<Model: Decodable, Table: TableRepresentable>(
+  public func fetch<Response: Decodable, Table: TableRepresentable>(
     from table: Table,
     filteredBy filters: Filter...,
     orderBy order: Order? = nil,
-    decoding type: Model.Type = Model.self
-  ) async throws -> [Model] {
+    decoding type: Response.Type = Response.self
+  ) async throws -> Response {
     try await self.fetch(
       from: table,
       where: filters,
       orderBy: order,
-      decoding: Model.self
+      decoding: Response.self
     )
   }
 
@@ -283,12 +283,12 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   - values: The row values.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The return value type to decode from the response.
-  public func insert<Values: Encodable, Model: Decodable, Table: TableRepresentable>(
+  public func insert<Values: Encodable, Response: Decodable, Table: TableRepresentable>(
     _ values: [Values],
     into table: Table,
     returning returningOptions: PostgrestReturningOptions = .representation,
-    decoding type: Model.Type = Model.self
-  ) async throws -> [Model] {
+    decoding type: Response.Type = Response.self
+  ) async throws -> Response {
     try await self.insertMany(
       .init(
         table: table,
@@ -296,7 +296,7 @@ extension SupabaseClientDependency.DatabaseClient {
         returningOptions: returningOptions
       )
     )
-    .decoding(as: Model.self)
+    .decoding(as: Response.self)
   }
 
   // MARK: - Update

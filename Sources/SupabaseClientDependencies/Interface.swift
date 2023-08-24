@@ -418,7 +418,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``fetch(from:filteredBy:orderBy:decoding:)``.
     ///
-    public var fetch: (FetchRequest) async throws -> [[String: AnyJSON]]
+    public var fetch: (FetchRequest) async throws -> Data
 
     /// Perform a single row fetch request on the database.
     ///
@@ -427,7 +427,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``fetchOne(from:filteredBy:decoding:)``.
     ///
-    public var fetchOne: (FetchOneRequest) async throws -> [String: AnyJSON]
+    public var fetchOne: (FetchOneRequest) async throws -> Data
 
     /// Build a database query.
     ///
@@ -445,7 +445,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``insert(_:into:returning:decoding:)-731w6``
     ///
-    public var insert: (InsertRequest) async throws -> [String: AnyJSON]
+    public var insert: (InsertRequest) async throws -> Data
 
     /// Perform an insert request for multiple rows on the database.
     ///
@@ -454,7 +454,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``insert(_:into:returning:decoding:)-1qutu``.
     ///
-    public var insertMany: (InsertManyRequest) async throws -> [[String: AnyJSON]]
+    public var insertMany: (InsertManyRequest) async throws -> Data
 
     /// Build a remote function request.
     ///
@@ -472,7 +472,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``update(id:in:with:returning:decoding:)``.
     ///
-    public var update: (UpdateRequest) async throws -> [String: AnyJSON]
+    public var update: (UpdateRequest) async throws -> Data
 
     /// Create a new database client.
     ///
@@ -487,13 +487,13 @@ public struct SupabaseClientDependency {
     ///   - update: Perform an update request on the database.
     public init(
       delete: @escaping (DeleteRequest) async throws -> Void,
-      fetch: @escaping (FetchRequest) async throws -> [[String: AnyJSON]],
-      fetchOne: @escaping (FetchOneRequest) async throws -> [String: AnyJSON],
+      fetch: @escaping (FetchRequest) async throws -> Data,
+      fetchOne: @escaping (FetchOneRequest) async throws -> Data,
       from: @escaping (String) -> PostgrestQueryBuilder,
-      insert: @escaping (InsertRequest) async throws -> [String: AnyJSON],
-      insertMany: @escaping (InsertManyRequest) async throws -> [[String: AnyJSON]],
+      insert: @escaping (InsertRequest) async throws -> Data,
+      insertMany: @escaping (InsertManyRequest) async throws -> Data,
       rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
-      update: @escaping (UpdateRequest) async throws -> [String: AnyJSON]
+      update: @escaping (UpdateRequest) async throws -> Data
     ) {
       self.delete = delete
       self.fetch = fetch
