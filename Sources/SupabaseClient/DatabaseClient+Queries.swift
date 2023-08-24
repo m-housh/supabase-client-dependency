@@ -1,6 +1,7 @@
 import Foundation
 import PostgREST
 
+// TODO: Should we use `from` on the database client for all the query operations?
 extension SupabaseClientDependency.DatabaseClient {
 
   // MARK: - Delete
@@ -94,7 +95,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///   - type: The return value type to decode.
   public func fetch<R: Decodable, Table: TableRepresentable>(
     from table: Table,
-    where filters: [Filter],
+    where filters: [Filter] = [],
     orderBy order: Order? = nil,
     as type: R.Type = R.self
   ) async throws -> [R] {
@@ -214,7 +215,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ) async throws -> R where R: Identifiable, R.ID: URLQueryRepresentable {
     try await self.fetchOne(
       from: table,
-      where: [.id(id)],
+      filteredBy: .id(id),
       as: R.self
     )
   }
@@ -253,6 +254,41 @@ extension SupabaseClientDependency.DatabaseClient {
       )
     )
     .decoding(as: R.self)
+  }
+
+  /// Helper for inserting multiple new values into the database.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// let todo = try await databaseClient.insert(
+  ///   into: Table.todos,
+  ///   values: [
+  ///     TodoInsertRequest(description: "New Todo", complete: false),
+  ///     TodoInsertRequest(description: "Another new todo", complete: true)
+  ///   ],
+  ///   returning: .representation,
+  ///   as: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  /// )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - table: The table to insert the values into.
+  ///   - values: The row values.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - type: The return value type to decode from the response.
+  public func insert<V: Encodable, R: Decodable, Table: TableRepresentable>(
+    _ values: [V],
+    into table: Table,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    as type: R.Type = R.self
+  ) async throws -> [R] {
+    try await self.from(table) {
+      try await $0
+        .insert(values: values, returning: returningOptions)
+        .execute()
+        .value
+    }
   }
 
   // MARK: - Update

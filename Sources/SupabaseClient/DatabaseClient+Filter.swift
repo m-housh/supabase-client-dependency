@@ -32,13 +32,6 @@ extension SupabaseClientDependency.DatabaseClient {
       self.value = value
     }
 
-    public static func equals(
-      column: String,
-      value: URLQueryRepresentable
-    ) -> Self {
-      .init(column: column, operator: .eq, value: value)
-    }
-
     public static func equals<C: ColumnRepresentable>(
       column: C,
       value: URLQueryRepresentable

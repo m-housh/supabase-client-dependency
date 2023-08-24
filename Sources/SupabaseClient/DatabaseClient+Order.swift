@@ -26,44 +26,6 @@ extension SupabaseClientDependency.DatabaseClient {
     ///   - ascending: If `true`, the result will be in ascending order.
     ///   - nullsFirst: If `true`, `null`s appear first.
     ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init(
-      column: String,
-      ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: String? = nil
-    ) {
-      self.column = column
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable
-    }
-
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init<C: ColumnRepresentable>(
-      column: C,
-      ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: String? = nil
-    ) {
-      self.column = column.columnName
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable
-    }
-
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
     public init<C: ColumnRepresentable, T: TableRepresentable>(
       column: C,
       ascending: Bool = true,
@@ -80,6 +42,18 @@ extension SupabaseClientDependency.DatabaseClient {
 
 extension ColumnRepresentable {
 
+  public func ascending<T: TableRepresentable>(
+    nullsFirst: Bool = false,
+    foreignTable: T? = nil
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
+    .init(
+      column: self,
+      ascending: true,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+
   public func ascending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
@@ -92,11 +66,16 @@ extension ColumnRepresentable {
     )
   }
 
-  public func ascending<T: TableRepresentable>(
+  public func descending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
   ) -> SupabaseClientDependency.DatabaseClient.Order {
-    self.ascending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
   }
 
   public func descending(
@@ -111,12 +90,6 @@ extension ColumnRepresentable {
     )
   }
 
-  public func descending<T: TableRepresentable>(
-    nullsFirst: Bool = false,
-    foreignTable: T? = nil
-  ) -> SupabaseClientDependency.DatabaseClient.Order {
-    self.descending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
-  }
 }
 
 extension PostgrestFilterBuilder {
