@@ -1,6 +1,7 @@
 import Dependencies
 import XCTest
 @testable import SupabaseClient
+@testable import SupabaseClientLive
 
 @MainActor
 final class SupabaseClientTests: XCTestCase {

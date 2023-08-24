@@ -2,6 +2,7 @@ import Dependencies
 import Foundation
 import GoTrue
 import Supabase
+@_exported import SupabaseClient
 
 extension SupabaseClientDependency {
 
@@ -16,21 +17,9 @@ extension SupabaseClientDependency {
   public static func live(configuration: Configuration) -> Self {
     let client = SupabaseClient(configuration: configuration)
 
-//    let session = AuthDependency(client: client)
-
     return Self.init(
-//      client: client,
       auth: .live(client: client.auth),
       database: .live(client: client.database)
-//          .init(
-//        createUser: { try await session.createUser(credentials: $0) },
-//        currentUser: { await session.currentUser },
-//        events: { await session.authEvents },
-//        initialize: { await client.auth.initialize() },
-//        login: { try await session.login(credentials: $0) },
-//        logout: { await session.logout() },
-//        session: { await session.session }
-//      )
     )
   }
 
@@ -179,6 +168,56 @@ extension SupabaseClientDependency.Auth {
   }
 }
 
+extension SupabaseClientDependency.DatabaseClient {
+  static func live(client: PostgrestClient) -> Self {
+    .init(
+      delete: { request in
+        try await client.from(request.table.tableName)
+          .delete(returning: .minimal)
+          .filter(by: request.filters)
+          .execute()
+          .value
+      },
+      fetch: { request in
+        try await client.from(request.table.tableName)
+          .select()
+          .filter(by: request.filters)
+          .order(by: request.order)
+          .execute()
+          .value
+      },
+      fetchOne: { request in
+        try await client.from(request.table.tableName)
+          .select()
+          .filter(by: request.filters)
+          .single()
+          .execute()
+          .value
+      },
+      from: { table in
+        client.from(table)
+      },
+      insert: { request in
+        try await client.from(request.table.tableName)
+          .insert(values: request.values, returning: request.returningOptions)
+          .single()
+          .execute()
+          .value
+      },
+      rpc: { client.rpc(fn: $0.functionName, params: $0.params, count: $0.count) },
+      update: { request in
+        try await client.from(request.table.tableName)
+          .update(values: request.values, returning: request.returningOptions)
+          .filter(by: request.filters)
+          .single()
+          .execute()
+          .value
+      }
+      
+    )
+  }
+}
+
 fileprivate extension AuthResponse {
   var user: User {
     switch self {
@@ -189,57 +228,3 @@ fileprivate extension AuthResponse {
     }
   }
 }
-//
-//fileprivate actor AuthDependency {
-//  private let client: SupabaseClient
-//
-//  init(client: SupabaseClient) {
-//    self.client = client
-//  }
-//
-//  var session: Session? {
-//    get async {
-//      try? await client.auth.session
-//    }
-//  }
-//
-//  var authEvents: AsyncStream<AuthChangeEvent> { client.auth.authEventChange }
-//
-//  func createUser(credentials: Credentials) async throws -> User {
-//    let response = try await client.auth.signUp(
-//      email: credentials.email,
-//      password: credentials.password
-//    )
-//
-//    switch response {
-//    case let .session(session):
-//      return session.user
-//    case let .user(user):
-//      return user
-//    }
-//  }
-//
-//  var currentUser: User? {
-//    get async { await self.session?.user }
-//  }
-//
-//  func login(credentials: Credentials?) async throws -> Session {
-//    if let credentials {
-//      return try await client.auth.signIn(
-//        email: credentials.email,
-//        password: credentials.password
-//      )
-//    }
-//
-//    guard let session = await self.session
-//    else { throw AuthenticationError() }
-//
-//    return session
-//  }
-//
-//  func logout() async {
-//    try? await client.auth.signOut()
-//  }
-//}
-//
-struct AuthenticationError: Error {}

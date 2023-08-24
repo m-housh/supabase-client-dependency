@@ -2,7 +2,6 @@ import Dependencies
 import Foundation
 @_exported import GoTrue
 @_exported import PostgREST
-@_exported import Supabase
 import XCTestDynamicOverlay
 
 extension DependencyValues {
@@ -30,76 +29,328 @@ public struct SupabaseClientDependency {
   public var auth: Auth
   
   public var database: DatabaseClient
-
-  /// Create a new supabase client dependency.
-  ///
-  /// - Parameters:
-  ///   - client: The supabase client for the application.
-  ///   - auth: The supabase authentication client dependency for the application.
-//  public init(
-//    client: Supabase.SupabaseClient,
-//    auth: Auth
-//  ) {
-//    self.client = client
-//    self.auth = auth
-//  }
   
   /// Create a new supabase client dependency.
   ///
   /// - Parameters:
-  ///   - configuration: The supabase client configuration for the application.
   ///   - auth: The supabase authentication client dependency for the application.
-//  public init(
-//    configuration: Configuration,
-//    auth: Auth
-//  ) {
-//    self.init(client: configuration.client, auth: auth)
-//  }
+  ///   - database: The supabase database client dependency for the application.
+  public init(
+    auth: Auth,
+    database: DatabaseClient
+  ) {
+    self.auth = auth
+    self.database = database
+  }
 
-  /// Perform a database request on the postgres client.
-  ///
-  ///  This is useful when you need to perform a custom query beyond what is provided by this library.
-  ///
-  /// ### Example
-  ///
-  /// ```swift
-  ///  try await client.withDatabase { database in
-  ///     database.from("todos")
-  ///       .select()
-  ///       .execute()
-  ///       .value
-  ///  }
-  /// ```
-  ///
-  /// - Parameters:
-  ///   - perform: The action to perform on the supabase database.
-//  @discardableResult
-//  public func withDatabase<R: Sendable>(
-//    perform: @escaping @Sendable (PostgrestClient) async throws -> R
-//  ) async rethrows -> R {
-//    try await perform(self.client.database)
-//  }
 
+  /// An authentication client to create and manage user sessions for access to data that is secured by
+  /// access policies.
+  ///
+  /// This exposes all of the api's of the `GoTrue` client with some niceities around some of them, but can
+  /// mocked or overriden for usage in your `TCA` based applications.
+  /// 
+  ///
+  public struct Auth {
+
+    /// Asynchronous sequence of authentication change events emitted during life of `GoTrueClient`.
+    public var events: @Sendable () -> AsyncStream<AuthChangeEvent>
+
+    /// Log in an existing user via a third-party provider.
+    public var getOAuthURL: @Sendable (OAuthRequest) throws -> URL
+
+    /// Initialize the client session from storage.
+    ///
+    /// This method is called automatically when instantiating the client, but it's recommended to
+    /// call this method on the app startup, for making sure that the client is fully initialized
+    /// before proceeding.
+    public var initialize: @Sendable () async -> Void
+
+    /// Perform session operations on the auth client.
+    public var session: @Sendable (SessionRequest?) async throws -> Session
+
+    /// Login users.
+    public var login: @Sendable (LoginRequest?) async throws -> Session?
+
+    /// Logout users.
+    public var logout: @Sendable () async throws -> Void
+
+    /// Sends a reset request to an email address.
+    public var resetPassword: @Sendable (ResetPasswordRequest) async throws -> Void
+
+    /// Signup users.
+    public var signUp: @Sendable (SignUpRequest) async throws -> User
+
+    /// Update users.
+    public var update: @Sendable (UserAttributes) async throws -> User
+
+    /// Login a user given a User supplied OTP
+    public var verifyOTP: @Sendable (VerifyOTPRequest) async throws -> User
+
+    public init(
+      events: @escaping @Sendable () -> AsyncStream<AuthChangeEvent>,
+      getOAuthURL: @escaping @Sendable (OAuthRequest) throws -> URL,
+      initialize: @escaping @Sendable () async  -> Void,
+      login: @escaping @Sendable (LoginRequest?) async throws -> Session?,
+      logout: @escaping @Sendable () async throws -> Void,
+      resetPassword: @escaping @Sendable (ResetPasswordRequest) async throws -> Void,
+      session: @escaping @Sendable (SessionRequest?) async throws -> Session,
+      signUp: @escaping @Sendable (SignUpRequest) async throws -> User,
+      update: @escaping @Sendable (UserAttributes) async throws -> User,
+      verifyOTP: @escaping @Sendable (VerifyOTPRequest) async throws -> User
+    ) {
+      self.events = events
+      self.getOAuthURL = getOAuthURL
+      self.initialize = initialize
+      self.session = session
+      self.login = login
+      self.logout = logout
+      self.resetPassword = resetPassword
+      self.signUp = signUp
+      self.update = update
+      self.verifyOTP = verifyOTP
+    }
+
+    /// Access the currently logged in user.
+    public func currentUser() async -> User? {
+      try? await self.session().user
+    }
+
+    /// Attempt to login with credentials stored in the user's key-chain, if they've logged in
+    /// in the past.
+    ///
+    @discardableResult
+    public func login() async throws -> Session? {
+      try await self.login(nil)
+    }
+
+    /// Login a user with the supplied credentials.
+    ///
+    @discardableResult
+    public func login(credentials: Credentials) async throws -> Session? {
+      try await self.login(.email(credentials.email, password: credentials.password))
+    }
+
+    /// A helper that will throw an error if there is not a current user logged in.
+    ///
+    /// This is useful for requiring authentication to certain views / routes in your application.
+    ///
+    public func requireCurrentUser() async throws -> User {
+      guard let user = await currentUser() else {
+        throw AuthenticationError()
+      }
+      return user
+    }
+    /// Attempt to login with a previously stored in the session in the storage, if they've logged in
+    /// in the past.
+    ///
+    public func session() async throws -> Session {
+      try await session(nil)
+    }
+
+    public struct OAuthRequest: Equatable {
+      public let provider: Provider
+      public let queryParams: [QueryParam]
+      public let redirectURL: URL?
+      public let scopes: String?
+
+      public init(
+        provider: Provider,
+        queryParams: [QueryParam] = [],
+        redirectURL: URL? = nil,
+        scopes: String? = nil
+      ) {
+        self.provider = provider
+        self.queryParams = queryParams
+        self.redirectURL = redirectURL
+        self.scopes = scopes
+      }
+
+      public struct QueryParam: Equatable {
+        public let name: String
+        public let value: String?
+
+        public init(name: String, value: String?) {
+          self.name = name
+          self.value = value
+        }
+      }
+    }
+
+    public struct ResetPasswordRequest: Equatable {
+      public let email: String
+      public let redirectURL: URL?
+      public let captchaToken: String?
+
+      public init(
+        email: String,
+        redirectURL: URL? = nil,
+        captchaToken: String? = nil
+      ) {
+        self.email = email
+        self.redirectURL = redirectURL
+        self.captchaToken = captchaToken
+      }
+    }
+
+    public enum SessionRequest: Equatable {
+      case oAuth(URL, storeSession: Bool = true)
+      case refresh(String)
+      case set(accessToken: String, refreshToken: String)
+    }
+
+
+    public enum LoginRequest: Equatable {
+
+      case email(String, password: String)
+      case phone(String, password: String)
+      //    case idToken(OpenIDConnectCredentials)
+      case otp(
+        OTPRequest,
+        shouldCreateUser: Bool? = nil,
+        options: SignUpOptions = .init()
+      )
+
+      public static func credentials(_ credentials: Credentials) -> Self {
+        .email(credentials.email, password: credentials.password)
+      }
+
+      public enum OTPRequest: Equatable {
+        case email(String)
+        case phone(String)
+
+        public var value: String {
+          switch self {
+          case let .email(email):
+            return email
+          case let .phone(phone):
+            return phone
+          }
+        }
+      }
+    }
+
+    public struct SignUpOptions: Equatable {
+      public let captchaToken: String?
+      public let data: [String: AnyJSON]?
+      public let redirectURL: URL?
+
+      public init(
+        captchaToken: String? = nil,
+        data: [String : AnyJSON]? = nil,
+        redirectURL: URL? = nil
+      ) {
+        self.captchaToken = captchaToken
+        self.data = data
+        self.redirectURL = redirectURL
+      }
+    }
+
+    public enum SignUpRequest: Equatable {
+      case email(
+        String,
+        password: String,
+        options: SignUpOptions = .init()
+      )
+
+      public static func email(
+        credentials: Credentials,
+        options: SignUpOptions = .init()
+      ) -> Self {
+        .email(
+          credentials.email,
+          password: credentials.password,
+          options: options
+        )
+      }
+
+      public static func credentials(
+        _ credentials: Credentials,
+        options: SignUpOptions = .init()
+      ) -> Self {
+        .email(
+          credentials.email,
+          password: credentials.password,
+          options: options
+        )
+      }
+
+      case phone(
+        String,
+        password: String,
+        options: SignUpOptions = .init()
+      )
+    }
+
+    public enum VerifyOTPRequest: Equatable {
+      case email(String, options: Options)
+      case phone(String, options: Options)
+
+      public struct Options: Equatable {
+        public let captchaToken: String?
+        public let redirectURL: URL?
+        public let token: String
+        public let type: OTPType
+
+        public init(
+          captchaToken: String?,
+          redirectURL: URL?,
+          token: String,
+          type: OTPType
+        ) {
+          self.captchaToken = captchaToken
+          self.redirectURL = redirectURL
+          self.token = token
+          self.type = type
+        }
+      }
+    }
+  }
+  
   public struct DatabaseClient {
 
     public var delete: (DeleteRequest) async throws -> Void
     public var fetch: (FetchRequest) async throws -> [[String: AnyJSON]]
     public var fetchOne: (FetchOneRequest) async throws -> [String: AnyJSON]
+    public var from: (String) -> PostgrestQueryBuilder
     public var insert: (InsertRequest) async throws -> [String: AnyJSON]
+    public var rpc: (RpcRequest) -> PostgrestTransformBuilder
     public var update: (UpdateRequest) async throws -> [String: AnyJSON]
     
     public init(
       delete: @escaping (DeleteRequest) async throws -> Void,
       fetch: @escaping (FetchRequest) async throws -> [[String : AnyJSON]],
       fetchOne: @escaping (FetchOneRequest) async throws -> [String: AnyJSON],
+      from: @escaping (String) -> PostgrestQueryBuilder,
       insert: @escaping (InsertRequest) async throws -> [String: AnyJSON],
+      rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> [String: AnyJSON]
     ) {
       self.delete = delete
       self.fetch = fetch
       self.fetchOne = fetchOne
+      self.from = from
       self.insert = insert
+      self.rpc = rpc
       self.update = update
+    }
+    
+    @discardableResult
+    public func from<R: Decodable>(
+      _ table: TableRepresentable,
+      decoding type: R.Type = R.self,
+      perform: (PostgrestQueryBuilder) async throws -> R
+    ) async throws -> R {
+      try await perform(self.from(table.tableName))
+    }
+    
+    @discardableResult
+    public func rpc<R: Decodable>(
+      _ rpcRequest: RpcRequest,
+      decoding type: R.Type = R.self,
+      perform: (PostgrestTransformBuilder) async throws -> R
+    ) async throws -> R {
+      try await perform(self.rpc(rpcRequest))
     }
     
     public struct DeleteRequest {
@@ -159,6 +410,24 @@ public struct SupabaseClientDependency {
       }
     }
     
+    public struct RpcRequest {
+      public let functionName: String
+      public let params: any Encodable
+      public let count: CountOption?
+      
+      public init(
+        functionName: String,
+        params: (any Encodable)? = nil,
+        count: CountOption? = nil
+      ) {
+        self.functionName = functionName
+        self.params = params ?? NoParams()
+        self.count = count
+      }
+      
+      struct NoParams: Encodable { }
+    }
+    
     public struct UpdateRequest {
       public let table: TableRepresentable
       public let filters: [Filter]
@@ -181,113 +450,19 @@ public struct SupabaseClientDependency {
 
 }
 
-extension SupabaseClientDependency.DatabaseClient {
-  static func live(client: PostgrestClient) -> Self {
-    .init(
-      delete: { request in
-        try await client.from(request.table.tableName)
-          .delete(returning: .minimal)
-          .filter(by: request.filters)
-          .execute()
-          .value
-      },
-      fetch: { request in
-        try await client.from(request.table.tableName)
-          .select()
-          .filter(by: request.filters)
-          .order(by: request.order)
-          .execute()
-          .value
-      },
-      fetchOne: { request in
-        try await client.from(request.table.tableName)
-          .select()
-          .filter(by: request.filters)
-          .single()
-          .execute()
-          .value
-      },
-      insert: { request in
-        try await client.from(request.table.tableName)
-          .insert(values: request.values, returning: request.returningOptions)
-          .single()
-          .execute()
-          .value
-      },
-      update: { request in
-        try await client.from(request.table.tableName)
-          .update(values: request.values, returning: request.returningOptions)
-          .filter(by: request.filters)
-          .single()
-          .execute()
-          .value
-      }
-      
-    )
-  }
-}
-private let dateFormatterWithFractionalSeconds = { () -> ISO8601DateFormatter in
-  let formatter = ISO8601DateFormatter()
-  formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-  return formatter
-}()
-
-private let dateFormatter = { () -> ISO8601DateFormatter in
-  let formatter = ISO8601DateFormatter()
-  formatter.formatOptions = [.withInternetDateTime]
-  return formatter
-}()
-
-extension JSONDecoder {
-  static let goTrue = { () -> JSONDecoder in
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .custom { decoder in
-      let container = try decoder.singleValueContainer()
-      let string = try container.decode(String.self)
-
-      let supportedFormatters = [dateFormatterWithFractionalSeconds, dateFormatter]
-
-      for formatter in supportedFormatters {
-        if let date = formatter.date(from: string) {
-          return date
-        }
-      }
-
-      throw DecodingError.dataCorruptedError(
-        in: container, debugDescription: "Invalid date format: \(string)"
-      )
-    }
-    return decoder
-  }()
-}
-
-extension JSONEncoder {
-  static let goTrue = { () -> JSONEncoder in
-    let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .custom { date, encoder in
-      var container = encoder.singleValueContainer()
-      let string = dateFormatter.string(from: date)
-      try container.encode(string)
-    }
-    return encoder
-  }()
-}
-
-
-extension Dictionary where Key == String, Value == AnyJSON {
-  
-  func decoding<T: Decodable>(as type: T.Type) throws -> T {
-    print("Decoding dictionary: \(self)")
-    let encoded = try JSONEncoder.goTrue.encode(self)
-    return try JSONDecoder.goTrue.decode(T.self, from: encoded)
-  }
-}
-
-extension Array where Element == [String: AnyJSON] {
-  func decoding<T: Decodable>(as type: T.Type) throws -> [T] {
-    try self.map { try $0.decoding(as: T.self) }
-  }
-  
+extension SupabaseClientDependency.Auth {
+  static let unimplemented = Self.init(
+    events: XCTestDynamicOverlay.unimplemented("\(Self.self).events", placeholder: AsyncStream { nil }),
+    getOAuthURL: XCTestDynamicOverlay.unimplemented("\(Self.self).getOAuthURL", placeholder: URL(string: "/")!),
+    initialize: XCTestDynamicOverlay.unimplemented("\(Self.self).initialize"),
+    login: XCTestDynamicOverlay.unimplemented("\(Self.self).login", placeholder: nil),
+    logout: XCTestDynamicOverlay.unimplemented("\(Self.self).logout"),
+    resetPassword: XCTestDynamicOverlay.unimplemented("\(Self.self).resetPassword"),
+    session: XCTestDynamicOverlay.unimplemented("\(Self.self).session", placeholder: .mock),
+    signUp: XCTestDynamicOverlay.unimplemented("\(Self.self).signUp", placeholder: .mock),
+    update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: .mock),
+    verifyOTP: XCTestDynamicOverlay.unimplemented("\(Self.self).verifyOTP", placeholder: .mock)
+  )
 }
 
 extension SupabaseClientDependency.DatabaseClient {
@@ -295,7 +470,9 @@ extension SupabaseClientDependency.DatabaseClient {
     delete: XCTestDynamicOverlay.unimplemented("\(Self.self).delete"),
     fetch: XCTestDynamicOverlay.unimplemented("\(Self.self).fetch", placeholder: []),
     fetchOne: XCTestDynamicOverlay.unimplemented("\(Self.self).fetchOne", placeholder: [:]),
+    from: XCTestDynamicOverlay.unimplemented("\(Self.self).from"),
     insert: XCTestDynamicOverlay.unimplemented("\(Self.self).insert", placeholder: [:]),
+    rpc: XCTestDynamicOverlay.unimplemented("\(Self.self).rpc"),
     update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: [:])
   )
 }
@@ -305,10 +482,6 @@ extension SupabaseClientDependency: TestDependencyKey {
   /// The unimplemented supabase client dependency for usage in tests.
   public static var testValue: Self {
     Self.init(
-//      client: unimplemented(
-//        "\(Self.self).client",
-//        placeholder: SupabaseClient(supabaseURL: URL(string: "/")!, supabaseKey: "")
-//      ),
       auth: .unimplemented,
       database: .unimplemented
     )

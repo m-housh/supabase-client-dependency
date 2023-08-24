@@ -19,22 +19,6 @@ extension SupabaseClientDependency.DatabaseClient {
     /// Create a new filter.
     ///
     /// - Parameters:
-    ///   - column: The column name to filter the results by.
-    ///   - operator: The operator to use to compare the column value to.
-    ///   - value: The value to use for the column filter.
-    public init(
-      column: String,
-      operator postgrestOperator: PostgrestFilterBuilder.Operator,
-      value: URLQueryRepresentable
-    ) {
-      self.column = column
-      self.operator = postgrestOperator
-      self.value = value
-    }
-
-    /// Create a new filter.
-    ///
-    /// - Parameters:
     ///   - column: The column to filter the results by.
     ///   - operator: The operator to use to compare the column value to.
     ///   - value: The value to use for the column filter.
