@@ -51,7 +51,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ) async throws {
     try await delete(from: table, where: filters)
   }
-  
+
   /// A helper for deleting a database item by it's id.
   ///
   /// ### Example
@@ -82,7 +82,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// let todos = try await databaseClient.fetch(
   ///   from: Table.todos,
   ///   where: [.equals("complete", "false")],
-  ///   orderBy: .init(column: "description"),
+  ///   orderBy: .init(column: "description").ascending(),
   ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
@@ -111,8 +111,8 @@ extension SupabaseClientDependency.DatabaseClient {
   /// ```swift
   /// let todos = try await databaseClient.fetch(
   ///   from: Table.todos,
-  ///   filteredBy: .equals("complete", "false"),
-  ///   orderBy: .init(column: "description"),
+  ///   filteredBy: TodoColumn.complete.equals(false),
+  ///   orderBy: TodoColumn.description.ascending(),
   ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
@@ -140,7 +140,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// ```swift
   /// let todo = try await databaseClient.fetch(
   ///   from: Table.todos,
-  ///   where: [.equals("id", UUID(0))],
+  ///   where: [TodoColumn.id.equals(UUID(0))],
   ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
@@ -170,7 +170,7 @@ extension SupabaseClientDependency.DatabaseClient {
   /// ```swift
   /// let todo = try await databaseClient.fetch(
   ///   from: Table.todos,
-  ///   filteredBy: .equals("id", UUID(0)),
+  ///   filteredBy: TodoColumn.id.equals(UUID(0)),
   ///   as: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
   /// ```
@@ -242,14 +242,14 @@ extension SupabaseClientDependency.DatabaseClient {
   public func insert<V: Encodable, R: Decodable, Table: TableRepresentable>(
     _ values: V,
     into table: Table,
-    returning returningOptions: PostgrestReturningOptions? = .representation,
+    returning returningOptions: PostgrestReturningOptions = .representation,
     as type: R.Type = R.self
   ) async throws -> R {
     try await self.insert(
       .init(
         table: table,
-        returningOptions: returningOptions,
-        values: values
+        values: values,
+        returningOptions: returningOptions
       )
     )
     .decoding(as: R.self)

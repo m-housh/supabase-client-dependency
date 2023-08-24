@@ -54,7 +54,9 @@ extension SupabaseClientDependency.DatabaseClient {
 
 extension ColumnRepresentable {
 
-  public func equals(_ value: URLQueryRepresentable) -> SupabaseClientDependency.DatabaseClient.Filter {
+  public func equals(_ value: URLQueryRepresentable)
+    -> SupabaseClientDependency.DatabaseClient.Filter
+  {
     .equals(column: self.columnName, value: value)
   }
 }

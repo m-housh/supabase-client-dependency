@@ -5,9 +5,9 @@ import XCTest
 final class MockAuthTests: XCTestCase {
   
   func makeAuthMock(
-    allowedCredentials: SupabaseClientDependency.Auth.AllowedCredentials = .any,
+    allowedCredentials: SupabaseClientDependency.AuthClient.AllowedCredentials = .any,
     session: Session? = .mock
-  ) -> SupabaseClientDependency.Auth {
+  ) -> SupabaseClientDependency.AuthClient {
     withDependencies {
       $0.uuid = .incrementing
       $0.date.now = .init(timeIntervalSince1970: 123456789)

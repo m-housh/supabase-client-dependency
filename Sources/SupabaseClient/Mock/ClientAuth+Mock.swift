@@ -4,7 +4,7 @@ import GoTrue
 import IdentifiedStorage
 import Supabase
 
-extension SupabaseClientDependency.Auth {
+extension SupabaseClientDependency.AuthClient {
 
   /// Create a mock authentication client for the supabase client dependency.
   ///
@@ -22,7 +22,8 @@ extension SupabaseClientDependency.Auth {
     allowedCredentials: AllowedCredentials = .any,
     oAuthURL: URL = URL(string: "/")!,
     session: Session? = .mock,
-    verifyOTP: @escaping (SupabaseClientDependency.Auth.VerifyOTPRequest) async throws -> User = { _ in .mock }
+    verifyOTP: @escaping (SupabaseClientDependency.AuthClient.VerifyOTPRequest) async throws ->
+      User = { _ in .mock }
   ) -> Self {
     @Dependency(\.date.now) var now
     @Dependency(\.uuid) var uuid
@@ -79,7 +80,7 @@ extension SupabaseClientDependency.Auth {
         }
         switch request {
 
-        case .oAuth(_, storeSession: let storeSession):
+        case .oAuth(_, let storeSession):
           guard storeSession else {
             throw AuthenticationError()
           }
@@ -96,13 +97,13 @@ extension SupabaseClientDependency.Auth {
           authEventStreamContinuation.yield(.tokenRefreshed)
           return session
 
-        case .set(accessToken: let accessToken, refreshToken: let refreshToken):
+        case .set(let accessToken, let refreshToken):
           let session = Session(
             accessToken: accessToken,
             tokenType: "mock-auth",
-            expiresIn: 123456789,
+            expiresIn: 123_456_789,
             refreshToken: refreshToken,
-            user: .mock // ?? what to do here.
+            user: .mock  // ?? what to do here.
           )
           await sessionStorage.set(elements: .init(uniqueElements: [session], id: \.user.id))
           authEventStreamContinuation.yield(.signedIn)
@@ -162,8 +163,8 @@ extension SupabaseClientDependency.Auth {
     }
 
     enum Request {
-      case login(SupabaseClientDependency.Auth.LoginRequest?)
-      case signUp(SupabaseClientDependency.Auth.SignUpRequest)
+      case login(SupabaseClientDependency.AuthClient.LoginRequest?)
+      case signUp(SupabaseClientDependency.AuthClient.SignUpRequest)
     }
   }
 }
@@ -171,7 +172,7 @@ extension SupabaseClientDependency.Auth {
 private enum AuthHelpers {
   fileprivate static func createUser(
     in storage: IdentifiedStorageOf<User>,
-    using request: SupabaseClientDependency.Auth.SignUpRequest,
+    using request: SupabaseClientDependency.AuthClient.SignUpRequest,
     date now: Date,
     uuid: UUIDGenerator
   ) async -> User {
@@ -200,7 +201,7 @@ private enum AuthHelpers {
   @discardableResult
   fileprivate static func login(
     authEventStreamContinuation: AsyncStream<AuthChangeEvent>.Continuation,
-    request: SupabaseClientDependency.Auth.LoginRequest?,
+    request: SupabaseClientDependency.AuthClient.LoginRequest?,
     sessionStorage: IdentifiedStorage<User.ID, Session>,
     userStorage: IdentifiedStorageOf<User>
   ) async throws -> Session {
@@ -238,14 +239,16 @@ private enum AuthHelpers {
   }
 }
 
-fileprivate extension IdentifiedStorage {
-  var first: Element? {
+extension IdentifiedStorage {
+  fileprivate var first: Element? {
     get async { await withValues { $0.first } }
   }
 }
 
-fileprivate extension IdentifiedStorage where Element == User {
-  func first(matching request: SupabaseClientDependency.Auth.LoginRequest) async -> User? {
+extension IdentifiedStorage where Element == User {
+  fileprivate func first(matching request: SupabaseClientDependency.AuthClient.LoginRequest) async
+    -> User?
+  {
     switch request {
     case let .email(email, password: _):
       return await withValues {
@@ -271,9 +274,9 @@ fileprivate extension IdentifiedStorage where Element == User {
   }
 }
 
-fileprivate extension SupabaseClientDependency.Auth.SignUpRequest {
+extension SupabaseClientDependency.AuthClient.SignUpRequest {
 
-  var loginRequest: SupabaseClientDependency.Auth.LoginRequest {
+  fileprivate var loginRequest: SupabaseClientDependency.AuthClient.LoginRequest {
     switch self {
     case let .email(email, password: password, options: _):
       return .email(email, password: password)
@@ -282,7 +285,7 @@ fileprivate extension SupabaseClientDependency.Auth.SignUpRequest {
     }
   }
 
-  func mockUser(date: Date, uuid: UUIDGenerator) -> User {
+  fileprivate func mockUser(date: Date, uuid: UUIDGenerator) -> User {
     switch self {
     case let .email(email, password: _, options: _):
       return .init(

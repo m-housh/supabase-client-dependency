@@ -13,7 +13,7 @@ let package = Package(
   ],
   products: [
     .library(name: "SupabaseClient", targets: ["SupabaseClient"]),
-    .library(name: "SupabaseClientLive", targets: ["SupabaseClientLive"])
+    .library(name: "SupabaseClientLive", targets: ["SupabaseClientLive"]),
   ],
   dependencies: [
     .package(

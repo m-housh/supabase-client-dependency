@@ -22,10 +22,11 @@ In general you use this package / dependency to build your database clients for 
 ### Structures
 
 - ``SupabaseClientDependency``
-- ``SupabaseClientDependency/Auth``
+- ``SupabaseClientDependency/AuthClient``
+- ``SupabaseClientDependency/DatabaseClient``
 - ``SupabaseClientDependency/Configuration``
-- ``SupabaseClientDependency/Filter``
-- ``SupabaseClientDependency/Order``
+- ``SupabaseClientDependency/DatabaseClient/Filter``
+- ``SupabaseClientDependency/DatabaseClient/Order``
 - ``Credentials``
 
 ### Protocols

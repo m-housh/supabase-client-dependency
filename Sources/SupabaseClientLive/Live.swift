@@ -25,7 +25,7 @@ extension SupabaseClientDependency {
 
 }
 
-extension SupabaseClientDependency.Auth {
+extension SupabaseClientDependency.AuthClient {
   static func live(client: GoTrueClient) -> Self {
     Self.init(
       events: {
@@ -47,20 +47,20 @@ extension SupabaseClientDependency.Auth {
         }
 
         switch loginRequest {
-          
+
         case let .email(email, password: password):
           return try await client.signIn(email: email, password: password)
-        
+
         case let .phone(phone, password: password):
           return try await client.signIn(phone: phone, password: password)
-          
+
         // SPI guarded.
-//        case let .idToken(token):
-//          fatalError()
-          
+        //        case let .idToken(token):
+        //          fatalError()
+
         case let .otp(otpRequest, shouldCreateUser: shouldCreateUser, options: options):
           switch otpRequest {
-           
+
           case let .email(email):
             try await client.signInWithOTP(
               email: email,
@@ -80,7 +80,7 @@ extension SupabaseClientDependency.Auth {
             return nil
           }
         }
-        
+
       },
       logout: { try await client.signOut() },
       resetPassword: { request in
@@ -117,7 +117,7 @@ extension SupabaseClientDependency.Auth {
       },
       signUp: { signUpRequest in
         switch signUpRequest {
-          
+
         case let .email(email, password: password, options: options):
           return try await client.signUp(
             email: email,
@@ -127,7 +127,7 @@ extension SupabaseClientDependency.Auth {
             captchaToken: options.captchaToken
           )
           .user
-          
+
         case let .phone(phone, password: password, options: options):
           return try await client.signUp(
             phone: phone,
@@ -136,7 +136,7 @@ extension SupabaseClientDependency.Auth {
             captchaToken: options.captchaToken
           )
           .user
-          
+
         }
       },
       update: { userAttributes in
@@ -153,7 +153,7 @@ extension SupabaseClientDependency.Auth {
             captchaToken: options.captchaToken
           )
           .user
-          
+
         case let .phone(phone, options: options):
           return try await client.verifyOTP(
             phone: phone,
@@ -213,13 +213,13 @@ extension SupabaseClientDependency.DatabaseClient {
           .execute()
           .value
       }
-      
+
     )
   }
 }
 
-fileprivate extension AuthResponse {
-  var user: User {
+extension AuthResponse {
+  fileprivate var user: User {
     switch self {
     case let .session(session):
       return session.user

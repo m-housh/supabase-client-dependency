@@ -125,7 +125,9 @@ extension PostgrestFilterBuilder {
   ///
   ///  - Parameters:
   ///   - order: The optional order by clause to apply to the query if applicable.
-  public func order(by order: SupabaseClientDependency.DatabaseClient.Order?) -> PostgrestTransformBuilder {
+  public func order(by order: SupabaseClientDependency.DatabaseClient.Order?)
+    -> PostgrestTransformBuilder
+  {
     if let order {
       return self.order(
         column: order.column,

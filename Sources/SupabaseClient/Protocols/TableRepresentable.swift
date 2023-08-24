@@ -15,6 +15,6 @@ extension RawRepresentable where RawValue == String, Self: TableRepresentable {
 }
 
 extension String: TableRepresentable {
-  
+
   public var tableName: String { self }
 }
