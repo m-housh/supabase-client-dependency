@@ -8,8 +8,14 @@ on:
 jobs:
   example:
     runs-on: macos-13
+    strategy:
+      matrix:
+        xcode: ['15.0']
+        config: ['debug']
     steps:
       - uses: actions/checkout@v3
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
       - uses: swift-actions/setup-swift@v1
         with:
           swift-version: "5.8"
