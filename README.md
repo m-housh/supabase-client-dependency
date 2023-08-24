@@ -39,9 +39,9 @@ let package = Package(
 
 ## Basic Usage
 
-This package does not have an official `liveValue` declared on the dependency because it is intended 
-that the live value is setup in the project that depends on it. It does conform to the 
-`TestDependencyKey` and has an `unimplemented` version used in tests. It also has a `mock` factory 
+This package does not have an official `liveValue` declared on the dependency because it is intended
+that the live value is setup in the project that depends on it. It does conform to the
+`TestDependencyKey` and has an `unimplemented` version used in tests. It also has a `mock` factory
 method for the `auth` portion of the client dependency, which is helpful for use in previews and test's.
 
 ### Define the configuration for the supabase client.
@@ -103,7 +103,7 @@ struct TodoModel: Codable, Equatable, Identifiable, Sendable {
   var createdAt: Date
   var description: String
   var isComplete: Bool = false
-  
+
   init(
     id: UUID,
     createdAt: Date? = nil,
@@ -116,7 +116,7 @@ struct TodoModel: Codable, Equatable, Identifiable, Sendable {
     self.description = description
     self.isComplete = isComplete
   }
-  
+
   private enum CodingKeys: String, CodingKey {
     case id
     case createdAt = "created_at"
@@ -135,7 +135,7 @@ import Dependencies
 import SupabaseClient
 
 extension DependencyValues {
-  
+
   // Access the database client as a dependency.
   var database: DatabaseClient {
     get { self[DatabaseClient.self] }
@@ -146,35 +146,35 @@ extension DependencyValues {
 
 // The database client interface.
 struct DatabaseClient {
-  
+
   var todos: Todos
-  
+
   // Represents interactions with the todos table in the database.
   struct Todos {
 
     // Delete a todo by it's id.
     var delete: (TodoModel.ID) async throws -> Void
-    
+
     // Fetch all the todo's for the authenticated user.
     var fetch: () async throws -> IdentifiedArrayOf<TodoModel>
-    
+
     // Insert a new todo in the database.
     var insert: (InsertRequest) async throws -> TodoModel
 
     // Update an existing todo in the database.
     var update: (TodoModel.ID, UpdateRequest) async throws -> TodoModel
-   
+
     // Represents the columns / fields needed to insert a new todo in the database.
     struct InsertRequest: Encodable {
       var description: String
       var complete: Bool
     }
-    
+
     // Represents the columns / fields to be updated for an existing todo.
     struct UpdateRequest: Encodable {
       var description: String?
       var complete: Bool?
-      
+
       var hasChanges: Bool {
         description != nil || complete != nil
       }
@@ -186,7 +186,7 @@ struct DatabaseClient {
 ### The live implementation of the database client.
 ```swift
 extension DatabaseClient: DependencyKey {
-  
+
   static var liveValue: Self {
     // Use the supabase client dependency and it's helper methods for interacting
     // with the supabase postgresql database.
@@ -196,10 +196,10 @@ extension DatabaseClient: DependencyKey {
       todos: DatabaseClient.Todos(
         delete: { try await client.delete(id: $0, from: Table.todos) },
         fetch: {
-          
+
           // get the current authenticated user.
           let user = try await client.auth.requireCurrentUser()
-         
+
           // Return the todos.
           return try await .init(
             uniqueElements: client.fetch(
@@ -210,7 +210,7 @@ extension DatabaseClient: DependencyKey {
           )
         },
         insert: { request in
-          
+
           // A helper type that includes the authenticated user's
           // id as the owner of the todo in the database, which is
           // required by the row level security.
@@ -222,14 +222,14 @@ extension DatabaseClient: DependencyKey {
             let complete: Bool
             let description: String
             let ownerId: UUID
-            
+
             enum CodingKeys: String, CodingKey {
               case complete
               case description
               case ownerId = "owner_id"
             }
           }
-          
+
           return try await client.insert(
             InsertValues(
               complete: request.complete,
@@ -244,22 +244,22 @@ extension DatabaseClient: DependencyKey {
     )
   }
 
-  static let previewValue: Self { 
+  static let previewValue: Self {
     ...
   }
 
-  static let testValue: Self { 
+  static let testValue: Self {
     ...
   }
 }
 ```
 
-See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
+See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples)
 project for a full working example.
 
 ## Documentation
 
-The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabaseclient/)
+The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabaseclientdependency/)
 
 ## License
 

@@ -1,7 +1,6 @@
 import Foundation
 import PostgREST
 
-// TODO: Should we use `from` on the database client for all the query operations?
 extension SupabaseClientDependency.DatabaseClient {
 
   // MARK: - Delete
@@ -283,12 +282,14 @@ extension SupabaseClientDependency.DatabaseClient {
     returning returningOptions: PostgrestReturningOptions = .representation,
     as type: R.Type = R.self
   ) async throws -> [R] {
-    try await self.from(table) {
-      try await $0
-        .insert(values: values, returning: returningOptions)
-        .execute()
-        .value
-    }
+    try await self.insertMany(
+      .init(
+        table: table,
+        values: values,
+        returningOptions: returningOptions
+      )
+    )
+    .decoding(as: R.self)
   }
 
   // MARK: - Update

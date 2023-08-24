@@ -2,7 +2,6 @@ import Dependencies
 import Foundation
 import GoTrue
 import Supabase
-@_exported import SupabaseClient
 
 extension SupabaseClientDependency {
 
@@ -201,6 +200,12 @@ extension SupabaseClientDependency.DatabaseClient {
         try await client.from(request.table.tableName)
           .insert(values: request.values, returning: request.returningOptions)
           .single()
+          .execute()
+          .value
+      },
+      insertMany: { request in
+        try await client.from(request.table.tableName)
+          .insert(values: request.values.anyJSON(), returning: request.returningOptions)
           .execute()
           .value
       },

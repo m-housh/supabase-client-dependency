@@ -7,14 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4C059A8A2A97049D000A63A7 /* SupabaseClientLive in Frameworks */ = {isa = PBXBuildFile; productRef = 4C059A892A97049D000A63A7 /* SupabaseClientLive */; };
 		4C0799842A92FBC500699C91 /* ExamplesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799832A92FBC500699C91 /* ExamplesApp.swift */; };
 		4C0799882A92FBC900699C91 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C0799872A92FBC900699C91 /* Assets.xcassets */; };
 		4C07998C2A92FBC900699C91 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C07998B2A92FBC900699C91 /* Preview Assets.xcassets */; };
 		4C0799962A92FBC900699C91 /* ExamplesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799952A92FBC900699C91 /* ExamplesTests.swift */; };
 		4C0799A02A92FBC900699C91 /* ExamplesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C07999F2A92FBC900699C91 /* ExamplesUITests.swift */; };
 		4C0799A22A92FBC900699C91 /* ExamplesUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799A12A92FBC900699C91 /* ExamplesUITestsLaunchTests.swift */; };
-		4C0799B02A92FC1300699C91 /* SupabaseClient in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0799AF2A92FC1300699C91 /* SupabaseClient */; };
 		4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0799B22A92FC4700699C91 /* ComposableArchitecture */; };
 		4C0799BC2A92FCF000699C91 /* SupabaseClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799BB2A92FCF000699C91 /* SupabaseClient+Live.swift */; };
 		4C0799C22A9304D500699C91 /* TodoForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799C12A9304D500699C91 /* TodoForm.swift */; };
@@ -24,6 +22,7 @@
 		4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1B2A938C8E006A21FC /* TodoModel.swift */; };
 		4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1D2A93BCE7006A21FC /* AuthView.swift */; };
 		4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1F2A93BF46006A21FC /* ErrorText.swift */; };
+		4CED0D242A979B8E0083DFF8 /* SupabaseClientDependency in Frameworks */ = {isa = PBXBuildFile; productRef = 4CED0D232A979B8E0083DFF8 /* SupabaseClientDependency */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,9 +68,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C059A8A2A97049D000A63A7 /* SupabaseClientLive in Frameworks */,
+				4CED0D242A979B8E0083DFF8 /* SupabaseClientDependency in Frameworks */,
 				4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */,
-				4C0799B02A92FC1300699C91 /* SupabaseClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,9 +211,8 @@
 			);
 			name = Examples;
 			packageProductDependencies = (
-				4C0799AF2A92FC1300699C91 /* SupabaseClient */,
 				4C0799B22A92FC4700699C91 /* ComposableArchitecture */,
-				4C059A892A97049D000A63A7 /* SupabaseClientLive */,
+				4CED0D232A979B8E0083DFF8 /* SupabaseClientDependency */,
 			);
 			productName = Examples;
 			productReference = 4C0799802A92FBC500699C91 /* Examples.app */;
@@ -720,18 +717,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4C059A892A97049D000A63A7 /* SupabaseClientLive */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SupabaseClientLive;
-		};
-		4C0799AF2A92FC1300699C91 /* SupabaseClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SupabaseClient;
-		};
 		4C0799B22A92FC4700699C91 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		4CED0D232A979B8E0083DFF8 /* SupabaseClientDependency */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SupabaseClientDependency;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

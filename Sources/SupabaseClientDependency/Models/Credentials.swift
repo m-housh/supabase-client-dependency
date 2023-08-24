@@ -70,7 +70,7 @@ public struct Credentials: Codable, Equatable, Sendable {
 /// Represents errors thrown while validating a ``Credentials`` instance.
 ///
 ///
-public enum CredentialError: Error {
+public enum CredentialError: Error, Equatable {
 
   /// The credentials have an invalid email address.
   case invalidEmail

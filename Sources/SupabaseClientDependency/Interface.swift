@@ -2,6 +2,7 @@ import Dependencies
 import Foundation
 @_exported import GoTrue
 @_exported import PostgREST
+@_exported import Supabase
 import XCTestDynamicOverlay
 
 extension DependencyValues {
@@ -442,9 +443,18 @@ public struct SupabaseClientDependency {
     /// This is the root item used to perform an insert request, it is generally not used directly, unless you're
     /// overriding the insert operations on the dependency. You generally would use one of the helper methods
     /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)``.
+    /// ``insert(_:into:returning:as:)-13iui``
     ///
     public var insert: (InsertRequest) async throws -> [String: AnyJSON]
+
+    /// Perform an insert request for multiple rows on the database.
+    ///
+    /// This is the root item used to perform an insert-many request, it is generally not used directly, unless you're
+    /// overriding the insert-many operations on the dependency. You generally would use one of the helper methods
+    /// on the database client, such as
+    /// ``insert(_:into:returning:as:)-sxhx``.
+    ///
+    public var insertMany: (InsertManyRequest) async throws -> [[String: AnyJSON]]
 
     /// Build a remote function request.
     ///
@@ -472,6 +482,7 @@ public struct SupabaseClientDependency {
     ///   - fetchOne: Perform a single-row fetch request on the database.
     ///   - from: Build a database query.
     ///   - insert: Perform an insert request on the database.
+    ///   - insertMany: Perform an insert request with multiple rows on the database.
     ///   - rpc: Build a remote function request.
     ///   - update: Perform an update request on the database.
     public init(
@@ -480,6 +491,7 @@ public struct SupabaseClientDependency {
       fetchOne: @escaping (FetchOneRequest) async throws -> [String: AnyJSON],
       from: @escaping (String) -> PostgrestQueryBuilder,
       insert: @escaping (InsertRequest) async throws -> [String: AnyJSON],
+      insertMany: @escaping (InsertManyRequest) async throws -> [[String: AnyJSON]],
       rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> [String: AnyJSON]
     ) {
@@ -488,6 +500,7 @@ public struct SupabaseClientDependency {
       self.fetchOne = fetchOne
       self.from = from
       self.insert = insert
+      self.insertMany = insertMany
       self.rpc = rpc
       self.update = update
     }
@@ -627,7 +640,7 @@ public struct SupabaseClientDependency {
     /// Represents an insert request on the database.
     ///
     /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)``.
+    /// ``insert(_:into:returning:as:)-13iui``
     ///
     public struct InsertRequest {
 
@@ -652,6 +665,42 @@ public struct SupabaseClientDependency {
       public init(
         table: TableRepresentable,
         values: any Encodable,
+        returningOptions: PostgrestReturningOptions? = nil
+      ) {
+        self.table = table
+        self.returningOptions = returningOptions
+        self.values = values
+      }
+    }
+
+    /// Represents an insert many request on the database.
+    ///
+    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+    /// ``insert(_:into:returning:as:)-sxhx``.
+    ///
+    public struct InsertManyRequest {
+
+      /// The table to insert the values into.
+      public let table: TableRepresentable
+
+      /// The returning options for the request.
+      public let returningOptions: PostgrestReturningOptions?
+
+      /// The values to insert into the database.
+      public let values: [(any Encodable)]
+
+      /// Create a new insert request.
+      ///
+      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:as:)``.
+      ///
+      /// - Parameters:
+      ///   - table: The table to insert the values into.
+      ///   - values: The values to insert into the database.
+      ///   - returningOptions: The returning options for the response values.
+      public init(
+        table: TableRepresentable,
+        values: [(any Encodable)],
         returningOptions: PostgrestReturningOptions? = nil
       ) {
         self.table = table
@@ -741,44 +790,4 @@ public struct SupabaseClientDependency {
     }
   }
 
-}
-
-extension SupabaseClientDependency.AuthClient {
-  static let unimplemented = Self.init(
-    events: XCTestDynamicOverlay.unimplemented(
-      "\(Self.self).events", placeholder: AsyncStream { nil }),
-    getOAuthURL: XCTestDynamicOverlay.unimplemented(
-      "\(Self.self).getOAuthURL", placeholder: URL(string: "/")!),
-    initialize: XCTestDynamicOverlay.unimplemented("\(Self.self).initialize"),
-    login: XCTestDynamicOverlay.unimplemented("\(Self.self).login", placeholder: nil),
-    logout: XCTestDynamicOverlay.unimplemented("\(Self.self).logout"),
-    resetPassword: XCTestDynamicOverlay.unimplemented("\(Self.self).resetPassword"),
-    session: XCTestDynamicOverlay.unimplemented("\(Self.self).session", placeholder: .mock),
-    signUp: XCTestDynamicOverlay.unimplemented("\(Self.self).signUp", placeholder: .mock),
-    update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: .mock),
-    verifyOTP: XCTestDynamicOverlay.unimplemented("\(Self.self).verifyOTP", placeholder: .mock)
-  )
-}
-
-extension SupabaseClientDependency.DatabaseClient {
-  static let unimplemented = Self.init(
-    delete: XCTestDynamicOverlay.unimplemented("\(Self.self).delete"),
-    fetch: XCTestDynamicOverlay.unimplemented("\(Self.self).fetch", placeholder: []),
-    fetchOne: XCTestDynamicOverlay.unimplemented("\(Self.self).fetchOne", placeholder: [:]),
-    from: XCTestDynamicOverlay.unimplemented("\(Self.self).from"),
-    insert: XCTestDynamicOverlay.unimplemented("\(Self.self).insert", placeholder: [:]),
-    rpc: XCTestDynamicOverlay.unimplemented("\(Self.self).rpc"),
-    update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: [:])
-  )
-}
-
-extension SupabaseClientDependency: TestDependencyKey {
-
-  /// The unimplemented supabase client dependency for usage in tests.
-  public static var testValue: Self {
-    Self.init(
-      auth: .unimplemented,
-      database: .unimplemented
-    )
-  }
 }

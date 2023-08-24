@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import SupabaseClient
+import SupabaseClientDependency
 import Supabase
 import SwiftUI
 

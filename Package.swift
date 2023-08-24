@@ -12,8 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClient", targets: ["SupabaseClient"]),
-    .library(name: "SupabaseClientLive", targets: ["SupabaseClientLive"]),
+    .library(name: "SupabaseClientDependency", targets: ["SupabaseClientDependency"]),
   ],
   dependencies: [
     .package(
@@ -23,14 +22,6 @@ let package = Package(
     .package(
       url: "https://github.com/supabase-community/supabase-swift.git",
       from: "0.3.0"
-    ),
-    .package(
-      url: "https://github.com/supabase-community/gotrue-swift.git",
-      from: "1.0.0"
-    ),
-    .package(
-      url: "https://github.com/supabase-community/postgrest-swift.git",
-      from: "1.0.0"
     ),
     .package(
       url: "https://github.com/m-housh/swift-identified-storage.git",
@@ -43,24 +34,16 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SupabaseClient",
+      name: "SupabaseClientDependency",
       dependencies: [
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
-        .product(name: "GoTrue", package: "gotrue-swift"),
-        .product(name: "PostgREST", package: "postgrest-swift"),
-      ]
-    ),
-    .target(
-      name: "SupabaseClientLive",
-      dependencies: [
-        "SupabaseClient",
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),
     .testTarget(
       name: "SupabaseClientTests",
-      dependencies: ["SupabaseClient", "SupabaseClientLive"]
+      dependencies: ["SupabaseClientDependency"]
     ),
   ]
 )
