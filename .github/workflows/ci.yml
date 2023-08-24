@@ -26,7 +26,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
       - uses: swift-actions/setup-swift@v1
         with:
-          swift-version: "5.9"
+          swift-version: "5.8"
       - name: Swift Version
         run: swift --version
       - name: Download supabase
