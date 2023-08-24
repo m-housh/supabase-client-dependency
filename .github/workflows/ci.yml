@@ -29,8 +29,7 @@ jobs:
           swift-version: "5.8"
       - name: Swift Version
         run: swift --version
-      - name: Download supabase
-        run: brew install supabase
+      - uses: supabase/setup-cli@v1
       - name: Start supabase
         run: supabase start
       - name: Run ${{ matrix.xcode }} Tests
