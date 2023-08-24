@@ -39,7 +39,7 @@ method for the `auth` portion of the client dependency, which is helpful for use
 
 ```swift
 import Dependencies
-import SupabaseClientDependency
+import SupabaseClientDependencies
 
 extension SupabaseClientDependency.Configuration {
   public static let live = Self.init(url: supabaseURL, anonKey: localAnonKey)
@@ -123,7 +123,7 @@ The database client that is used for interactions with the supabase instance for
 
 ```swift
 import Dependencies
-import SupabaseClientDependency
+import SupabaseClientDependencies
 
 extension DependencyValues {
   
