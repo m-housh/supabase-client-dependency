@@ -16,4 +16,7 @@
    <FileRef
       location = "group:Tests/TestPlans/SupabaseClient.xctestplan">
    </FileRef>
+   <FileRef
+      location = "group:Tests/TestPlans/SupabaseClientDependencies.xctestplan">
+   </FileRef>
 </Workspace>

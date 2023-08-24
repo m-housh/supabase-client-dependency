@@ -1,21 +1,20 @@
 {
   "configurations" : [
     {
-      "id" : "DF67C163-DFB8-4B7B-8773-E61BF3BBE8C9",
+      "id" : "FE393694-561B-4E2A-982E-700F64EE1376",
       "name" : "Test Scheme Action",
       "options" : {
-        "environmentVariableEntries" : [
-          {
-            "key" : "INTEGRATION_TESTS",
-            "value" : "1"
-          }
-        ]
+
       }
     }
   ],
   "defaultOptions" : {
+    "codeCoverage" : false,
     "environmentVariableEntries" : [
-
+      {
+        "key" : "INTEGRATION_TESTS",
+        "value" : "1"
+      }
     ]
   },
   "testTargets" : [

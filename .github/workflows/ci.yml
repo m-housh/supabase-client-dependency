@@ -10,6 +10,9 @@ jobs:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v3
+      - uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: "5.8"
       - name: Build example
         run: make build-example
 
@@ -29,8 +32,5 @@ jobs:
           swift-version: "5.8"
       - name: Swift Version
         run: swift --version
-      - uses: supabase/setup-cli@v1
-      - name: Start supabase
-        run: supabase start
       - name: Run ${{ matrix.xcode }} Tests
         run: make CONFIG=${{ matrix.config }} test-library
