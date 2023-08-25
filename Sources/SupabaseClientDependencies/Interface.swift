@@ -402,6 +402,13 @@ public struct SupabaseClientDependency {
   ///
   public struct DatabaseClient {
 
+    /// A decoder used for decoding data.
+    ///
+    /// In general care should be used if overriding this in a live implementation because the default
+    /// decoder supplied with the library has to do some custom date decoding logic for the supabase
+    /// integration.  For the test implementation the standard decoder is used.
+    public var decoder: JSONDecoder
+
     /// Perform a delete request on the database.
     ///
     /// This is the root item used to perform a delete request, it is generally not used directly, unless you're
@@ -410,6 +417,14 @@ public struct SupabaseClientDependency {
     /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
     ///
     public var delete: (DeleteRequest) async throws -> Void
+
+    /// An encoder used for encoding data.
+    ///
+    /// In general care should be used if overriding this in a live implementation because the default
+    /// encoder supplied with the library has to do some custom date decoding logic for the supabase
+    /// integration.  For the test implementation the standard encoder is used.
+    public var encoder: JSONEncoder
+
 
     /// Perform a multi-row fetch request on the database.
     ///
@@ -477,7 +492,9 @@ public struct SupabaseClientDependency {
     /// Create a new database client.
     ///
     /// - Parameters:
+    ///   - decoder: A decoder used for decoding data.
     ///   - delete: Perform a delete request on the database.
+    ///   - encoder: An encode used for encoding data.
     ///   - fetch: Perform a multi-row fetch request on the database.
     ///   - fetchOne: Perform a single-row fetch request on the database.
     ///   - from: Build a database query.
@@ -486,7 +503,9 @@ public struct SupabaseClientDependency {
     ///   - rpc: Build a remote function request.
     ///   - update: Perform an update request on the database.
     public init(
+      decoder: JSONDecoder,
       delete: @escaping (DeleteRequest) async throws -> Void,
+      encoder: JSONEncoder,
       fetch: @escaping (FetchRequest) async throws -> Data,
       fetchOne: @escaping (FetchOneRequest) async throws -> Data,
       from: @escaping (String) -> PostgrestQueryBuilder,
@@ -495,7 +514,9 @@ public struct SupabaseClientDependency {
       rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> Data
     ) {
+      self.decoder = decoder
       self.delete = delete
+      self.encoder = encoder
       self.fetch = fetch
       self.fetchOne = fetchOne
       self.from = from

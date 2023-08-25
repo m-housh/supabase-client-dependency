@@ -92,4 +92,40 @@ final class SupabaseClientTests: XCTestCase {
       XCTFail("Invalid error recieved: \(error)")
     }
   }
+
+  func testCustomCredentialValidation() throws {
+    enum CustomError: Error, Equatable {
+      case invalidEmail
+      case invalidPassword
+
+      var localizedDescription: String {
+        switch self {
+        case .invalidEmail:
+          return "Invalid email"
+        case .invalidPassword:
+          return "Invalid password"
+        }
+      }
+    }
+
+    let credentials = Credentials(email: "blob@example.com", password: "super-secret-password")
+
+    do {
+      _ = try Credentials.validate(credentials, validateEmail: { _ in throw CustomError.invalidEmail } )
+      XCTFail("Should have failed email validation.")
+    } catch _ as CredentialError {
+      XCTAssert(true)
+    } catch {
+      XCTFail()
+    }
+
+    do {
+      _ = try Credentials.validate(credentials, validatePassword: { _ in throw CustomError.invalidPassword } )
+      XCTFail("Should have failed password validation.")
+    } catch _ as CredentialError {
+      XCTAssert(true)
+    } catch {
+      XCTFail()
+    }
+  }
 }

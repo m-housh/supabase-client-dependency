@@ -56,6 +56,13 @@ test-swift:
 
 test-library: test-macos test-ios test-mac-catalyst test-tvos test-watchos
 
+test-integration:
+	set -o pipefail && \
+	xcodebuild test \
+		-scheme SupabaseClientDependencies \
+		-configuration "$(CONFIG)" \
+		-destination="$(PLATFORM_MACOS)"
+
 code-cov-report:
 		@xcrun llvm-cov report \
 			$(COV_BIN) \

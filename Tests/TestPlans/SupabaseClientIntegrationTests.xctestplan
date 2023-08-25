@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "FE393694-561B-4E2A-982E-700F64EE1376",
+      "id" : "53C37382-ACAB-4AF2-9E1B-25083820B724",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -14,17 +14,9 @@
         "key" : "INTEGRATION_TESTS",
         "value" : "1"
       }
-    ],
-    "nsZombieEnabled" : true
+    ]
   },
   "testTargets" : [
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "SupabaseClientTests",
-        "name" : "SupabaseClientTests"
-      }
-    },
     {
       "target" : {
         "containerPath" : "container:",

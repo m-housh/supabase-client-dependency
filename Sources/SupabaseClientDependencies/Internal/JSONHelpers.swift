@@ -15,7 +15,7 @@ private let dateFormatter = { () -> ISO8601DateFormatter in
 }()
 
 extension JSONDecoder {
-  static let databaseClient = { () -> JSONDecoder in
+  static let databaseClientDecoder = { () -> JSONDecoder in
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .custom { decoder in
       let container = try decoder.singleValueContainer()
@@ -38,7 +38,7 @@ extension JSONDecoder {
 }
 
 extension JSONEncoder {
-  static let databaseClient = { () -> JSONEncoder in
+  static let databaseClientEncoder = { () -> JSONEncoder in
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .custom { date, encoder in
       var container = encoder.singleValueContainer()
@@ -50,17 +50,17 @@ extension JSONEncoder {
 }
 
 extension Data {
-  func decoding<T: Decodable>(as type: T.Type) throws -> T {
-    try JSONDecoder.databaseClient.decode(T.self, from: self)
+  func decoding<T: Decodable>(as type: T.Type, with decoder: JSONDecoder) throws -> T {
+    try decoder.decode(T.self, from: self)
   }
 }
 
 extension Array where Element == (any Encodable) {
 
-  func anyJSON() throws -> [[String: AnyJSON]] {
-    let encoded = try self.map { try JSONEncoder.databaseClient.encode($0) }
+  func anyJSON(encoder: JSONEncoder) throws -> [[String: AnyJSON]] {
+    let encoded = try self.map { try encoder.encode($0) }
     return try encoded.map {
-      try JSONDecoder.databaseClient.decode([String: AnyJSON].self, from: $0)
+      try JSONDecoder.databaseClientDecoder.decode([String: AnyJSON].self, from: $0)
     }
   }
 }

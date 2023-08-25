@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:Sources/SupabaseClientDependencies/Documentation.docc/Articles/AdvancedDatabaseOperations.md">
+   </FileRef>
+   <FileRef
       location = "group:Sources/SupabaseClientDependencies/Documentation.docc/Articles/DatabaseOperations.md">
    </FileRef>
    <FileRef
@@ -18,5 +21,8 @@
    </FileRef>
    <FileRef
       location = "group:Tests/TestPlans/SupabaseClientDependencies.xctestplan">
+   </FileRef>
+   <FileRef
+      location = "group:Tests/TestPlans/SupabaseClientIntegrationTests.xctestplan">
    </FileRef>
 </Workspace>

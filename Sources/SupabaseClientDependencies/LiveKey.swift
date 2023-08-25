@@ -181,6 +181,7 @@ extension SupabaseClientDependency.DatabaseClient {
   ///
   public static func live(client: PostgrestClient) -> Self {
     .init(
+      decoder: .databaseClientDecoder,
       delete: { request in
         try await client.from(request.table.tableName)
           .delete(returning: .minimal)
@@ -188,6 +189,7 @@ extension SupabaseClientDependency.DatabaseClient {
           .execute()
           .value
       },
+      encoder: .databaseClientEncoder,
       fetch: { request in
         try await client.from(request.table.tableName)
           .select()
@@ -216,7 +218,10 @@ extension SupabaseClientDependency.DatabaseClient {
       },
       insertMany: { request in
         try await client.from(request.table.tableName)
-          .insert(values: request.values.anyJSON(), returning: request.returningOptions)
+          .insert(
+            values: request.values.anyJSON(encoder: .databaseClientEncoder),
+            returning: request.returningOptions
+          )
           .execute()
           .value
       },

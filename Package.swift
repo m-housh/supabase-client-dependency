@@ -45,5 +45,9 @@ let package = Package(
       name: "SupabaseClientTests",
       dependencies: ["SupabaseClientDependencies"]
     ),
+    .testTarget(
+      name: "SupabaseClientIntegrationTests",
+      dependencies: ["SupabaseClientDependencies"]
+    ),
   ]
 )

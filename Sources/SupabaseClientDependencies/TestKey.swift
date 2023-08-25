@@ -21,7 +21,9 @@ extension SupabaseClientDependency.AuthClient {
 
 extension SupabaseClientDependency.DatabaseClient {
   static let unimplemented = Self.init(
+    decoder: JSONDecoder(),
     delete: XCTestDynamicOverlay.unimplemented("\(Self.self).delete"),
+    encoder: JSONEncoder(),
     fetch: XCTestDynamicOverlay.unimplemented("\(Self.self).fetch", placeholder: Data()),
     fetchOne: XCTestDynamicOverlay.unimplemented("\(Self.self).fetchOne", placeholder: Data()),
     from: XCTestDynamicOverlay.unimplemented("\(Self.self).from"),
