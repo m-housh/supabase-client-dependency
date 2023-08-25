@@ -35,6 +35,7 @@ public struct Credentials: Codable, Equatable, Sendable {
 
   /// Validates a credentials object.
   ///
+  /// ### Default Logic
   /// The email, must be one or more characters followed by an '@' symbol, then one or more characters
   /// followed by a '.' and finishing with one or more characters.
   ///

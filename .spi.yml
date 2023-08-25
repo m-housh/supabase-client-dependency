@@ -1,0 +1,4 @@
+version: 1
+build:
+  configs:
+    documentation_targets: [SupabaseClientDependencies]
