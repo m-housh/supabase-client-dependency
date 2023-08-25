@@ -92,7 +92,7 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     let updatedTodo: Todo = try await database.update(
       id: drinkCoffeeTodo.id,
       in: Table.todos,
-      with: ["complete": true]
+      with: TodoUpdateRequest(isComplete: true)
     )
     XCTAssertEqual(updatedTodo.isComplete, true)
 
