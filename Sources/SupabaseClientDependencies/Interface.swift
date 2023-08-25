@@ -401,10 +401,13 @@ public struct SupabaseClientDependency {
   /// `CRUD` operations.  See <doc:DatabaseOperations> for common database operation usage.
   ///
   public struct DatabaseClient {
-    
+
+    /// A decoder used for decoding data.
+    ///
+    /// In general care should be used if overriding this in a live implementation because the default
+    /// decoder supplied with the library has to do some custom date decoding logic for the supabase
+    /// integration.  For the test implementation the standard decoder is used.
     public var decoder: JSONDecoder
-    
-    public var encoder: JSONEncoder
 
     /// Perform a delete request on the database.
     ///
@@ -414,6 +417,14 @@ public struct SupabaseClientDependency {
     /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
     ///
     public var delete: (DeleteRequest) async throws -> Void
+
+    /// An encoder used for encoding data.
+    ///
+    /// In general care should be used if overriding this in a live implementation because the default
+    /// encoder supplied with the library has to do some custom date decoding logic for the supabase
+    /// integration.  For the test implementation the standard encoder is used.
+    public var encoder: JSONEncoder
+
 
     /// Perform a multi-row fetch request on the database.
     ///
@@ -481,7 +492,9 @@ public struct SupabaseClientDependency {
     /// Create a new database client.
     ///
     /// - Parameters:
+    ///   - decoder: A decoder used for decoding data.
     ///   - delete: Perform a delete request on the database.
+    ///   - encoder: An encode used for encoding data.
     ///   - fetch: Perform a multi-row fetch request on the database.
     ///   - fetchOne: Perform a single-row fetch request on the database.
     ///   - from: Build a database query.

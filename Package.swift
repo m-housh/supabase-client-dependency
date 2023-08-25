@@ -48,6 +48,6 @@ let package = Package(
     .testTarget(
       name: "SupabaseClientIntegrationTests",
       dependencies: ["SupabaseClientDependencies"]
-    )
+    ),
   ]
 )
