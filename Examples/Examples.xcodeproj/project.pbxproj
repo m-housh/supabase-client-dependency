@@ -13,7 +13,6 @@
 		4C0799962A92FBC900699C91 /* ExamplesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799952A92FBC900699C91 /* ExamplesTests.swift */; };
 		4C0799A02A92FBC900699C91 /* ExamplesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C07999F2A92FBC900699C91 /* ExamplesUITests.swift */; };
 		4C0799A22A92FBC900699C91 /* ExamplesUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799A12A92FBC900699C91 /* ExamplesUITestsLaunchTests.swift */; };
-		4C0799B02A92FC1300699C91 /* SupabaseClient in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0799AF2A92FC1300699C91 /* SupabaseClient */; };
 		4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0799B22A92FC4700699C91 /* ComposableArchitecture */; };
 		4C0799BC2A92FCF000699C91 /* SupabaseClient+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799BB2A92FCF000699C91 /* SupabaseClient+Live.swift */; };
 		4C0799C22A9304D500699C91 /* TodoForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0799C12A9304D500699C91 /* TodoForm.swift */; };
@@ -23,6 +22,7 @@
 		4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1B2A938C8E006A21FC /* TodoModel.swift */; };
 		4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1D2A93BCE7006A21FC /* AuthView.swift */; };
 		4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1F2A93BF46006A21FC /* ErrorText.swift */; };
+		4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,8 +68,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */,
 				4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */,
-				4C0799B02A92FC1300699C91 /* SupabaseClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +90,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4C059A882A97049D000A63A7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		4C0799772A92FBC500699C91 = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +104,7 @@
 				4C0799942A92FBC900699C91 /* ExamplesTests */,
 				4C07999E2A92FBC900699C91 /* ExamplesUITests */,
 				4C0799812A92FBC500699C91 /* Products */,
+				4C059A882A97049D000A63A7 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -203,8 +211,8 @@
 			);
 			name = Examples;
 			packageProductDependencies = (
-				4C0799AF2A92FC1300699C91 /* SupabaseClient */,
 				4C0799B22A92FC4700699C91 /* ComposableArchitecture */,
+				4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */,
 			);
 			productName = Examples;
 			productReference = 4C0799802A92FBC500699C91 /* Examples.app */;
@@ -506,10 +514,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hhe.Examples;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -544,10 +552,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hhe.Examples;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -709,14 +717,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4C0799AF2A92FC1300699C91 /* SupabaseClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SupabaseClient;
-		};
 		4C0799B22A92FC4700699C91 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SupabaseClientDependencies;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

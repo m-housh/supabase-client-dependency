@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SupabaseClient"
-               BuildableName = "SupabaseClient"
-               BlueprintName = "SupabaseClient"
+               BlueprintIdentifier = "SupabaseClientDependencies"
+               BuildableName = "SupabaseClientDependencies"
+               BlueprintName = "SupabaseClientDependencies"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,7 +29,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:Tests/TestPlans/SupabaseClient.xctestplan"
+            reference = "container:Tests/TestPlans/SupabaseClientDependencies.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -54,9 +54,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "SupabaseClient"
-            BuildableName = "SupabaseClient"
-            BlueprintName = "SupabaseClient"
+            BlueprintIdentifier = "SupabaseClientDependencies"
+            BuildableName = "SupabaseClientDependencies"
+            BlueprintName = "SupabaseClientDependencies"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

@@ -13,3 +13,7 @@ public protocol ColumnRepresentable {
 extension RawRepresentable where RawValue == String, Self: ColumnRepresentable {
   public var columnName: String { rawValue }
 }
+
+extension String: ColumnRepresentable {
+  public var columnName: String { self }
+}

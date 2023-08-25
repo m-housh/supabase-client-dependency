@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import SupabaseClient
+import SupabaseClientDependencies
 import SwiftUI
 
 struct AuthFeature: Reducer {
@@ -93,14 +93,21 @@ struct AuthFeature: Reducer {
         guard state.credentials.isValid else { return .none }
         state.error = nil
         return .run { [credentials = state.credentials, mode = state.mode] send in
+          struct AuthenticationError: Error { }
           await send(.receiveSession(
             TaskResult {
               switch mode {
               case .signIn:
-                return try await supabaseClient.auth.login(credentials: credentials)
+                guard let session = try await supabaseClient.auth.login(credentials: credentials) else {
+                  throw AuthenticationError()
+                }
+                return session
               case .signUp:
-                _ = try await supabaseClient.auth.createUser(credentials)
-                return try await supabaseClient.auth.login(credentials: credentials)
+                _ = try await supabaseClient.auth.signUp(.credentials(credentials))
+                guard let session = try await supabaseClient.auth.login(credentials: credentials) else {
+                  throw AuthenticationError()
+                }
+                return session
               }
             }
           ))
@@ -164,6 +171,7 @@ struct AuthView: View {
   }
 }
 
+#if DEBUG
 #Preview {
   NavigationStack {
     AuthView(
@@ -175,3 +183,4 @@ struct AuthView: View {
     )
   }
 }
+#endif

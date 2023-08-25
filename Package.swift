@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.8
 
 import PackageDescription
 
@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClient", targets: ["SupabaseClient"])
+    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"])
   ],
   dependencies: [
     .package(
@@ -34,7 +34,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SupabaseClient",
+      name: "SupabaseClientDependencies",
       dependencies: [
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
@@ -43,7 +43,7 @@ let package = Package(
     ),
     .testTarget(
       name: "SupabaseClientTests",
-      dependencies: ["SupabaseClient"]
+      dependencies: ["SupabaseClientDependencies"]
     ),
   ]
 )

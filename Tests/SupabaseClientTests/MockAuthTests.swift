@@ -1,13 +1,13 @@
 import Dependencies
-import SupabaseClient
+import SupabaseClientDependencies
 import XCTest
 
 final class MockAuthTests: XCTestCase {
   
   func makeAuthMock(
-    allowedCredentials: SupabaseClientDependency.Auth.AllowedCredentials = .any,
+    allowedCredentials: SupabaseClientDependency.AuthClient.AllowedCredentials = .any,
     session: Session? = .mock
-  ) -> SupabaseClientDependency.Auth {
+  ) -> SupabaseClientDependency.AuthClient {
     withDependencies {
       $0.uuid = .incrementing
       $0.date.now = .init(timeIntervalSince1970: 123456789)
@@ -31,7 +31,7 @@ final class MockAuthTests: XCTestCase {
   
   func testLogoutDeletesSession() async throws {
     let auth = makeAuthMock()
-    await auth.logout()
+    try await auth.logout()
     do {
       try await auth.login()
       XCTFail()
@@ -43,16 +43,17 @@ final class MockAuthTests: XCTestCase {
   func testOnlyAllowedCredentials() async throws {
     let credentials = Credentials(email: "test@example.com", password: "test-password")
     let auth = makeAuthMock(
-      allowedCredentials: .only([credentials]),
+      allowedCredentials: .only([.credentials(credentials)]),
       session: nil
     )
     
-    let user = try await auth.createUser(credentials)
+    let user = try await auth.signUp(.credentials(credentials))
     let session = try await auth.login(credentials: credentials)
-    XCTAssertEqual(session.user, user)
-    
+    XCTAssertNotNil(session)
+    XCTAssertEqual(session!.user, user)
+
     do {
-      _ = try await auth.createUser(.init(email: "bad@example.com", password: "bad-password"))
+      _ = try await auth.signUp(.email("bad@example.com", password: "bad-password"))
       XCTFail()
     } catch {
       XCTAssert(true)

@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "DF67C163-DFB8-4B7B-8773-E61BF3BBE8C9",
+      "name" : "Test Scheme Action",
+      "options" : {
+        "environmentVariableEntries" : [
+
+        ]
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+
+    ]
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SupabaseClientTests",
+        "name" : "SupabaseClientTests"
+      }
+    }
+  ],
+  "version" : 1
+}

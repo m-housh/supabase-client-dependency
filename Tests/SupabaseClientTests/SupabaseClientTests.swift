@@ -1,6 +1,6 @@
 import Dependencies
 import XCTest
-@testable import SupabaseClient
+import SupabaseClientDependencies
 
 @MainActor
 final class SupabaseClientTests: XCTestCase {
@@ -15,7 +15,7 @@ final class SupabaseClientTests: XCTestCase {
     } operation: {
       @Dependency(\.supabaseClient) var client;
 
-      var currentUser = await client.auth.currentUser()
+      let currentUser = await client.auth.currentUser()
       XCTAssertNil(currentUser)
 
       let credentials = Credentials(
@@ -23,7 +23,7 @@ final class SupabaseClientTests: XCTestCase {
         password: "secret-password"
       )
 
-      let user = try? await client.auth.createUser(credentials)
+      let user = try? await client.auth.signUp(.credentials(credentials))
 
       // Testing session does not work because the `keychain` is not setup properly
       // in a swift package.
@@ -59,7 +59,7 @@ final class SupabaseClientTests: XCTestCase {
     } catch let credentialError as CredentialError {
       XCTAssertEqual(
         credentialError.localizedDescription,
-        CredentialError.invalidEmailAndPassword.localizedDescription
+        CredentialError.invalidEmailAndPassword().localizedDescription
       )
     } catch {
       XCTFail("Invalid error recieved: \(error)")

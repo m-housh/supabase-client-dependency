@@ -9,6 +9,7 @@ PLATFORM_TVOS = tvOS Simulator,name=Apple TV
 PLATFORM_WATCHOS = watchOS Simulator,name=Apple Watch Series 8 (45mm)
 
 SCHEME = supabase-client-dependency
+DOCC_TARGET = SupabaseClientDependencies
 
 CONFIG := debug
 
@@ -70,18 +71,24 @@ format:
 		./Package.swift \
 		./Sources
 
+build-example:
+	xcodebuild build \
+		-workspace supabase-client-dependency.xcworkspace \
+		-scheme Examples \
+		-destination="$(PLATFORM_IOS)" || exit 1;
+
 build-documentation:
 	swift package \
 		--allow-writing-to-directory ./docs \
 		generate-documentation \
-		--target SupabaseClient \
+		--target "$(DOCC_TARGET)" \
 		--disable-indexing \
 		--transform-for-static-hosting \
-		--hosting-base-path supabase-client-dependency \
+		--hosting-base-path "$(SCHEME)" \
 		--output-path ./docs
 
 preview-documentation:
 	swift package \
 		--disable-sandbox \
 		preview-documentation \
-		--target SupabaseClient
+		--target "$(DOCC_TARGET)"

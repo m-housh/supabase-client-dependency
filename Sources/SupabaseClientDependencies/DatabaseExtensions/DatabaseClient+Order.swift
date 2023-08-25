@@ -1,7 +1,7 @@
 import Foundation
 import PostgREST
 
-extension SupabaseClientDependency {
+extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents an order by clause used for a database query.
   ///
@@ -26,44 +26,6 @@ extension SupabaseClientDependency {
     ///   - ascending: If `true`, the result will be in ascending order.
     ///   - nullsFirst: If `true`, `null`s appear first.
     ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init(
-      column: String,
-      ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: String? = nil
-    ) {
-      self.column = column
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable
-    }
-
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init<C: ColumnRepresentable>(
-      column: C,
-      ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: String? = nil
-    ) {
-      self.column = column.columnName
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable
-    }
-
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
     public init<C: ColumnRepresentable, T: TableRepresentable>(
       column: C,
       ascending: Bool = true,
@@ -80,10 +42,10 @@ extension SupabaseClientDependency {
 
 extension ColumnRepresentable {
 
-  public func ascending(
+  public func ascending<T: TableRepresentable>(
     nullsFirst: Bool = false,
-    foreignTable: String? = nil
-  ) -> SupabaseClientDependency.Order {
+    foreignTable: T? = nil
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     .init(
       column: self,
       ascending: true,
@@ -92,20 +54,13 @@ extension ColumnRepresentable {
     )
   }
 
-  public func ascending<T: TableRepresentable>(
-    nullsFirst: Bool = false,
-    foreignTable: T? = nil
-  ) -> SupabaseClientDependency.Order {
-    self.ascending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
-  }
-
-  public func descending(
+  public func ascending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
-  ) -> SupabaseClientDependency.Order {
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
     .init(
       column: self,
-      ascending: false,
+      ascending: true,
       nullsFirst: nullsFirst,
       foreignTable: foreignTable
     )
@@ -114,9 +69,27 @@ extension ColumnRepresentable {
   public func descending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
-  ) -> SupabaseClientDependency.Order {
-    self.descending(nullsFirst: nullsFirst, foreignTable: foreignTable?.tableName)
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
   }
+
+  public func descending(
+    nullsFirst: Bool = false,
+    foreignTable: String? = nil
+  ) -> SupabaseClientDependency.DatabaseClient.Order {
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+
 }
 
 extension PostgrestFilterBuilder {
@@ -125,7 +98,9 @@ extension PostgrestFilterBuilder {
   ///
   ///  - Parameters:
   ///   - order: The optional order by clause to apply to the query if applicable.
-  public func order(by order: SupabaseClientDependency.Order?) -> PostgrestTransformBuilder {
+  public func order(by order: SupabaseClientDependency.DatabaseClient.Order?)
+    -> PostgrestTransformBuilder
+  {
     if let order {
       return self.order(
         column: order.column,

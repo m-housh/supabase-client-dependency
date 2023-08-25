@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "FE393694-561B-4E2A-982E-700F64EE1376",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "environmentVariableEntries" : [
+      {
+        "key" : "INTEGRATION_TESTS",
+        "value" : "1"
+      }
+    ]
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SupabaseClientTests",
+        "name" : "SupabaseClientTests"
+      }
+    }
+  ],
+  "version" : 1
+}

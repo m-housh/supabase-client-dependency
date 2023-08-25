@@ -1,7 +1,7 @@
 import Foundation
-import Supabase
+import PostgREST
 
-extension SupabaseClientDependency {
+extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents a filter for use in database queries.
   ///
@@ -19,22 +19,6 @@ extension SupabaseClientDependency {
     /// Create a new filter.
     ///
     /// - Parameters:
-    ///   - column: The column name to filter the results by.
-    ///   - operator: The operator to use to compare the column value to.
-    ///   - value: The value to use for the column filter.
-    public init(
-      column: String,
-      operator postgrestOperator: PostgrestFilterBuilder.Operator,
-      value: URLQueryRepresentable
-    ) {
-      self.column = column
-      self.operator = postgrestOperator
-      self.value = value
-    }
-
-    /// Create a new filter.
-    ///
-    /// - Parameters:
     ///   - column: The column to filter the results by.
     ///   - operator: The operator to use to compare the column value to.
     ///   - value: The value to use for the column filter.
@@ -46,13 +30,6 @@ extension SupabaseClientDependency {
       self.column = column.columnName
       self.operator = postgrestOperator
       self.value = value
-    }
-
-    public static func equals(
-      column: String,
-      value: URLQueryRepresentable
-    ) -> Self {
-      .init(column: column, operator: .eq, value: value)
     }
 
     public static func equals<C: ColumnRepresentable>(
@@ -70,7 +47,9 @@ extension SupabaseClientDependency {
 
 extension ColumnRepresentable {
 
-  public func equals(_ value: URLQueryRepresentable) -> SupabaseClientDependency.Filter {
+  public func equals(_ value: URLQueryRepresentable)
+    -> SupabaseClientDependency.DatabaseClient.Filter
+  {
     .equals(column: self.columnName, value: value)
   }
 }
@@ -78,7 +57,7 @@ extension ColumnRepresentable {
 extension PostgrestFilterBuilder {
 
   @discardableResult
-  public func filter(by filters: [SupabaseClientDependency.Filter]) -> Self {
+  public func filter(by filters: [SupabaseClientDependency.DatabaseClient.Filter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
         column: filter.column,
@@ -90,12 +69,12 @@ extension PostgrestFilterBuilder {
   }
 
   @discardableResult
-  public func filter(_ filters: SupabaseClientDependency.Filter...) -> Self {
+  public func filter(_ filters: SupabaseClientDependency.DatabaseClient.Filter...) -> Self {
     self.filter(by: filters)
   }
 
   @discardableResult
-  public func filter(by filter: SupabaseClientDependency.Filter) -> Self {
+  public func filter(by filter: SupabaseClientDependency.DatabaseClient.Filter) -> Self {
     self.filter(by: [filter])
   }
 }

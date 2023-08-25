@@ -1,7 +1,7 @@
 import Dependencies
 import Foundation
 import IdentifiedStorage
-import SupabaseClient
+import SupabaseClientDependencies
 import XCTestDynamicOverlay
 
 extension DependencyValues {
@@ -43,19 +43,17 @@ extension DatabaseClient: DependencyKey {
     @Dependency(\.supabaseClient) var client;
     return Self.init(
       todos: DatabaseClient.Todos(
-        delete: { try await client.delete(id: $0, from: Table.todos) },
+        delete: { try await client.database.delete(id: $0, from: Table.todos) },
         fetch: {
           
           // get the current authenticated user.
           let user = try await client.auth.requireCurrentUser()
-         
+          
           // Return the todos.
-          return try await .init(
-            uniqueElements: client.fetch(
-              from: Table.todos,
-              filteredBy: TodoColumn.ownerId.equals(user.id),
-              orderBy: TodoColumn.complete.ascending()
-            )
+          return try await client.database.fetch(
+            from: Table.todos,
+            filteredBy: TodoColumn.ownerId.equals(user.id),
+            orderBy: TodoColumn.complete.ascending()
           )
         },
         insert: { request in
@@ -79,7 +77,7 @@ extension DatabaseClient: DependencyKey {
             }
           }
           
-          return try await client.insert(
+          return try await client.database.insert(
             InsertValues(
               complete: request.complete,
               description: request.description,
@@ -88,7 +86,7 @@ extension DatabaseClient: DependencyKey {
             into: Table.todos
           )
         },
-        update: { try await client.update(id: $0, in: Table.todos, with: $1) }
+        update: { try await client.database.update(id: $0, in: Table.todos, with: $1) }
       )
     )
   }

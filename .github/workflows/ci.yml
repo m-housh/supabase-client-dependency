@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test-library:
     name: MacOS
     runs-on: macos-13
     strategy:
@@ -17,6 +17,9 @@ jobs:
       - uses: actions/checkout@v3
       - name: Select Xcode ${{ matrix.xcode }}
         run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
+      - uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: "5.8"
       - name: Swift Version
         run: swift --version
       - name: Run ${{ matrix.xcode }} Tests
