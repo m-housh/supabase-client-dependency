@@ -401,6 +401,10 @@ public struct SupabaseClientDependency {
   /// `CRUD` operations.  See <doc:DatabaseOperations> for common database operation usage.
   ///
   public struct DatabaseClient {
+    
+    public var decoder: JSONDecoder
+    
+    public var encoder: JSONEncoder
 
     /// Perform a delete request on the database.
     ///
@@ -486,7 +490,9 @@ public struct SupabaseClientDependency {
     ///   - rpc: Build a remote function request.
     ///   - update: Perform an update request on the database.
     public init(
+      decoder: JSONDecoder,
       delete: @escaping (DeleteRequest) async throws -> Void,
+      encoder: JSONEncoder,
       fetch: @escaping (FetchRequest) async throws -> Data,
       fetchOne: @escaping (FetchOneRequest) async throws -> Data,
       from: @escaping (String) -> PostgrestQueryBuilder,
@@ -495,7 +501,9 @@ public struct SupabaseClientDependency {
       rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> Data
     ) {
+      self.decoder = decoder
       self.delete = delete
+      self.encoder = encoder
       self.fetch = fetch
       self.fetchOne = fetchOne
       self.from = from

@@ -102,7 +102,7 @@ extension SupabaseClientDependency.DatabaseClient {
     try await self.fetch(
       .init(table: table, filters: filters, order: order)
     )
-    .decoding(as: Response.self)
+    .decoding(as: Response.self, with: self.decoder)
   }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
@@ -166,7 +166,7 @@ extension SupabaseClientDependency.DatabaseClient {
         filters: filters
       )
     )
-    .decoding(as: Model.self)
+    .decoding(as: Model.self, with: self.decoder)
   }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
@@ -259,7 +259,7 @@ extension SupabaseClientDependency.DatabaseClient {
         returningOptions: returningOptions
       )
     )
-    .decoding(as: Model.self)
+    .decoding(as: Model.self, with: self.decoder)
   }
 
   /// Helper for inserting multiple new values into the database.
@@ -296,7 +296,7 @@ extension SupabaseClientDependency.DatabaseClient {
         returningOptions: returningOptions
       )
     )
-    .decoding(as: Response.self)
+    .decoding(as: Response.self, with: self.decoder)
   }
 
   // MARK: - Update
@@ -337,7 +337,7 @@ extension SupabaseClientDependency.DatabaseClient {
         values: values
       )
     )
-    .decoding(as: Model.self)
+    .decoding(as: Model.self, with: self.decoder)
   }
 
   /// A helper for updating an item in the database, using the table name and a filter for the item.

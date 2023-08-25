@@ -258,6 +258,9 @@ struct TodoListView: View {
       TodoListFeature()._printChanges()
     } withDependencies: {
       $0.uuid = .init { UUID() }
+      $0.supabaseClient.database.fetch = { _ in
+        try! JSONEncoder().encode(TodoModel.mocks)
+      }
     }
   )
 }

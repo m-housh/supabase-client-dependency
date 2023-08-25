@@ -20,6 +20,7 @@ In general you use this package / dependency to build your database clients for 
 
 - <doc:GettingStarted>
 - <doc:DatabaseOperations>
+- <doc:AdvancedDatabaseOperations>
 
 ## Topics
 
