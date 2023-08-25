@@ -1,6 +1,8 @@
 # supabase-client-dependency
 
 [![CI](https://github.com/m-housh/supabase-client-dependency/actions/workflows/ci.yml/badge.svg)](https://github.com/m-housh/supabase-client-dependency/actions/workflows/ci.yml)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fm-housh%2Fsupabase-client-dependency%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/m-housh/supabase-client-dependency)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fm-housh%2Fsupabase-client-dependency%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/m-housh/supabase-client-dependency)
 
 A [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) client for supabase integrations.
 
@@ -30,7 +32,7 @@ let package = Package(
     .target(
       name: "<My Target>",
       dependencies: [
-        .product(name: "SupabaseClient", package: "supabase-client-dependency")
+        .product(name: "SupabaseClientDependencies", package: "supabase-client-dependency")
       ]
     )
   ]
@@ -48,7 +50,7 @@ method for the `auth` portion of the client dependency, which is helpful for use
 
 ```swift
 import Dependencies
-import SupabaseClient
+import SupabaseClientDependencies
 
 extension SupabaseClientDependency.Configuration {
   public static let live = Self.init(url: supabaseURL, anonKey: localAnonKey)
@@ -132,7 +134,7 @@ The database client that is used for interactions with the supabase instance for
 
 ```swift
 import Dependencies
-import SupabaseClient
+import SupabaseClientDependencies
 
 extension DependencyValues {
 

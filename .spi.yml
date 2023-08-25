@@ -1,4 +1,13 @@
 version: 1
 build:
   configs:
-    documentation_targets: [SupabaseClientDependencies]
+    - documentation_targets: [SupabaseClientDependencies]
+    - platform: ios
+      scheme: supabase-client-dependency
+    - platform: macos
+      scheme: supabase-client-dependency
+    - platform: tvos
+      scheme: supabase-client-dependency
+    - platform: watchos
+      scheme: supabase-client-dependency
+
