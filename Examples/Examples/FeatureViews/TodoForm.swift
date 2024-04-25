@@ -1,15 +1,17 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct TodoFormFeature: Reducer {
-  
+@Reducer
+struct TodoFormFeature {
+
+  @ObservableState
   struct State: Equatable {
     var id: TodoModel.ID?
-    @BindingState var description: String
-    @BindingState var isComplete: Bool
-    
+    var description: String
+    var isComplete: Bool
+
     var isValid: Bool { !description.isEmpty }
-    
+
     init(
       id: TodoModel.ID? = nil,
       description: String = "",
@@ -19,31 +21,31 @@ struct TodoFormFeature: Reducer {
       self.description = description
       self.isComplete = isComplete
     }
-    
+
     init(todo: TodoModel) {
       self.id = todo.id
       self.description = todo.description
       self.isComplete = todo.isComplete
     }
   }
-  
+
   enum Action: BindableAction, Equatable {
     case binding(BindingAction<State>)
   }
-  
+
   var body: some ReducerOf<Self> {
     BindingReducer()
   }
 }
 
 struct TodoForm: View {
-  let store: StoreOf<TodoFormFeature>
-  
+  @Perception.Bindable var store: StoreOf<TodoFormFeature>
+
   var body: some View {
-    WithViewStore(store, observe: { $0 }) { viewStore in
+    WithPerceptionTracking {
       Form {
-        TextField("Description", text: viewStore.$description)
-        Toggle("Complete", isOn: viewStore.$isComplete)
+        TextField("Description", text: $store.description)
+        Toggle("Complete", isOn: $store.isComplete)
       }
     }
   }

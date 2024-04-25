@@ -1,35 +1,22 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct TodoListFeature: Reducer {
+@Reducer
+struct TodoListFeature {
   
+  @Reducer(state: .equatable, action: .equatable)
+  enum Destination {
+    case addTodo(TodoFormFeature)
+    case editTodo(TodoFormFeature)
+  }
+
+  @ObservableState
   struct State: Equatable {
-    @PresentationState var destination: Destination.State?
+    @Presents var destination: Destination.State?
     var todos: IdentifiedArrayOf<TodoModel>?
     var isLoadingTodos: Bool = false
   }
-  
-  struct Destination: Reducer {
-    enum State: Equatable {
-      case addTodo(TodoFormFeature.State)
-      case editTodo(TodoFormFeature.State)
-    }
-    
-    enum Action: Equatable {
-      case addTodo(TodoFormFeature.Action)
-      case editTodo(TodoFormFeature.Action)
-    }
-    
-    var body: some ReducerOf<Self> {
-      Scope(state: /State.addTodo, action: /Action.addTodo) {
-        TodoFormFeature()
-      }
-      Scope(state: /State.editTodo, action: /Action.editTodo) {
-        TodoFormFeature()
-      }
-    }
-  }
-  
+
   enum Action: Equatable {
     case addTodoButtonTapped
     case delete(id: TodoModel.ID)
@@ -40,41 +27,41 @@ struct TodoListFeature: Reducer {
     case saveTodoFormButtonTapped
     case task
   }
-  
-  @Dependency(\.database) var database;
+
+  @Dependency(\.database) var database
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-        
+
       case .addTodoButtonTapped:
         state.destination = .addTodo(.init())
         return .none
-        
+
       case let .delete(id: todoId):
         state.todos?.remove(id: todoId)
         return .run { _ in
           try await database.todos.delete(todoId)
         }
-        
+
       case .destination:
         return .none
-        
+
       case let .receiveTodos(.failure(error)):
         state.isLoadingTodos = false
         XCTFail("Failed to fetch todos: \(error)")
         return .none
-        
+
       case let .receiveTodos(.success(todos)):
         state.isLoadingTodos = false
         state.todos = todos
         return .none
-        
+
       case let .receiveSavedTodo(.failure(error)):
         state.destination = nil
         XCTFail("Failed to save todo: \(error)")
         return .none
-        
+
       case let .receiveSavedTodo(.success(todo)):
         state.destination = nil
         if state.todos?[id: todo.id] != nil {
@@ -85,7 +72,7 @@ struct TodoListFeature: Reducer {
           state.todos?.insert(todo, at: 0)
         }
         return .none
-        
+
       case let .rowTapped(id: id):
         guard let todo = state.todos?[id: id]
         else {
@@ -94,11 +81,11 @@ struct TodoListFeature: Reducer {
         }
         state.destination = .editTodo(.init(todo: todo))
         return .none
-        
+
       case .saveTodoFormButtonTapped:
         guard let destination = state.destination
         else { return .none }
-        
+
         switch destination {
         case let .addTodo(form):
           // Confirm form is valid.
@@ -111,8 +98,8 @@ struct TodoListFeature: Reducer {
           // Confirm the form has an id, we can find the original todo in our state,
           // and that the form is valid.
           guard let todoId = form.id,
-                let originalTodo = state.todos?[id: todoId],
-                form.isValid
+            let originalTodo = state.todos?[id: todoId],
+            form.isValid
           else { return .none }
           // Update the todo.
           return .run { send in
@@ -120,7 +107,7 @@ struct TodoListFeature: Reducer {
             else { return }
             await send(.receiveSavedTodo(todoResult))
           }
-          
+
         }
 
       case .task:
@@ -128,18 +115,18 @@ struct TodoListFeature: Reducer {
         guard state.todos == nil else { return .none }
         state.isLoadingTodos = true
         return .run { send in
-          await send(.receiveTodos(
-            TaskResult { try await database.todos.fetch() }
-          ))
+          await send(
+            .receiveTodos(
+              TaskResult { try await database.todos.fetch() }
+            ))
         }
-        
+
       }
     }
-    .ifLet(\.$destination, action: /Action.destination) {
-      Destination()
-    }
+    .ifLet(\.$destination, action: \.destination)
+    
   }
-  
+
   private func saveNewTodo(form: TodoFormFeature.State) async -> TaskResult<TodoModel> {
     await TaskResult {
       try await database.todos.insert(
@@ -147,7 +134,7 @@ struct TodoListFeature: Reducer {
       )
     }
   }
-  
+
   private func updateTodo(
     form: TodoFormFeature.State,
     original: TodoModel
@@ -170,11 +157,11 @@ struct TodoListFeature: Reducer {
 }
 
 struct TodoListView: View {
-  let store: StoreOf<TodoListFeature>
+  @Perception.Bindable var store: StoreOf<TodoListFeature>
 
   var body: some View {
-    WithViewStore(store, observe: { $0 }) { viewStore in
-      if let todos = viewStore.todos {
+    WithPerceptionTracking {
+      if let todos = store.todos {
         List {
           ForEach(todos) { todo in
             HStack {
@@ -184,10 +171,10 @@ struct TodoListView: View {
               Image(systemName: "chevron.right")
                 .foregroundStyle(Color.secondary)
             }
-            .onTapGesture { viewStore.send(.rowTapped(id: todo.id)) }
+            .onTapGesture { store.send(.rowTapped(id: todo.id)) }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
               Button(role: .destructive) {
-                viewStore.send(.delete(id: todo.id))
+                store.send(.delete(id: todo.id))
               } label: {
                 Label("Delete", systemImage: "trash")
               }
@@ -196,21 +183,31 @@ struct TodoListView: View {
         }
         .navigationTitle("Todos")
         .navigationDestination(
-          store: store.scope(state: \.$destination, action: { .destination($0) })
-        ) { store in
-          DestinationView(store: store)
+          item: $store.scope(state: \.destination?.editTodo, action: \.destination.editTodo)
+        ) { destinationStore in
+          TodoForm(store: destinationStore)
+            .navigationTitle("Edit Todo")
             .toolbar {
-              ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                  viewStore.send(.saveTodoFormButtonTapped)
-                }
+              Button("Save") {
+                self.store.send(.saveTodoFormButtonTapped)
+              }
+            }
+        }
+        .navigationDestination(
+          item: $store.scope(state: \.destination?.addTodo, action: \.destination.addTodo)
+        ) { destinationStore in
+          TodoForm(store: destinationStore)
+            .navigationTitle("Add Todo")
+            .toolbar {
+              Button("Save") {
+                self.store.send(.saveTodoFormButtonTapped)
               }
             }
         }
         .toolbar {
           ToolbarItem(placement: .confirmationAction) {
             Button {
-              viewStore.send(.addTodoButtonTapped)
+              store.send(.addTodoButtonTapped)
             } label: {
               Label("Add Todo", systemImage: "plus")
             }
@@ -219,34 +216,7 @@ struct TodoListView: View {
       } else {
         ProgressView()
           .navigationTitle("Todos")
-          .task { await viewStore.send(.task).finish() }
-      }
-    }
-  }
-  
-  struct DestinationView: View {
-    let store: StoreOf<TodoListFeature.Destination>
-    
-    var body: some View {
-      SwitchStore(store) { state in
-        switch state {
-        case .addTodo:
-          CaseLet(
-            /TodoListFeature.Destination.State.addTodo,
-             action: TodoListFeature.Destination.Action.addTodo
-          ) { store in
-            TodoForm(store: store)
-              .navigationTitle("Add Todo")
-          }
-        case .editTodo:
-          CaseLet(
-            /TodoListFeature.Destination.State.editTodo,
-             action: TodoListFeature.Destination.Action.editTodo
-          ) { store in
-            TodoForm(store: store)
-              .navigationTitle("Edit Todo")
-          }
-        }
+          .task { await store.send(.task).finish() }
       }
     }
   }
