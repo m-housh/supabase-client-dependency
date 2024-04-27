@@ -60,9 +60,9 @@ extension PostgrestFilterBuilder {
   public func filter(by filters: [SupabaseClientDependency.DatabaseClient.Filter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
-        column: filter.column,
-        operator: filter.operator,
-        value: filter.value
+        filter.column,
+        operator: filter.operator.rawValue,
+        value: filter.value.queryValue
       )
     }
     return self

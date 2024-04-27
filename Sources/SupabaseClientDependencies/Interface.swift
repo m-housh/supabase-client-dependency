@@ -1,6 +1,6 @@
 import Dependencies
 import Foundation
-@_exported import GoTrue
+//@_exported import GoTrue
 @_exported import PostgREST
 @_exported import Supabase
 import XCTestDynamicOverlay
@@ -54,7 +54,7 @@ public struct SupabaseClientDependency {
   public struct AuthClient {
 
     /// Asynchronous sequence of authentication change events emitted during life of `GoTrueClient`.
-    public var events: @Sendable () -> AsyncStream<AuthChangeEvent>
+    public var events: @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>
 
     /// Log in an existing user via a third-party provider.
     public var getOAuthURL: @Sendable (OAuthRequest) throws -> URL
@@ -88,7 +88,7 @@ public struct SupabaseClientDependency {
     public var verifyOTP: @Sendable (VerifyOTPRequest) async throws -> User
 
     public init(
-      events: @escaping @Sendable () -> AsyncStream<AuthChangeEvent>,
+      events: @escaping @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>,
       getOAuthURL: @escaping @Sendable (OAuthRequest) throws -> URL,
       initialize: @escaping @Sendable () async -> Void,
       login: @escaping @Sendable (LoginRequest?) async throws -> Session?,
@@ -371,7 +371,7 @@ public struct SupabaseClientDependency {
         public let token: String
 
         /// The token type.
-        public let type: OTPType
+//        public let type: OTPType
 
         /// Create a new one-time password option instance.
         ///
@@ -383,13 +383,13 @@ public struct SupabaseClientDependency {
         public init(
           captchaToken: String? = nil,
           redirectURL: URL? = nil,
-          token: String,
-          type: OTPType
+          token: String//,
+//          type: OTPType
         ) {
           self.captchaToken = captchaToken
           self.redirectURL = redirectURL
           self.token = token
-          self.type = type
+//          self.type = type
         }
       }
     }
@@ -478,7 +478,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``rpc(_:params:count:decoding:perform:)``.
     ///
-    public var rpc: (RpcRequest) -> PostgrestTransformBuilder
+    public var rpc: (RpcRequest) throws -> PostgrestTransformBuilder
 
     /// Perform an update request on the database.
     ///
@@ -511,7 +511,7 @@ public struct SupabaseClientDependency {
       from: @escaping (String) -> PostgrestQueryBuilder,
       insert: @escaping (InsertRequest) async throws -> Data,
       insertMany: @escaping (InsertManyRequest) async throws -> Data,
-      rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
+      rpc: @escaping (RpcRequest) throws -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> Data
     ) {
       self.decoder = decoder

@@ -1,5 +1,4 @@
 import Foundation
-import Get
 import PostgREST
 import Supabase
 
@@ -66,21 +65,18 @@ extension PostgrestClient {
   /// - Parameters:
   ///   - configuration: The configuration values used to generate the client.
   ///   - schema: An optional schem for the database connection.
-  ///   - apiClientDelegate: Custom APIClientDelegate for the underlying APIClient.
   public convenience init(
     configuration: SupabaseClientDependency.Configuration,
-    schema: String? = nil,
-    apiClientDelegate: APIClientDelegate? = nil
+    schema: String? = nil
   ) {
     self.init(
       url: configuration.url
         .appending(component: "rest")
         .appending(component: "v1"),
+      schema: schema, 
       headers: [
         "apiKey": configuration.anonymousKey
-      ],
-      schema: schema,
-      apiClientDelegate: nil
+      ]
     )
   }
 }

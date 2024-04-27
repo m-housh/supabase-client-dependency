@@ -1,6 +1,5 @@
 import Dependencies
 import Foundation
-import GoTrue
 import Supabase
 
 extension SupabaseClientDependency {
@@ -31,10 +30,10 @@ extension SupabaseClientDependency.AuthClient {
   /// - Parameters:
   ///   - client: The go-true client used to build the live dependency.
   ///
-  public static func live(client: GoTrueClient) -> Self {
+  public static func live(client: Supabase.AuthClient) -> Self {
     Self.init(
       events: {
-        client.authEventChange
+        client.authStateChanges
       },
       getOAuthURL: { request in
         try client.getOAuthSignInURL(
@@ -44,7 +43,10 @@ extension SupabaseClientDependency.AuthClient {
           queryParams: request.queryParams.map { ($0.name, $0.value) }
         )
       },
-      initialize: { await client.initialize() },
+      initialize: {
+        #warning("fix me.")
+        //await client.initialize()
+      },
       login: { loginRequest in
         guard let loginRequest else {
           // Attempt to login with previously saved credentials.
@@ -70,7 +72,7 @@ extension SupabaseClientDependency.AuthClient {
             try await client.signInWithOTP(
               email: email,
               redirectTo: options.redirectURL,
-              shouldCreateUser: shouldCreateUser,
+              shouldCreateUser: shouldCreateUser ?? false,
               data: options.data,
               captchaToken: options.captchaToken
             )
@@ -78,7 +80,7 @@ extension SupabaseClientDependency.AuthClient {
           case let .phone(phone):
             try await client.signInWithOTP(
               phone: phone,
-              shouldCreateUser: shouldCreateUser,
+              shouldCreateUser: shouldCreateUser ?? false,
               data: options.data,
               captchaToken: options.captchaToken
             )
@@ -101,10 +103,11 @@ extension SupabaseClientDependency.AuthClient {
         }
         switch sessionRequest {
 
+          #warning("fix me, remove storeSession?")
         case let .oAuth(oAuthURL, storeSession: storeSession):
           return try await client.session(
-            from: oAuthURL,
-            storeSession: storeSession
+            from: oAuthURL//,
+//            storeSession: storeSession
           )
 
         case let .refresh(token):
@@ -148,22 +151,25 @@ extension SupabaseClientDependency.AuthClient {
         try await client.update(user: userAttributes)
       },
       verifyOTP: { otpRequest in
+        #warning("Fix type.")
         switch otpRequest {
         case let .email(email, options: options):
           return try await client.verifyOTP(
             email: email,
             token: options.token,
-            type: options.type,
+            type: .email,
+//            type: options.type,
             redirectTo: options.redirectURL,
             captchaToken: options.captchaToken
           )
           .user
 
         case let .phone(phone, options: options):
+          #warning("Fix type.")
           return try await client.verifyOTP(
             phone: phone,
             token: options.token,
-            type: options.type,
+            type: .sms,
             captchaToken: options.captchaToken
           )
           .user
@@ -211,7 +217,7 @@ extension SupabaseClientDependency.DatabaseClient {
       },
       insert: { request in
         try await client.from(request.table.tableName)
-          .insert(values: request.values, returning: request.returningOptions)
+          .insert(request.values, returning: request.returningOptions)
           .single()
           .execute()
           .value
@@ -219,16 +225,16 @@ extension SupabaseClientDependency.DatabaseClient {
       insertMany: { request in
         try await client.from(request.table.tableName)
           .insert(
-            values: request.values.anyJSON(encoder: .databaseClientEncoder),
+            request.values.anyJSON(encoder: .databaseClientEncoder),
             returning: request.returningOptions
           )
           .execute()
           .value
       },
-      rpc: { client.rpc(fn: $0.functionName, params: $0.params, count: $0.count) },
+      rpc: { try client.rpc($0.functionName, params: $0.params, count: $0.count) },
       update: { request in
         try await client.from(request.table.tableName)
-          .update(values: request.values, returning: request.returningOptions)
+          .update(request.values, returning: request.returningOptions)
           .filter(by: request.filters)
           .single()
           .execute()

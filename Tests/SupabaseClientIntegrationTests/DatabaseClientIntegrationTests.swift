@@ -24,13 +24,13 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     try await postgrestClient
       .from(Table.todos.tableName)
       .delete(returning: .minimal)
-      .eq(column: "complete", value: true)
+      .eq("complete", value: true)
       .execute()
 
     try await postgrestClient
       .from(Table.todos.tableName)
       .delete(returning: .minimal)
-      .eq(column: "complete", value: false)
+      .eq("complete", value: false)
       .execute()
   }
 
