@@ -21,7 +21,7 @@ let package = Package(
     ),
     .package(
       url: "https://github.com/supabase-community/supabase-swift.git",
-      from: "0.3.0"
+      from: "2.0.0"
     ),
     .package(
       url: "https://github.com/m-housh/swift-identified-storage.git",
