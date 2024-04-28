@@ -3,7 +3,6 @@ import Dependencies
 import IdentifiedCollections
 import SupabaseClientDependencies
 
-@MainActor
 final class DatabaseClientIntegrationTests: XCTestCase {
 
   let postgrestClient = PostgrestClient(configuration: .local, schema: "public")
@@ -24,13 +23,13 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     try await postgrestClient
       .from(Table.todos.tableName)
       .delete(returning: .minimal)
-      .eq(column: "complete", value: true)
+      .eq("complete", value: true)
       .execute()
 
     try await postgrestClient
       .from(Table.todos.tableName)
       .delete(returning: .minimal)
-      .eq(column: "complete", value: false)
+      .eq("complete", value: false)
       .execute()
   }
 

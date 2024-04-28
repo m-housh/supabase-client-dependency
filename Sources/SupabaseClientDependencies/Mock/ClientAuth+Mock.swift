@@ -1,6 +1,5 @@
 import Dependencies
 import Foundation
-import GoTrue
 import IdentifiedStorage
 import PostgREST
 
@@ -39,7 +38,7 @@ extension SupabaseClientDependency.AuthClient {
     )
 
     let (authEventStream, authEventStreamContinuation) = AsyncStream.makeStream(
-      of: AuthChangeEvent.self
+      of: (event: AuthChangeEvent, session: Session?).self
     )
 
     return .init(
@@ -67,7 +66,7 @@ extension SupabaseClientDependency.AuthClient {
       },
       logout: {
         await sessionStorage.set(elements: .init(id: \.user.id))
-        authEventStreamContinuation.yield(.signedOut)
+        authEventStreamContinuation.yield((.signedOut, nil))
       },
       resetPassword: { _ in },
       session: { optionalRequest in
@@ -93,7 +92,7 @@ extension SupabaseClientDependency.AuthClient {
           }
           session.refreshToken = token
           await sessionStorage.set(elements: .init(uniqueElements: [session], id: \.user.id))
-          authEventStreamContinuation.yield(.tokenRefreshed)
+          authEventStreamContinuation.yield((.tokenRefreshed, session))
           return session
 
         case .set(let accessToken, let refreshToken):
@@ -101,13 +100,13 @@ extension SupabaseClientDependency.AuthClient {
             accessToken: accessToken,
             tokenType: "mock-auth",
             expiresIn: 123_456_789,
+            expiresAt: nil,
             refreshToken: refreshToken,
             user: .mock  // ?? what to do here.
           )
           await sessionStorage.set(elements: .init(uniqueElements: [session], id: \.user.id))
-          authEventStreamContinuation.yield(.signedIn)
+          authEventStreamContinuation.yield((.signedIn, session))
           return session
-
         }
       },
 
@@ -130,7 +129,7 @@ extension SupabaseClientDependency.AuthClient {
         user.phone = attributes.phone ?? user.phone
         user.userMetadata = attributes.data ?? user.userMetadata
         try await userStorage.update(user)
-        authEventStreamContinuation.yield(.userUpdated)
+        authEventStreamContinuation.yield((.userUpdated, nil))
         return user
       },
       verifyOTP: { request in
@@ -211,6 +210,7 @@ private enum AuthHelpers {
       accessToken: "mock-access-token",
       tokenType: "fake",
       expiresIn: 123_456_789,
+      expiresAt: nil,
       refreshToken: "mock-refresh-token",
       user: user
     )
@@ -222,17 +222,18 @@ private enum AuthHelpers {
 
   @discardableResult
   fileprivate static func login(
-    authEventStreamContinuation: AsyncStream<AuthChangeEvent>.Continuation,
+    authEventStreamContinuation: AsyncStream<(event: AuthChangeEvent, session: Session?)>.Continuation,
     request: SupabaseClientDependency.AuthClient.LoginRequest?,
     sessionStorage: IdentifiedStorage<User.ID, Session>,
     userStorage: IdentifiedStorageOf<User>
   ) async throws -> Session {
+    let currentSession = await sessionStorage.first
     guard let request else {
       // Check if there's a session.
-      guard let session = await sessionStorage.first else {
+      guard let session = currentSession else {
         throw AuthenticationError.sessionNotFound
       }
-      authEventStreamContinuation.yield(.signedIn)
+      authEventStreamContinuation.yield((.signedIn, session))
       return session
     }
 
@@ -242,7 +243,7 @@ private enum AuthHelpers {
       throw AuthenticationError.userNotFound
     }
 
-    authEventStreamContinuation.yield(.signedIn)
+    authEventStreamContinuation.yield((.signedIn, currentSession))
     return await AuthHelpers.createSession(
       for: user,
       in: sessionStorage

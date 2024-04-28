@@ -1,6 +1,6 @@
 import Dependencies
 import Foundation
-@_exported import GoTrue
+//@_exported import GoTrue
 @_exported import PostgREST
 @_exported import Supabase
 import XCTestDynamicOverlay
@@ -54,7 +54,7 @@ public struct SupabaseClientDependency {
   public struct AuthClient {
 
     /// Asynchronous sequence of authentication change events emitted during life of `GoTrueClient`.
-    public var events: @Sendable () -> AsyncStream<AuthChangeEvent>
+    public var events: @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>
 
     /// Log in an existing user via a third-party provider.
     public var getOAuthURL: @Sendable (OAuthRequest) throws -> URL
@@ -88,7 +88,7 @@ public struct SupabaseClientDependency {
     public var verifyOTP: @Sendable (VerifyOTPRequest) async throws -> User
 
     public init(
-      events: @escaping @Sendable () -> AsyncStream<AuthChangeEvent>,
+      events: @escaping @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>,
       getOAuthURL: @escaping @Sendable (OAuthRequest) throws -> URL,
       initialize: @escaping @Sendable () async -> Void,
       login: @escaping @Sendable (LoginRequest?) async throws -> Session?,
@@ -353,10 +353,10 @@ public struct SupabaseClientDependency {
     public enum VerifyOTPRequest: Equatable {
 
       /// The email and token used for the request.
-      case email(String, options: Options)
+      case email(String, options: Options, type: EmailOTPType)
 
       /// The phone and token used for the request.
-      case phone(String, options: Options)
+      case phone(String, options: Options, type: MobileOTPType)
 
       /// Represents the shared option parameters for the one-time password token request.
       public struct Options: Equatable {
@@ -370,26 +370,21 @@ public struct SupabaseClientDependency {
         /// The one-time password token.
         public let token: String
 
-        /// The token type.
-        public let type: OTPType
-
         /// Create a new one-time password option instance.
         ///
         /// - Parameters:
         ///   - captchaToken: An optional captcha token.
         ///   - redirectURL: An optional redirect-to URL.
         ///   - token: The one-time password token.
-        ///   - type: The token type.
         public init(
           captchaToken: String? = nil,
           redirectURL: URL? = nil,
-          token: String,
-          type: OTPType
+          token: String
         ) {
           self.captchaToken = captchaToken
           self.redirectURL = redirectURL
           self.token = token
-          self.type = type
+//          self.type = type
         }
       }
     }
@@ -478,7 +473,7 @@ public struct SupabaseClientDependency {
     /// on the database client, such as
     /// ``rpc(_:params:count:decoding:perform:)``.
     ///
-    public var rpc: (RpcRequest) -> PostgrestTransformBuilder
+    public var rpc: (RpcRequest) throws -> PostgrestTransformBuilder
 
     /// Perform an update request on the database.
     ///
@@ -511,7 +506,7 @@ public struct SupabaseClientDependency {
       from: @escaping (String) -> PostgrestQueryBuilder,
       insert: @escaping (InsertRequest) async throws -> Data,
       insertMany: @escaping (InsertManyRequest) async throws -> Data,
-      rpc: @escaping (RpcRequest) -> PostgrestTransformBuilder,
+      rpc: @escaping (RpcRequest) throws -> PostgrestTransformBuilder,
       update: @escaping (UpdateRequest) async throws -> Data
     ) {
       self.decoder = decoder

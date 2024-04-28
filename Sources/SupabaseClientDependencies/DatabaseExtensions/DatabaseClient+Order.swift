@@ -103,10 +103,10 @@ extension PostgrestFilterBuilder {
   {
     if let order {
       return self.order(
-        column: order.column,
+        order.column,
         ascending: order.ascending,
         nullsFirst: order.nullsFirst,
-        foreignTable: order.foreignTable
+        referencedTable: order.foreignTable
       )
     }
     return self

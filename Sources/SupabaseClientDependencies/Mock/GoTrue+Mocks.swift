@@ -1,5 +1,4 @@
 import Foundation
-import GoTrue
 
 #if DEBUG
   extension User {
@@ -25,6 +24,7 @@ import GoTrue
       accessToken: "",
       tokenType: "",
       expiresIn: 1,
+      expiresAt: nil,
       refreshToken: "",
       user: .mock
     )
