@@ -353,10 +353,10 @@ public struct SupabaseClientDependency {
     public enum VerifyOTPRequest: Equatable {
 
       /// The email and token used for the request.
-      case email(String, options: Options)
+      case email(String, options: Options, type: EmailOTPType)
 
       /// The phone and token used for the request.
-      case phone(String, options: Options)
+      case phone(String, options: Options, type: MobileOTPType)
 
       /// Represents the shared option parameters for the one-time password token request.
       public struct Options: Equatable {
@@ -370,21 +370,16 @@ public struct SupabaseClientDependency {
         /// The one-time password token.
         public let token: String
 
-        /// The token type.
-//        public let type: OTPType
-
         /// Create a new one-time password option instance.
         ///
         /// - Parameters:
         ///   - captchaToken: An optional captcha token.
         ///   - redirectURL: An optional redirect-to URL.
         ///   - token: The one-time password token.
-        ///   - type: The token type.
         public init(
           captchaToken: String? = nil,
           redirectURL: URL? = nil,
-          token: String//,
-//          type: OTPType
+          token: String
         ) {
           self.captchaToken = captchaToken
           self.redirectURL = redirectURL

@@ -17,7 +17,7 @@ extension SupabaseClientDependency {
 
     return Self.init(
       auth: .live(client: client.auth),
-      database: .live(client: client.database)
+      database: .live(client: client.schema("public"))
     )
   }
 
@@ -43,10 +43,7 @@ extension SupabaseClientDependency.AuthClient {
           queryParams: request.queryParams.map { ($0.name, $0.value) }
         )
       },
-      initialize: {
-        #warning("fix me.")
-        //await client.initialize()
-      },
+      initialize: { },
       login: { loginRequest in
         guard let loginRequest else {
           // Attempt to login with previously saved credentials.
@@ -103,11 +100,9 @@ extension SupabaseClientDependency.AuthClient {
         }
         switch sessionRequest {
 
-          #warning("fix me, remove storeSession?")
-        case let .oAuth(oAuthURL, storeSession: storeSession):
+        case let .oAuth(oAuthURL, storeSession: _):
           return try await client.session(
-            from: oAuthURL//,
-//            storeSession: storeSession
+            from: oAuthURL
           )
 
         case let .refresh(token):
@@ -151,25 +146,22 @@ extension SupabaseClientDependency.AuthClient {
         try await client.update(user: userAttributes)
       },
       verifyOTP: { otpRequest in
-        #warning("Fix type.")
         switch otpRequest {
-        case let .email(email, options: options):
+        case let .email(email, options: options, type: type):
           return try await client.verifyOTP(
             email: email,
             token: options.token,
-            type: .email,
-//            type: options.type,
+            type: type,
             redirectTo: options.redirectURL,
             captchaToken: options.captchaToken
           )
           .user
 
-        case let .phone(phone, options: options):
-          #warning("Fix type.")
+        case let .phone(phone, options: options, type: type):
           return try await client.verifyOTP(
             phone: phone,
             token: options.token,
-            type: .sms,
+            type: type,
             captchaToken: options.captchaToken
           )
           .user

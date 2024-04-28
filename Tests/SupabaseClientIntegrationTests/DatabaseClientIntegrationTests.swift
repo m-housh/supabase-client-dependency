@@ -3,7 +3,6 @@ import Dependencies
 import IdentifiedCollections
 import SupabaseClientDependencies
 
-@MainActor
 final class DatabaseClientIntegrationTests: XCTestCase {
 
   let postgrestClient = PostgrestClient(configuration: .local, schema: "public")
