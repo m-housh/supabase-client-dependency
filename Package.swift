@@ -20,7 +20,7 @@ let package = Package(
       from: "1.0.0"
     ),
     .package(
-      url: "https://github.com/supabase-community/supabase-swift.git",
+      url: "https://github.com/supabase/supabase-swift.git",
       from: "2.0.0"
     ),
     .package(
