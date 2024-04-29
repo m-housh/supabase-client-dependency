@@ -43,7 +43,7 @@ final class DatabaseClientIntegrationTests: XCTestCase {
 
   public func testIntegration() async throws {
     @Dependency(\.supabaseClient) var client;
-    let database = client.database(schema: "public")
+    let database = client.database()
 
     var todos: IdentifiedArrayOf<Todo> = try await database.fetch(
       from: .todos,

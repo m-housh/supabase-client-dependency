@@ -19,21 +19,6 @@ extension SupabaseClientDependency.AuthClient {
   )
 }
 
-//extension SupabaseClientDependency.DatabaseClient {
-//  static let unimplemented = Self.init(
-//    decoder: JSONDecoder(),
-//    delete: XCTestDynamicOverlay.unimplemented("\(Self.self).delete"),
-//    encoder: JSONEncoder(),
-//    fetch: XCTestDynamicOverlay.unimplemented("\(Self.self).fetch", placeholder: Data()),
-//    fetchOne: XCTestDynamicOverlay.unimplemented("\(Self.self).fetchOne", placeholder: Data()),
-//    from: XCTestDynamicOverlay.unimplemented("\(Self.self).from"),
-//    insert: XCTestDynamicOverlay.unimplemented("\(Self.self).insert", placeholder: Data()),
-//    insertMany: XCTestDynamicOverlay.unimplemented("\(Self.self).insertMany", placeholder: Data()),
-//    rpc: XCTestDynamicOverlay.unimplemented("\(Self.self).rpc"),
-//    update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: Data())
-//  )
-//}
-
 extension SupabaseClientDependency: TestDependencyKey {
 
   /// The unimplemented supabase client dependency for usage in tests.
@@ -41,7 +26,132 @@ extension SupabaseClientDependency: TestDependencyKey {
     Self.init(
       auth: .unimplemented,
       client: .init(configuration: .local)
-//      database: .unimplemented
     )
   }
+
+  mutating public func override(
+    _ data: @escaping () throws -> Data
+  ) {
+
+    let currentDb = self.database()
+    self.database = {
+        .init(
+          configuration: .init(
+            url: currentDb.configuration.url,
+            schema: currentDb.configuration.schema,
+            headers: currentDb.configuration.headers,
+            logger: nil,
+            fetch: { _ in
+                try await OK(data())
+            },
+            encoder: currentDb.configuration.encoder,
+            decoder: currentDb.configuration.decoder
+          )
+        )
+    }
+  }
+
+  struct OverrideMatch {
+
+    var isEqual: (URLRequest) -> Bool
+
+    init(
+      isEqual: @escaping (URLRequest) -> Bool
+    ) {
+      self.isEqual = isEqual
+    }
+  }
+
+  public enum Override {
+    case all
+    case delete(from: AnyTable)
+    case fetch(from: AnyTable)
+
+    var match: OverrideMatch {
+      switch self {
+      case .all:
+        return .init { _ in true }
+
+      case let .delete(from: table):
+          return .init {
+            $0.httpMethod == "DELETE" &&
+            $0.url?.lastPathComponent == table.tableName
+          }
+
+      case let .fetch(from: table):
+        return .init {
+          $0.httpMethod == "GET" &&
+          $0.url?.lastPathComponent == table.tableName
+        }
+      }
+    }
+  }
+
+  mutating public func override<A: Encodable>(
+    with value: A
+  ) {
+
+    let currentDb = self.database()
+    self.database = {
+      .init(
+        configuration: .init(
+          url: currentDb.configuration.url,
+          schema: currentDb.configuration.schema,
+          headers: currentDb.configuration.headers,
+          logger: nil,
+          fetch: { request in
+            return try await OK(value, encoder: currentDb.configuration.encoder)
+          },
+          encoder: currentDb.configuration.encoder,
+          decoder: currentDb.configuration.decoder
+        )
+      )
+    }
+  }
+
+  mutating public func override<A: Encodable>(
+    _ matching: Override,
+    with value: A
+  ) {
+
+    let currentDb = self.database()
+    self.database = {
+      .init(
+        configuration: .init(
+          url: currentDb.configuration.url,
+          schema: currentDb.configuration.schema,
+          headers: currentDb.configuration.headers,
+          logger: nil,
+          fetch: { request in
+            guard matching.match.isEqual(request) else {
+              return try await currentDb.configuration.fetch(request)
+            }
+            return try await OK(value, encoder: currentDb.configuration.encoder)
+          },
+          encoder: currentDb.configuration.encoder,
+          decoder: currentDb.configuration.decoder
+        )
+      )
+    }
+  }
 }
+#if DEBUG
+
+public func OK<A: Encodable>(
+  _ value: A, encoder: JSONEncoder = .init()
+) async throws -> (Data, URLResponse) {
+  (
+    try encoder.encode(value),
+    HTTPURLResponse(
+      url: URL(string: "/")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+  )
+}
+
+public func OK(_ jsonObject: Any) async throws -> (Data, URLResponse) {
+  (
+    try JSONSerialization.data(withJSONObject: jsonObject, options: []),
+    HTTPURLResponse(
+      url: URL(string: "/")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+  )
+}
+#endif

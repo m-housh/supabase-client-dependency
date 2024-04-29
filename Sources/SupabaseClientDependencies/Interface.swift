@@ -48,6 +48,8 @@ public struct SupabaseClientDependency {
   
   public var client: SupabaseClient
 
+  public var database: () -> PostgrestClient
+
   /// Create a new supabase client dependency.
   ///
   /// - Parameters:
@@ -59,15 +61,12 @@ public struct SupabaseClientDependency {
   ) {
     self.auth = auth
     self.client = client
+    self.database = { client.schema("public") }
   }
   
   public subscript<T>(dynamicMember keyPath: WritableKeyPath<SupabaseClient, T>) -> T {
     get { self.client[keyPath: keyPath] }
     set { self.client[keyPath: keyPath] = newValue }
-  }
-  
-  public func database(schema: String = "public") -> PostgrestClient {
-    client.schema(schema)
   }
 
   /// An authentication client to create and manage user sessions for access to data that is secured by

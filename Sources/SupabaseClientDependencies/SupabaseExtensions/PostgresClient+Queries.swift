@@ -82,9 +82,10 @@ extension PostgrestClient {
     try await self.delete(from: table, filteredBy: .id(id))
   }
   
-  func fetch<R: Decodable>(
+  public func fetch<R: Decodable>(
     _ request: DatabaseRequest.FetchRequest
   ) async throws -> R {
+
     try await self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
@@ -113,7 +114,7 @@ extension PostgrestClient {
   ///   - filters: Filters to apply to the query.
   ///   - orderBy: An optional order by clause for the query.
   ///   - type: The return value type to decode.
-  public func fetch<Response: Decodable>(
+  func fetch<Response: Decodable>(
     from table: AnyTable,
     where filters: [DatabaseRequest.Filter] = [],
     orderBy order: DatabaseRequest.Order? = nil,
@@ -158,7 +159,7 @@ extension PostgrestClient {
 
   // MARK: - Fetch One
   
-  func fetchOne<R: Decodable>(
+  public func fetchOne<R: Decodable>(
     _ request: DatabaseRequest.FetchOneRequest
   ) async throws -> R {
     try await self.from(request.table.tableName)
@@ -257,8 +258,8 @@ extension PostgrestClient {
 
   // MARK: - Insert
   
-  func insert<R: Decodable>(
-    _ request: DatabaseRequest.InsertRequest
+  func insert<R: Decodable, V: Encodable>(
+    _ request: DatabaseRequest.InsertRequest<V>
   ) async throws -> R {
     try await self.from(request.table.tableName)
       .insert(request.values, returning: request.returningOptions)
@@ -267,8 +268,8 @@ extension PostgrestClient {
       .value
   }
   
-  func insertMany<R: Decodable>(
-    _ request: DatabaseRequest.InsertManyRequest
+  func insertMany<R: Decodable, V: Encodable>(
+    _ request: DatabaseRequest.InsertManyRequest<V>
   ) async throws -> R {
     @Dependency(\.databaseCoder.encoder) var encoder
 
@@ -352,8 +353,8 @@ extension PostgrestClient {
 
   // MARK: - Update
   
-  func update<R: Decodable>(
-    _ request: DatabaseRequest.UpdateRequest
+  func update<R: Decodable, V: Encodable>(
+    _ request: DatabaseRequest.UpdateRequest<V>
   ) async throws -> R {
     try await self.from(request.table.tableName)
       .update(request.values, returning: request.returningOptions)

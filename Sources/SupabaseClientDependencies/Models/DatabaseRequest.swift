@@ -1,7 +1,9 @@
 import Foundation
 import Supabase
 
+// TODO: Remove tables.
 public enum DatabaseRequest {
+
   /// Represents a filter for use in database queries.
   ///
   public struct Filter {
@@ -209,7 +211,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``insert(_:into:returning:decoding:)-731w6``
   ///
-  public struct InsertRequest {
+  public struct InsertRequest<Value: Encodable> {
 
     /// The table to insert the values into.
     public let table: AnyTable
@@ -218,7 +220,7 @@ public enum DatabaseRequest {
     public let returningOptions: PostgrestReturningOptions?
 
     /// The values to insert into the database.
-    public let values: any Encodable
+    public let values: Value
 
     /// Create a new insert request.
     ///
@@ -231,7 +233,7 @@ public enum DatabaseRequest {
     ///   - returningOptions: The returning options for the response values.
     public init<T: TableRepresentable>(
       table: T,
-      values: any Encodable,
+      values: Value,
       returningOptions: PostgrestReturningOptions? = nil
     ) {
       self.table = table.eraseToAnyTable()
@@ -241,7 +243,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      values: any Encodable,
+      values: Value,
       returningOptions: PostgrestReturningOptions? = nil
     ) {
       self.table = table
@@ -255,7 +257,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``insert(_:into:returning:decoding:)-630da``.
   ///
-  public struct InsertManyRequest {
+  public struct InsertManyRequest<Value: Encodable> {
 
     /// The table to insert the values into.
     public let table: AnyTable
@@ -264,7 +266,7 @@ public enum DatabaseRequest {
     public let returningOptions: PostgrestReturningOptions?
 
     /// The values to insert into the database.
-    public let values: [(any Encodable)]
+    public let values: [Value]
 
     /// Create a new insert request.
     ///
@@ -277,7 +279,7 @@ public enum DatabaseRequest {
     ///   - returningOptions: The returning options for the response values.
     public init<T: TableRepresentable>(
       table: T,
-      values: [(any Encodable)],
+      values: [Value],
       returningOptions: PostgrestReturningOptions? = nil
     ) {
       self.table = table.eraseToAnyTable()
@@ -287,7 +289,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      values: [(any Encodable)],
+      values: [Value],
       returningOptions: PostgrestReturningOptions? = nil
     ) {
       self.table = table
@@ -339,7 +341,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``update(id:in:with:returning:decoding:)``.
   ///
-  public struct UpdateRequest {
+  public struct UpdateRequest<Value: Encodable> {
 
     /// The table to perform the update request on.
     public let table: AnyTable
@@ -351,7 +353,7 @@ public enum DatabaseRequest {
     public let returningOptions: PostgrestReturningOptions
 
     /// The values to update in the database.
-    public let values: any Encodable
+    public let values: Value
 
     /// Create a new update request.
     ///
@@ -367,7 +369,7 @@ public enum DatabaseRequest {
       table: T,
       filters: [Filter],
       returningOptions: PostgrestReturningOptions = .representation,
-      values: any Encodable
+      values: Value
     ) {
       self.table = table.eraseToAnyTable()
       self.filters = filters
@@ -379,7 +381,7 @@ public enum DatabaseRequest {
       table: AnyTable,
       filters: [Filter],
       returningOptions: PostgrestReturningOptions = .representation,
-      values: any Encodable
+      values: Value
     ) {
       self.table = table
       self.filters = filters
@@ -397,3 +399,6 @@ extension DatabaseRequest.Filter: Equatable {
   }
 }
 
+extension DatabaseRequest.InsertRequest: Equatable where Value: Equatable { }
+extension DatabaseRequest.InsertManyRequest: Equatable where Value: Equatable { }
+extension DatabaseRequest.UpdateRequest: Equatable where Value: Equatable { }

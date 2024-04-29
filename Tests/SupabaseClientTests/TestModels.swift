@@ -2,8 +2,11 @@ import Dependencies
 import Foundation
 import SupabaseClientDependencies
 
-enum Table: String, TableRepresentable {
-  case todos
+//enum Table: String, TableRepresentable {
+//  case todos
+//}
+extension AnyTable {
+  static let todos = Self("todos")
 }
 
 enum TodoColumn: String, ColumnRepresentable {

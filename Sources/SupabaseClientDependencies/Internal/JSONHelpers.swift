@@ -65,3 +65,14 @@ extension Array where Element == (any Encodable) {
     }
   }
 }
+
+extension Array where Element: Encodable {
+
+  func anyJSON(encoder: JSONEncoder) throws -> [[String: AnyJSON]] {
+    let encoded = try self.map { try encoder.encode($0) }
+    return try encoded.map {
+      try JSONDecoder.databaseClientDecoder
+        .decode(Dictionary<String, AnyJSON>.self, from: $0)
+    }
+  }
+}
