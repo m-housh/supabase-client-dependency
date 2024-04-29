@@ -1,7 +1,9 @@
+import Dependencies
 import Foundation
 import PostgREST
 import Supabase
 
+// TODO: Add database configuration.
 extension SupabaseClientDependency {
 
   /// Represents the configuration for the supabase client dependency.
@@ -69,14 +71,16 @@ extension PostgrestClient {
     configuration: SupabaseClientDependency.Configuration,
     schema: String? = nil
   ) {
+    @Dependency(\.databaseCoder) var databaseCoder
+
     self.init(
-      url: configuration.url
-        .appending(component: "rest")
-        .appending(component: "v1"),
-      schema: schema, 
-      headers: [
-        "apiKey": configuration.anonymousKey
-      ]
+      url: configuration.url.appending(component: "rest").appending(component: "v1"),
+      schema: schema,
+      headers: ["apiKey": configuration.anonymousKey],
+      logger: nil,
+      fetch: { try await URLSession.shared.data(for: $0) },
+      encoder: databaseCoder.encoder,
+      decoder: databaseCoder.decoder
     )
   }
 }

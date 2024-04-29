@@ -20,8 +20,3 @@ extension String: TableRepresentable {
   public var tableName: String { self }
 }
 
-extension SupabaseClient {
-  public func from(_ table: TableRepresentable) -> PostgrestQueryBuilder {
-    self.from(table.tableName)
-  }
-}

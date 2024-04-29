@@ -14,16 +14,23 @@ extension DependencyValues {
   }
   
   /// The decoder used for decoding database values.
-  public var databaseDecoder: JSONDecoder {
-    get { self[DatabaseDecoderKey.self].decoder }
-    set { self[DatabaseDecoderKey.self].decoder = newValue }
+  public var databaseCoder: DatabaseCoder {
+    get { self[DatabaseCoder.self] }
+    set { self[DatabaseCoder.self] = newValue }
   }
 }
 
-struct DatabaseDecoderKey: DependencyKey {
+public struct DatabaseCoder: DependencyKey {
+  var encoder: JSONEncoder
   var decoder: JSONDecoder
-  static var testValue: DatabaseDecoderKey { .init(decoder: .databaseClientDecoder) }
-  static var liveValue: DatabaseDecoderKey { .init(decoder: .databaseClientDecoder) }
+
+  public static var testValue: DatabaseCoder {
+    .init(
+      encoder: .databaseClientEncoder,
+      decoder: .databaseClientDecoder
+    )
+  }
+  public static var liveValue: DatabaseCoder { .testValue }
 }
 
 /// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate

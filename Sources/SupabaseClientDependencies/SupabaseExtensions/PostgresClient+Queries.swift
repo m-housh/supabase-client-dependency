@@ -19,14 +19,7 @@ extension PostgrestClient {
       .execute()
       .value
   }
-  
-  public func delete(
-    from table: AnyTable,
-    where filters: [DatabaseFilter]
-  ) async throws {
-    try await self.delete(.init(table: table, filters: filters))
-  }
-  
+
   /// A helper for deleting a database item by the provided filters.
   ///
   /// ### Example
@@ -44,13 +37,12 @@ extension PostgrestClient {
   /// - Parameters:
   ///   - table: The table name to delete the item from.
   ///   - filters: The filters for the row to be deleted from the database.
-//  public func delete<Table: TableRepresentable>(
-//    from table: Table,
-//    where filters: [DatabaseFilter]
-//  ) async throws {
-//    try await self.delete(from: AnyTable(table), where: filters)
-//  }
-  
+  public func delete(
+    from table: AnyTable,
+    where filters: [DatabaseFilter]
+  ) async throws {
+    try await self.delete(.init(table: table, filters: filters))
+  }
 
   
   /// A helper for deleting a database item by the provided filters.
@@ -69,12 +61,6 @@ extension PostgrestClient {
   /// - Parameters:
   ///   - table: The table name to delete the item from.
   ///   - filters: The filters for the row to be deleted from the database.
-//  public func delete<Table: TableRepresentable>(
-//    from table: Table,
-//    filteredBy filters: DatabaseFilter...
-//  ) async throws {
-//    try await delete(from: table, where: filters)
-//  }
   public func delete(
     from table: AnyTable,
     filteredBy filters: DatabaseFilter...
@@ -103,9 +89,9 @@ extension PostgrestClient {
     try await self.delete(from: table, filteredBy: .id(id))
   }
   
-  func fetch(
+  func fetch<R: Decodable>(
     _ request: DatabaseFetchRequest
-  ) async throws -> Data {
+  ) async throws -> R {
     try await self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
@@ -140,12 +126,9 @@ extension PostgrestClient {
     orderBy order: DatabaseOrder? = nil,
     decoding type: Response.Type = Response.self
   ) async throws -> Response {
-    @Dependency(\.databaseDecoder) var decoder
-    
     return try await self.fetch(
       .init(table: table, filters: filters, order: order)
     )
-    .decoding(as: Response.self, with: decoder)
   }
 
   /// A helper for fetching items from the database, using the table name, a Filter, and Order types.
@@ -182,9 +165,9 @@ extension PostgrestClient {
 
   // MARK: - Fetch One
   
-  func fetchOne(
+  func fetchOne<R: Decodable>(
     _ request: DatabaseFetchOneRequest
-  ) async throws -> Data {
+  ) async throws -> R {
     try await self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
@@ -214,14 +197,12 @@ extension PostgrestClient {
     where filters: [DatabaseFilter],
     decoding type: Model.Type = Model.self
   ) async throws -> Model {
-    @Dependency(\.databaseDecoder) var decoder
     return try await self.fetchOne(
       .init(
         table: table,
         filters: filters
       )
     )
-    .decoding(as: Model.self, with: decoder)
   }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
@@ -283,9 +264,9 @@ extension PostgrestClient {
 
   // MARK: - Insert
   
-  func insert(
+  func insert<R: Decodable>(
     _ request: DatabaseInsertRequest
-  ) async throws -> Data {
+  ) async throws -> R {
     try await self.from(request.table.tableName)
       .insert(request.values, returning: request.returningOptions)
       .single()
@@ -293,9 +274,9 @@ extension PostgrestClient {
       .value
   }
   
-  func insertMany(
+  func insertMany<R: Decodable>(
     _ request: DatabaseInsertManyRequest
-  ) async throws -> Data {
+  ) async throws -> R {
     try await self.from(request.table.tableName)
       .insert(
         request.values.anyJSON(encoder: .databaseClientEncoder),
@@ -329,7 +310,6 @@ extension PostgrestClient {
     returning returningOptions: PostgrestReturningOptions = .representation,
     decoding type: Model.Type = Model.self
   ) async throws -> Model {
-    @Dependency(\.databaseDecoder) var decoder
     return try await self.insert(
       .init(
         table: table,
@@ -337,7 +317,6 @@ extension PostgrestClient {
         returningOptions: returningOptions
       )
     )
-    .decoding(as: Model.self, with: decoder)
   }
 
   /// Helper for inserting multiple new values into the database.
@@ -367,7 +346,6 @@ extension PostgrestClient {
     returning returningOptions: PostgrestReturningOptions = .representation,
     decoding type: Response.Type = Response.self
   ) async throws -> Response {
-    @Dependency(\.databaseDecoder) var decoder
     return try await self.insertMany(
       .init(
         table: table,
@@ -375,12 +353,13 @@ extension PostgrestClient {
         returningOptions: returningOptions
       )
     )
-    .decoding(as: Response.self, with: decoder)
   }
 
   // MARK: - Update
   
-  func update(_ request: DatabaseUpdateRequest) async throws -> Data {
+  func update<R: Decodable>(
+    _ request: DatabaseUpdateRequest
+  ) async throws -> R {
     try await self.from(request.table.tableName)
       .update(request.values, returning: request.returningOptions)
       .filter(by: request.filters)
@@ -417,7 +396,6 @@ extension PostgrestClient {
     returning returningOptions: PostgrestReturningOptions = .representation,
     decoding type: Model.Type = Model.self
   ) async throws -> Model {
-    @Dependency(\.databaseDecoder) var decoder
     return try await self.update(
       .init(
         table: table,
@@ -426,7 +404,6 @@ extension PostgrestClient {
         values: values
       )
     )
-    .decoding(as: Model.self, with: decoder)
   }
 
   /// A helper for updating an item in the database, using the table name and a filter for the item.

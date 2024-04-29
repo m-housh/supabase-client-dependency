@@ -45,15 +45,18 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     @Dependency(\.supabaseClient) var client;
     let database = client.database(schema: "public")
 
-    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(from: AnyTable.todos)
+    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(
+      from: .todos,
+      decoding: IdentifiedArrayOf<Todo>.self
+    )
     XCTAssertEqual(todos, [])
 
     let insertedTodo: Todo = try await database.insert(
       TodoInsertRequest(description: "Implement integration tests for supabase-client-dependency."),
-      into: AnyTable.todos
+      into: .todos
     )
 
-    todos = try await database.fetch(from: AnyTable.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertEqual(todos, [insertedTodo])
 
     let insertedTodos: [Todo] = try await database.insert(
@@ -61,14 +64,14 @@ final class DatabaseClientIntegrationTests: XCTestCase {
         TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
         TodoInsertRequest(description: "Drink some coffee.")
       ],
-      into: AnyTable.todos
+      into: .todos
     )
 
-    todos = try await database.fetch(from: AnyTable.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
 
     let orderedTodos: [Todo] = try await database.fetch(
-      from: AnyTable.todos,
+      from: .todos,
       orderBy: TodoColumn.description.ascending()
     )
     XCTAssertEqual(
@@ -83,19 +86,19 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     let drinkCoffeeTodo = insertedTodos[1]
     let fetchOneTodo: Todo = try await database.fetchOne(
       id: drinkCoffeeTodo.id,
-      from: AnyTable.todos
+      from: .todos
     )
     XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
 
     let updatedTodo: Todo = try await database.update(
       id: drinkCoffeeTodo.id,
-      in: AnyTable.todos,
+      in: .todos,
       with: TodoUpdateRequest(isComplete: true)
     )
     XCTAssertEqual(updatedTodo.isComplete, true)
 
     let completedTodos: [Todo] = try await database.fetch(
-      from: AnyTable.todos,
+      from: .todos,
       filteredBy: TodoColumn.isComplete.equals(true)
     )
     XCTAssertEqual(completedTodos, [updatedTodo])
@@ -104,7 +107,7 @@ final class DatabaseClientIntegrationTests: XCTestCase {
       from: .todos,
       filteredBy: TodoColumn.isComplete.equals(true)
     )
-    todos = try await database.fetch(from: AnyTable.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
 
     let firstTodo = todos.first!
