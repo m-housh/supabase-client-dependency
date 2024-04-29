@@ -16,7 +16,7 @@ extension PostgrestFilterBuilder {
   public func filter(by filters: [DatabaseRequest.Filter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
-        filter.column,
+        filter.column.columnName,
         operator: filter.operator.rawValue,
         value: filter.value.queryValue
       )

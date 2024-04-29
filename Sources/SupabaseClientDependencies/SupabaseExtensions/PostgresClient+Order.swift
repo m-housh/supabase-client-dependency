@@ -64,7 +64,7 @@ extension PostgrestFilterBuilder {
   {
     if let order {
       return self.order(
-        order.column,
+        order.column.columnName,
         ascending: order.ascending,
         nullsFirst: order.nullsFirst,
         referencedTable: order.foreignTable

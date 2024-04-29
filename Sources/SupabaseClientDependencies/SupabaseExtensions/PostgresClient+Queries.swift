@@ -82,7 +82,7 @@ extension PostgrestClient {
     try await self.delete(from: table, filteredBy: .id(id))
   }
   
-  public func fetch<R: Decodable>(
+  func fetch<R: Decodable>(
     _ request: DatabaseRequest.FetchRequest
   ) async throws -> R {
 
@@ -159,7 +159,7 @@ extension PostgrestClient {
 
   // MARK: - Fetch One
   
-  public func fetchOne<R: Decodable>(
+  func fetchOne<R: Decodable>(
     _ request: DatabaseRequest.FetchOneRequest
   ) async throws -> R {
     try await self.from(request.table.tableName)
@@ -271,11 +271,9 @@ extension PostgrestClient {
   func insertMany<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.InsertManyRequest<V>
   ) async throws -> R {
-    @Dependency(\.databaseCoder.encoder) var encoder
-
     return try await self.from(request.table.tableName)
       .insert(
-        request.values.anyJSON(encoder: encoder),
+        request.values.anyJSON(encoder: self.configuration.encoder),
         returning: request.returningOptions
       )
       .execute()
@@ -363,6 +361,7 @@ extension PostgrestClient {
       .execute()
       .value
   }
+
 
   /// A helper for updating an item in the database, using the table name and a filter for the item.
   ///
@@ -478,4 +477,200 @@ extension PostgrestClient {
       decoding: Model.self
     )
   }
+
+
+  // MARK: - Upsert
+  func upsert<R: Decodable, V: Encodable>(
+    _ request: DatabaseRequest.UpsertRequest<V>
+  ) async throws -> R {
+    try await self.from(request.table.tableName)
+      .upsert(request.values, returning: request.returningOptions, ignoreDuplicates: request.ignoreDuplicates)
+      .filter(by: request.filters)
+      .single()
+      .execute()
+      .value
+  }
+
+  func upsertMany<R: Decodable, V: Encodable>(
+    _ request: DatabaseRequest.UpsertManyRequest<V>
+  ) async throws -> [R] {
+    try await self.from(request.table.tableName)
+      .upsert(
+        request.values,
+        returning: request.returningOptions,
+        ignoreDuplicates: request.ignoreDuplicates
+      )
+      .filter(by: request.filters)
+      .execute()
+      .value
+  }
+
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
+  /// in the database to be "id" for matching the id value against.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// let todo = try await databaseClient.update(
+  ///   id: UUID(0)
+  ///   in: Table.todo,
+  ///   with: TodoUpdateRequest(complete: true),
+  ///   returning: .representation,
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  /// )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - id: The item's id.
+  ///   - table: The table to update the row.
+  ///   - values: The values to updated in the row.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsert<
+    Values: Encodable, Model: Decodable
+  >(
+    in table: AnyTable,
+    with values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: Model.Type = Model.self
+  ) async throws -> Model where Values: Identifiable {
+    try await self.upsert(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
+  /// in the database to be "id" for matching the id value against.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// let todo = try await databaseClient.update(
+  ///   id: UUID(0)
+  ///   in: Table.todo,
+  ///   with: TodoUpdateRequest(complete: true),
+  ///   returning: .representation,
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  /// )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - id: The item's id.
+  ///   - table: The table to update the row.
+  ///   - values: The values to updated in the row.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsert<
+    Values: Encodable
+  >(
+    in table: AnyTable,
+    with values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: Values.Type = Values.self
+  ) async throws -> Values where Values: Identifiable, Values: Decodable {
+    try await self.upsert(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+
+    /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
+  /// in the database to be "id" for matching the id value against.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// let todo = try await databaseClient.update(
+  ///   id: UUID(0)
+  ///   in: Table.todo,
+  ///   with: TodoUpdateRequest(complete: true),
+  ///   returning: .representation,
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  /// )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - id: The item's id.
+  ///   - table: The table to update the row.
+  ///   - values: The values to updated in the row.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsertMany<
+    Value: Encodable, Model: Decodable
+  >(
+    in table: AnyTable,
+    with values: [Value],
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: [Model].Type = [Model].self
+  ) async throws -> [Model] where Value: Identifiable {
+    try await self.upsertMany(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
+  /// in the database to be "id" for matching the id value against.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// let todo = try await databaseClient.update(
+  ///   id: UUID(0)
+  ///   in: Table.todo,
+  ///   with: TodoUpdateRequest(complete: true),
+  ///   returning: .representation,
+  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
+  /// )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - id: The item's id.
+  ///   - table: The table to update the row.
+  ///   - values: The values to updated in the row.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsert<
+    Value: Encodable
+  >(
+    in table: AnyTable,
+    with values: [Value],
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: [Value].Type = [Value].self
+  ) async throws -> [Value] where Value: Identifiable, Value: Decodable {
+    try await self.upsertMany(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+
 }

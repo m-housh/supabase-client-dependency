@@ -1,7 +1,6 @@
 import Foundation
 import Supabase
 
-// TODO: Remove tables.
 public enum DatabaseRequest {
 
   /// Represents a filter for use in database queries.
@@ -9,7 +8,7 @@ public enum DatabaseRequest {
   public struct Filter {
 
     /// The column to filter the results by.
-    public let column: String
+    public let column: AnyColumn
 
     /// The operator to use to filter the results by.
     public let `operator`: PostgrestFilterBuilder.Operator
@@ -28,11 +27,26 @@ public enum DatabaseRequest {
       operator postgrestOperator: PostgrestFilterBuilder.Operator,
       value: URLQueryRepresentable
     ) {
-      self.column = column.columnName
+      self.column = column.eraseToAnyColumn()
       self.operator = postgrestOperator
       self.value = value
     }
 
+    /// Create a new filter.
+    ///
+    /// - Parameters:
+    ///   - column: The column to filter the results by.
+    ///   - operator: The operator to use to compare the column value to.
+    ///   - value: The value to use for the column filter.
+    public init(
+      column: AnyColumn,
+      operator postgrestOperator: PostgrestFilterBuilder.Operator,
+      value: URLQueryRepresentable
+    ) {
+      self.column = column
+      self.operator = postgrestOperator
+      self.value = value
+    }
     public static func equals<C: ColumnRepresentable>(
       column: C,
       value: URLQueryRepresentable
@@ -50,7 +64,7 @@ public enum DatabaseRequest {
   public struct Order: Equatable {
 
     /// The column name to use for the order by clause.
-    public let column: String
+    public let column: AnyColumn
 
     /// Whether the values are returned in ascending or descending order.
     public let ascending: Bool
@@ -74,7 +88,26 @@ public enum DatabaseRequest {
       nullsFirst: Bool = false,
       foreignTable: T? = nil
     ) {
-      self.column = column.columnName
+      self.column = column.eraseToAnyColumn()
+      self.ascending = ascending
+      self.nullsFirst = nullsFirst
+      self.foreignTable = foreignTable?.tableName
+    }
+
+    /// Create a new order by clause for the result with the specified `column`.
+    ///
+    /// - Parameters:
+    ///   - column: The column to order on.
+    ///   - ascending: If `true`, the result will be in ascending order.
+    ///   - nullsFirst: If `true`, `null`s appear first.
+    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
+    public init<T: TableRepresentable>(
+      column: AnyColumn,
+      ascending: Bool = true,
+      nullsFirst: Bool = false,
+      foreignTable: T? = nil
+    ) {
+      self.column = column
       self.ascending = ascending
       self.nullsFirst = nullsFirst
       self.foreignTable = foreignTable?.tableName
@@ -86,7 +119,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``delete(id:from:)``.
   ///
-  public struct DeleteRequest: Equatable {
+  struct DeleteRequest: Equatable {
 
     /// The table to perform the delete on.
     public let table: AnyTable
@@ -118,7 +151,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``fetch(from:filteredBy:orderBy:decoding:)``.
   ///
-  public struct FetchRequest: Equatable {
+  struct FetchRequest: Equatable {
 
     /// The table to perform the fetch on.
     public let table: AnyTable
@@ -173,7 +206,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``fetchOne(id:from:decoding:)``.
   ///
-  public struct FetchOneRequest: Equatable {
+  struct FetchOneRequest: Equatable {
 
     /// The table to perform the request on.
     public let table: AnyTable
@@ -211,7 +244,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``insert(_:into:returning:decoding:)-731w6``
   ///
-  public struct InsertRequest<Value: Encodable> {
+  struct InsertRequest<Value: Encodable> {
 
     /// The table to insert the values into.
     public let table: AnyTable
@@ -257,7 +290,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``insert(_:into:returning:decoding:)-630da``.
   ///
-  public struct InsertManyRequest<Value: Encodable> {
+  struct InsertManyRequest<Value: Encodable> {
 
     /// The table to insert the values into.
     public let table: AnyTable
@@ -303,7 +336,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``rpc(_:params:count:decoding:perform:)``.
   ///
-  public struct RpcRequest {
+  struct RpcRequest {
 
     /// The remote function name.
     public let functionName: String
@@ -341,7 +374,7 @@ public enum DatabaseRequest {
   /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
   /// ``update(id:in:with:returning:decoding:)``.
   ///
-  public struct UpdateRequest<Value: Encodable> {
+  struct UpdateRequest<Value: Encodable> {
 
     /// The table to perform the update request on.
     public let table: AnyTable
@@ -386,6 +419,128 @@ public enum DatabaseRequest {
       self.table = table
       self.filters = filters
       self.returningOptions = returningOptions
+      self.values = values
+    }
+  }
+
+  /// Represents an upset request on the database.
+  ///
+  /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+  /// ``update(id:in:with:returning:decoding:)``.
+  ///
+  struct UpsertRequest<Value: Encodable> where Value: Identifiable {
+
+    /// The table to perform the update request on.
+    public let table: AnyTable
+
+    /// The filters for the request.
+    public let filters: [Filter]
+
+    /// The returning options for the response type.
+    public let returningOptions: PostgrestReturningOptions
+
+    /// The values to update in the database.
+    public let values: Value
+
+    public let ignoreDuplicates: Bool
+
+    /// Create a new update request.
+    ///
+    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+    /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:decoding:)``.
+    ///
+    /// - Parameters:
+    ///   - table: The table to perform the request on.
+    ///   - filters: The row filters for the request.
+    ///   - returningOptions: The returning options for the response type.
+    ///   - ignoreDuplicates: if `true` duplicate rows are ignored, if `false` duplicate rows are merged.
+    ///   - values: The values to update in the database.
+    public init<T: TableRepresentable>(
+      table: T,
+      filters: [Filter],
+      returningOptions: PostgrestReturningOptions = .representation,
+      ignoreDuplicates: Bool = false,
+      values: Value
+    ) {
+      self.table = table.eraseToAnyTable()
+      self.filters = filters
+      self.returningOptions = returningOptions
+      self.ignoreDuplicates = ignoreDuplicates
+      self.values = values
+    }
+
+    public init(
+      table: AnyTable,
+      filters: [Filter],
+      returningOptions: PostgrestReturningOptions = .representation,
+      ignoreDuplicates: Bool = false,
+      values: Value
+    ) {
+      self.table = table
+      self.filters = filters
+      self.returningOptions = returningOptions
+      self.ignoreDuplicates = ignoreDuplicates
+      self.values = values
+    }
+  }
+
+  /// Represents an upset request on the database.
+  ///
+  /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+  /// ``update(id:in:with:returning:decoding:)``.
+  ///
+  struct UpsertManyRequest<Value: Encodable> where Value: Identifiable {
+
+    /// The table to perform the update request on.
+    public let table: AnyTable
+
+    /// The filters for the request.
+    public let filters: [Filter]
+
+    /// The returning options for the response type.
+    public let returningOptions: PostgrestReturningOptions
+
+    /// The values to update in the database.
+    public let values: [Value]
+
+    public let ignoreDuplicates: Bool
+
+    /// Create a new update request.
+    ///
+    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
+    /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:decoding:)``.
+    ///
+    /// - Parameters:
+    ///   - table: The table to perform the request on.
+    ///   - filters: The row filters for the request.
+    ///   - returningOptions: The returning options for the response type.
+    ///   - ignoreDuplicates: if `true` duplicate rows are ignored, if `false` duplicate rows are merged.
+    ///   - values: The values to update in the database.
+    public init<T: TableRepresentable>(
+      table: T,
+      filters: [Filter],
+      returningOptions: PostgrestReturningOptions = .representation,
+      ignoreDuplicates: Bool = false,
+      values: [Value]
+    ) {
+      self.table = table.eraseToAnyTable()
+      self.filters = filters
+      self.returningOptions = returningOptions
+      self.ignoreDuplicates = ignoreDuplicates
+      self.values = values
+    }
+
+    public init(
+      table: AnyTable,
+      filters: [Filter],
+      returningOptions: PostgrestReturningOptions = .representation,
+      ignoreDuplicates: Bool = false,
+      values: [Value]
+    ) {
+      self.table = table
+      self.filters = filters
+      self.returningOptions = returningOptions
+      self.ignoreDuplicates = ignoreDuplicates
       self.values = values
     }
   }

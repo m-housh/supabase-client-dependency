@@ -12,25 +12,7 @@ extension DependencyValues {
     get { self[SupabaseClientDependency.self] }
     set { self[SupabaseClientDependency.self] = newValue }
   }
-  
-  /// The decoder used for decoding database values.
-  public var databaseCoder: DatabaseCoder {
-    get { self[DatabaseCoder.self] }
-    set { self[DatabaseCoder.self] = newValue }
-  }
-}
 
-public struct DatabaseCoder: DependencyKey {
-  var encoder: JSONEncoder
-  var decoder: JSONDecoder
-
-  public static var testValue: DatabaseCoder {
-    .init(
-      encoder: .databaseClientEncoder,
-      decoder: .databaseClientDecoder
-    )
-  }
-  public static var liveValue: DatabaseCoder { .testValue }
 }
 
 /// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate
@@ -46,9 +28,16 @@ public struct SupabaseClientDependency {
   /// - SeeAlso: ``AuthClient``
   public var auth: AuthClient
   
+  /// The supabase client for the application.
+  ///
   public var client: SupabaseClient
 
-  public var database: () -> PostgrestClient
+  /// Holds overrides and acts as a proxy for the postgrest client.
+  var databaseClient: DatabaseClient = .init()
+
+  public func database(schema: String = "public") -> PostgrestClient {
+    self.databaseClient(client: self.client.schema(schema))
+  }
 
   /// Create a new supabase client dependency.
   ///
@@ -61,12 +50,78 @@ public struct SupabaseClientDependency {
   ) {
     self.auth = auth
     self.client = client
-    self.database = { client.schema("public") }
   }
   
-  public subscript<T>(dynamicMember keyPath: WritableKeyPath<SupabaseClient, T>) -> T {
+  public subscript<T>(
+    dynamicMember keyPath: WritableKeyPath<SupabaseClient, T>
+  ) -> T {
     get { self.client[keyPath: keyPath] }
     set { self.client[keyPath: keyPath] = newValue }
+  }
+
+  public mutating func override<A: Encodable>(
+    _ matching: DatabaseOverride,
+    with value: A
+  ) {
+    self.databaseClient.overrides.append(
+      (override: matching, response: OK(value))
+    )
+  }
+
+  public mutating func override(
+    _ matching: DatabaseOverride
+  ) {
+    self.databaseClient.overrides.append(
+      (override: matching, response: OK())
+    )
+  }
+
+  public mutating func override<A: Encodable>(
+    with value: A
+  ) {
+    self.databaseClient.overrides.append(
+      (override: .all, response: OK(value))
+    )
+  }
+
+  public enum DatabaseOverride {
+    case all
+    case delete(from: AnyTable)
+    case fetch(from: AnyTable)
+    case fetchOne(from: AnyTable)
+    case insert(into: AnyTable)
+    case insertMany(into: AnyTable)
+    case update(in: AnyTable)
+    case upsert(in: AnyTable)
+  }
+
+  /// Used as a proxy for the postgrest client, to provide override functionality.
+  struct DatabaseClient {
+    typealias ResponseHandler = (JSONEncoder) async throws -> (Data, URLResponse)
+
+    var overrides: [(override: DatabaseOverride, response: ResponseHandler)] = []
+
+    func callAsFunction(
+      client: PostgrestClient
+    ) -> PostgrestClient {
+      let configuration = client.configuration
+      return .init(
+        url: configuration.url,
+        schema: configuration.schema,
+        headers: configuration.headers,
+        logger: nil,
+        fetch: { request in
+          guard let match = self.overrides.first(
+            where: { $0.override.isMatch(for: request) }
+          ) else {
+            return try await configuration.fetch(request)
+          }
+          return try await match.response(configuration.encoder)
+        },
+        encoder: configuration.encoder,
+        decoder: configuration.decoder
+      )
+    }
   }
 
   /// An authentication client to create and manage user sessions for access to data that is secured by
@@ -414,4 +469,73 @@ public struct SupabaseClientDependency {
     }
   }
 
+}
+
+// MARK: - Helpers
+
+fileprivate func OK<A: Encodable>(
+  _ value: A
+) -> (JSONEncoder) async throws -> (Data, URLResponse) {
+  return { encoder in
+    (
+      try encoder.encode(value),
+      HTTPURLResponse(
+        url: URL(string: "/")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+      )!
+    )
+  }
+}
+
+fileprivate func OK() -> (JSONEncoder) async throws -> (Data, URLResponse) {
+  return { _ in
+    (
+      Data(),
+      HTTPURLResponse(
+        url: URL(string: "/")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+      )!
+    )
+  }
+}
+
+fileprivate extension SupabaseClientDependency.DatabaseOverride {
+  func isMatch(for request: URLRequest) -> Bool {
+    switch self {
+    case .all:
+      return true
+
+    case let .delete(from: table):
+      return request.httpMethod == "DELETE" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .fetch(from: table):
+      return request.httpMethod == "GET" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .fetchOne(from: table):
+      return request.httpMethod == "GET" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .insert(into: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .insertMany(into: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .update(in: table):
+      return request.httpMethod == "PATCH" &&
+      request.url?.lastPathComponent == table.tableName
+
+    case let .upsert(in: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
+    }
+  }
 }

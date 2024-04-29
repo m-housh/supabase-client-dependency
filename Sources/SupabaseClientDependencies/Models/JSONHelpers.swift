@@ -15,7 +15,7 @@ private let dateFormatter = { () -> ISO8601DateFormatter in
 }()
 
 extension JSONDecoder {
-  static let databaseClientDecoder = { () -> JSONDecoder in
+  public static let databaseClientDecoder = { () -> JSONDecoder in
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .custom { decoder in
       let container = try decoder.singleValueContainer()
@@ -38,7 +38,7 @@ extension JSONDecoder {
 }
 
 extension JSONEncoder {
-  static let databaseClientEncoder = { () -> JSONEncoder in
+  public static let databaseClientEncoder = { () -> JSONEncoder in
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .custom { date, encoder in
       var container = encoder.singleValueContainer()

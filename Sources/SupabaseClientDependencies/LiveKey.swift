@@ -18,7 +18,6 @@ extension SupabaseClientDependency {
     return Self.init(
       auth: .live(client: client.auth),
       client: client
-//      database: .live(client: client.schema("public"))
     )
   }
 }

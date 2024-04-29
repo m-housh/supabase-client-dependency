@@ -5,7 +5,7 @@ import SupabaseClientDependencies
 
 final class DatabaseClientIntegrationTests: XCTestCase {
 
-  let postgrestClient = PostgrestClient(configuration: .local, schema: "public")
+  let postgrestClient = SupabaseClient(configuration: .local).schema("public")
 
   override func setUp() async throws {
     try await super.setUp()
