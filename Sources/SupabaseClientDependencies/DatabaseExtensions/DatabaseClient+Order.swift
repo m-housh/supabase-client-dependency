@@ -1,6 +1,9 @@
 import Foundation
 import PostgREST
 
+public typealias DatabaseOrder = SupabaseClientDependency.DatabaseClient.Order
+
+// TODO: Rename.
 extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents an order by clause used for a database query.
@@ -98,7 +101,7 @@ extension PostgrestFilterBuilder {
   ///
   ///  - Parameters:
   ///   - order: The optional order by clause to apply to the query if applicable.
-  public func order(by order: SupabaseClientDependency.DatabaseClient.Order?)
+  public func order(by order: DatabaseOrder?)
     -> PostgrestTransformBuilder
   {
     if let order {

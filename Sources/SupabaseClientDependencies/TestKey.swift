@@ -40,7 +40,8 @@ extension SupabaseClientDependency: TestDependencyKey {
   public static var testValue: Self {
     Self.init(
       auth: .unimplemented,
-      database: .unimplemented
+      client: .init(configuration: .local)
+//      database: .unimplemented
     )
   }
 }

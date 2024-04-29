@@ -1,6 +1,10 @@
 import Foundation
 import PostgREST
 
+
+public typealias DatabaseFilter = SupabaseClientDependency.DatabaseClient.Filter
+
+// TODO: Just rename filter struct to DatabaseFilter
 extension SupabaseClientDependency.DatabaseClient {
 
   /// Represents a filter for use in database queries.
@@ -57,7 +61,7 @@ extension ColumnRepresentable {
 extension PostgrestFilterBuilder {
 
   @discardableResult
-  public func filter(by filters: [SupabaseClientDependency.DatabaseClient.Filter]) -> Self {
+  public func filter(by filters: [DatabaseFilter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
         filter.column,
@@ -69,12 +73,12 @@ extension PostgrestFilterBuilder {
   }
 
   @discardableResult
-  public func filter(_ filters: SupabaseClientDependency.DatabaseClient.Filter...) -> Self {
+  public func filter(_ filters: DatabaseFilter...) -> Self {
     self.filter(by: filters)
   }
 
   @discardableResult
-  public func filter(by filter: SupabaseClientDependency.DatabaseClient.Filter) -> Self {
+  public func filter(by filter: DatabaseFilter) -> Self {
     self.filter(by: [filter])
   }
 }

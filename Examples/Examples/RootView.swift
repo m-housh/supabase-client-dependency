@@ -56,7 +56,7 @@ struct RootFeature: Reducer {
 
       case .task:
         return .run { send in
-          for await event in auth.events() {
+          for await (event, _) in auth.events() {
             await send(.receiveAuthEvent(event))
           }
           await auth.initialize()

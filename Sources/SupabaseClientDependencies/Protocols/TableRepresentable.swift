@@ -1,4 +1,5 @@
 import Foundation
+import Supabase
 
 /// A helper type that allows you to model table's generally as an enum.
 ///
@@ -17,4 +18,10 @@ extension RawRepresentable where RawValue == String, Self: TableRepresentable {
 extension String: TableRepresentable {
 
   public var tableName: String { self }
+}
+
+extension SupabaseClient {
+  public func from(_ table: TableRepresentable) -> PostgrestQueryBuilder {
+    self.from(table.tableName)
+  }
 }

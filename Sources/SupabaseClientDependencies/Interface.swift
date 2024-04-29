@@ -12,6 +12,18 @@ extension DependencyValues {
     get { self[SupabaseClientDependency.self] }
     set { self[SupabaseClientDependency.self] = newValue }
   }
+  
+  /// The decoder used for decoding database values.
+  public var databaseDecoder: JSONDecoder {
+    get { self[DatabaseDecoderKey.self].decoder }
+    set { self[DatabaseDecoderKey.self].decoder = newValue }
+  }
+}
+
+struct DatabaseDecoderKey: DependencyKey {
+  var decoder: JSONDecoder
+  static var testValue: DatabaseDecoderKey { .init(decoder: .databaseClientDecoder) }
+  static var liveValue: DatabaseDecoderKey { .init(decoder: .databaseClientDecoder) }
 }
 
 /// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate
@@ -19,17 +31,20 @@ extension DependencyValues {
 ///
 /// This adds some niceties around database operations and also includes an `auth` client.
 ///
+@dynamicMemberLookup
 public struct SupabaseClientDependency {
 
   /// The supabase authentication client for the application.
   ///
   /// - SeeAlso: ``AuthClient``
   public var auth: AuthClient
+  
+  public var client: SupabaseClient
 
   /// The supabase database client for the applicaiton.
   ///
   /// - SeeAlso: ``DatabaseClient``
-  public var database: DatabaseClient
+//  public var database: DatabaseClient
 
   /// Create a new supabase client dependency.
   ///
@@ -38,10 +53,21 @@ public struct SupabaseClientDependency {
   ///   - database: The supabase database client dependency for the application.
   public init(
     auth: AuthClient,
-    database: DatabaseClient
+    client: SupabaseClient//,
+//    database: DatabaseClient
   ) {
     self.auth = auth
-    self.database = database
+    self.client = client
+//    self.database = database
+  }
+  
+  public subscript<T>(dynamicMember keyPath: WritableKeyPath<SupabaseClient, T>) -> T {
+    get { self.client[keyPath: keyPath] }
+    set { self.client[keyPath: keyPath] = newValue }
+  }
+  
+  public func database(schema: String = "public") -> PostgrestClient {
+    client.schema(schema)
   }
 
   /// An authentication client to create and manage user sessions for access to data that is secured by

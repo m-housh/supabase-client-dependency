@@ -17,11 +17,13 @@ extension SupabaseClientDependency {
 
     return Self.init(
       auth: .live(client: client.auth),
-      database: .live(client: client.schema("public"))
+      client: client
+//      database: .live(client: client.schema("public"))
     )
   }
-
 }
+
+
 
 extension SupabaseClientDependency.AuthClient {
 
@@ -171,6 +173,7 @@ extension SupabaseClientDependency.AuthClient {
   }
 }
 
+// TODO: Deprecate the database client.
 extension SupabaseClientDependency.DatabaseClient {
   /// Create a live ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient`` instance.
   ///
