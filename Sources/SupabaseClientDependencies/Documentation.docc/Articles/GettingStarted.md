@@ -176,16 +176,23 @@ struct DatabaseClient {
 
 ### The live implementation of the database client.
 ```swift
+// Extending the `AnyTable` struct allows for convenient access to
+// database operations.
+extension AnyTable {
+  static let todos = Self("todos")
+}
+
 extension DatabaseClient: DependencyKey {
   
   static var liveValue: Self {
     // Use the supabase client dependency and it's helper methods for interacting
     // with the supabase postgresql database.
     @Dependency(\.supabaseClient) var client;
+    let database = client.database(schema: "public")
 
     return Self.init(
       todos: DatabaseClient.Todos(
-        delete: { try await client.database.delete(id: $0, from: Table.todos) },
+        delete: { try await database.delete(id: $0, from: .todos) },
         fetch: {
           
           // get the current authenticated user.
@@ -193,8 +200,8 @@ extension DatabaseClient: DependencyKey {
          
           // Return the todos.
           return try await .init(
-            uniqueElements: client.database.fetch(
-              from: Table.todos,
+            uniqueElements: database.fetch(
+              from: .todos,
               filteredBy: TodoColumn.ownerId.equals(user.id),
               orderBy: TodoColumn.complete.ascending()
             )
@@ -221,16 +228,16 @@ extension DatabaseClient: DependencyKey {
             }
           }
           
-          return try await client.database.insert(
+          return try await database.insert(
             InsertValues(
               complete: request.complete,
               description: request.description,
               ownerId: client.auth.requireCurrentUser().id
             ),
-            into: Table.todos
+            into: .todos
           )
         },
-        update: { try await client.database.update(id: $0, in: Table.todos, with: $1) }
+        update: { try await database.update(id: $0, in: .todos, with: $1) }
       )
     )
   }

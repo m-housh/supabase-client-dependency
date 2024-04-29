@@ -65,7 +65,8 @@ This does require the `liveValue` to be setup for your project.
 See <doc:GettingStarted> for details on setting up the client.
 
 ```swift
-@Dependency(\.supabaseClient.database) var database
+@Dependency(\.supabaseClient) var client
+let database = client.database()
 ```
 
 ### Fetching Todos
@@ -74,7 +75,7 @@ An example of fetching all the todos from the database.
 
 ```swift
 func fetchTodos() async throws -> [Todo] { 
-  try await database.fetch(from: Table.todos)
+  try await database.fetch(from: .todos)
 }
 ```
 
@@ -83,7 +84,7 @@ Optionally you can order the todo's returned from the query as well.
 ```swift
 func fetchOrderedTodos() async throws -> [Todo] { 
   try await database.fetch(
-    from: Table.todos,
+    from: .todos,
     orderBy: TableColumn.description.ascending()
   )
 }
@@ -94,7 +95,7 @@ An example of filtering the todo's to only return completed todo's.
 ```swift
 func fetchCompletedTodos() async throws -> [Todo] { 
   try await database.fetch(
-    from: Table.todos, 
+    from: .todos, 
     filteredBy: TodoColumn.isComplete.equals(true)
   )
 }
@@ -106,7 +107,7 @@ An example of fetching a single todo by it's id.
 
 ```swift
 func fetchTodo(id: Todo.ID) async throws -> Todo { 
-  try await database.fetchOne(id: id, from: Table.todos)
+  try await database.fetchOne(id: id, from: .todos)
 }
 ```
 
@@ -126,7 +127,7 @@ struct TodoInsertRequest: Encodable {
 }
 
 func insertTodo(_ todo: TodoInsertRequest) async throws -> Todo { 
-  try await database.insert(todo, into: Table.todos)
+  try await database.insert(todo, into: .todos)
 }
 
 ```
@@ -137,7 +138,7 @@ An example of inserting multiple todo's.
 
 ```swift
 func insertTodos(_ todos: [TodoInsertRequest]) async throws -> [Todo] { 
-  try await database.insert(todos, into: Table.todos)
+  try await database.insert(todos, into: .todos)
 }
 ```
 
@@ -157,7 +158,7 @@ struct TodoUpdateRequest: Encodable {
 }
 
 func updateTodo(id: Todo.ID, updates: TodoUpdateRequest) async throws -> Todo { 
-  try await database.update(id: id, in: Table.todos, with: updates)
+  try await database.update(id: id, in: .todos, with: updates)
 }
 ```
 
@@ -167,7 +168,7 @@ An example of deleting a todo by it's id.
 
 ```swift
 func deleteTodo(id: Todo.ID) async throws { 
-  try await database.delete(id: id, from: Table.todos)
+  try await database.delete(id: id, from: .todos)
 }
 ```
 
@@ -180,13 +181,11 @@ An example of creating a custom query.
 
 ```swift
 func customFetchTodos() async throws -> [Todo] { 
-  try await database.from(Table.todos) { query in 
-    try await query
-      // Add customizations here, and return the result.
-      .select()
-      .execute()
-      .value
-  }
+  try await database.from(.todos)
+    // Add customizations here, and return the result.
+    .select()
+    .execute()
+    .value
 }
 ```
 

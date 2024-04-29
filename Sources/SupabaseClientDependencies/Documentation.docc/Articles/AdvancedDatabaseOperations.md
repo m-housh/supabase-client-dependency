@@ -61,13 +61,13 @@ Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetch`` pro
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.fetch = { _ in
-    // Ignore the incoming request and return mock todo's.
-    return try JSONEncoder().encode(TodoModel.mocks)
-  }
+  $0.supabaseClient.override(
+    .fetch(from: .todos),
+    with: TodoModel.mocks
+  )
 } operation: { 
-  @Dependency(\.supabaseClient.database) var database;
-  let todos: [TodoModel] = try await database.fetch(
+  @Dependency(\.supabaseClient) var client;
+  let todos: [TodoModel] = try await client.database().fetch(
     from: Table.todos
   )
   XCTAssertEqual(todos, TodoModel.mocks)
@@ -83,13 +83,13 @@ Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetchOne`` 
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.fetchOne = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .fetchOne(from: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
-  @Dependency(\.supabaseClient.database) var database;
-  let todo: TodoModel = try await database.fetchOne(
+  @Dependency(\.supabaseClient) var client;
+  let todo: TodoModel = try await client.database().fetchOne(
     id: UUID(0),
     from: Table.todos
   )
@@ -107,10 +107,10 @@ Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insert`` pr
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.insert = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .insert(into: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todo: TodoModel = try await database.insert(
@@ -131,10 +131,10 @@ Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insertMany`
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.insertMany = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.mocks)
-  }
+  $0.supabaseClient.override(
+    .insertMany(into: .todos),
+    with: TodoModel.mocks
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todos: [TodoModel] = try await database.insert(
@@ -157,10 +157,10 @@ Set a custom value for the ``SupabaseClientDependency/DatabaseClient/update`` pr
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.update = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .update(in: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todo: TodoModel = try await database.update(
@@ -180,10 +180,10 @@ client.
 Set a custom value for the ``SupabaseClientDependency/DatabaseClient/delete`` property.
 
 ```swift
-try await withDependencies { 
-  $0.supabaseClient.database.update = { _ in
-    // Ignore the incoming request and do nothing.
-  }
+try await withDependencies {
+  $0.supabaseClient.override(
+    .delete(from: .todos)
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   try await database.delete(

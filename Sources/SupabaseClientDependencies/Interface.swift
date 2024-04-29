@@ -35,8 +35,15 @@ public struct SupabaseClientDependency {
   /// Holds overrides and acts as a proxy for the postgrest client.
   var databaseClient: DatabaseClient = .init()
 
-  public func database(schema: String = "public") -> PostgrestClient {
+  public func schema(_ schema: String = "public") -> PostgrestClient {
     self.databaseClient(client: self.client.schema(schema))
+  }
+  
+  /// Access the postgrest client, focused in on the public schema, if you need access to a different schema.
+  /// then you can use ``SupabaseClientDependency/schema(_:)``.
+  ///
+  public var database: PostgrestClient {
+    self.databaseClient(client: self.client.schema("public"))
   }
 
   /// Create a new supabase client dependency.

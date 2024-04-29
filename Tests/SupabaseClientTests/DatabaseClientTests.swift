@@ -16,10 +16,10 @@ final class DatabaseClientTests: XCTestCase {
         .delete(from: .todos)
       )
     } operation: {
-      @Dependency(\.supabaseClient) var client;
+      @Dependency(\.supabaseClient.database) var database;
 
       do {
-        _ = try await client.database().delete(
+        _ = try await database.delete(
           id: mock.id,
           from: .todos
         )
@@ -45,7 +45,7 @@ final class DatabaseClientTests: XCTestCase {
     } operation: {
       @Dependency(\.supabaseClient) var client;
 
-      let todos: [Todo] = try await client.database().fetch(
+      let todos: [Todo] = try await client.schema().fetch(
         from: .todos
       )
       XCTAssertEqual(todos, Todo.mocks)
@@ -63,7 +63,7 @@ final class DatabaseClientTests: XCTestCase {
       $0.supabaseClient.override(.fetchOne(from: .todos), with: mock)
     } operation: {
       @Dependency(\.supabaseClient) var client;
-      let todo: Todo = try await client.database().fetchOne(
+      let todo: Todo = try await client.schema().fetchOne(
         id: UUID(0),
         from: .todos
       )
@@ -86,7 +86,7 @@ final class DatabaseClientTests: XCTestCase {
       )
     } operation: {
       @Dependency(\.supabaseClient) var client;
-      let todo: Todo = try await client.database().insert(
+      let todo: Todo = try await client.schema().insert(
         TodoInsertRequest(description: "Insert new todo"),
         into: .todos
       )
@@ -109,7 +109,7 @@ final class DatabaseClientTests: XCTestCase {
       )
     } operation: {
       @Dependency(\.supabaseClient) var client;
-      let todos: [Todo] = try await client.database().insert(
+      let todos: [Todo] = try await client.schema().insert(
         [
           TodoInsertRequest(description: "Insert new todo"),
           TodoInsertRequest(description: "Another new todo"),
@@ -134,7 +134,7 @@ final class DatabaseClientTests: XCTestCase {
       )
     } operation: {
       @Dependency(\.supabaseClient) var client;
-      let todo: Todo = try await client.database().update(
+      let todo: Todo = try await client.schema().update(
         id: UUID(0),
         in: .todos,
         with: TodoUpdateRequest(description: "Buy milk & eggs")
@@ -163,7 +163,7 @@ final class DatabaseClientTests: XCTestCase {
         description: "New todo",
         isComplete: false
       )
-      let todo: Todo = try await client.database().upsert(
+      let todo: Todo = try await client.schema().upsert(
         in: .todos,
         with: newTodo
       )

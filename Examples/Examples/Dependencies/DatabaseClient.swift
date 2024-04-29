@@ -41,7 +41,7 @@ extension DatabaseClient: DependencyKey {
   
   static var liveValue: Self {
     @Dependency(\.supabaseClient) var client;
-    let database = client.database()
+    let database = client.schema()
     return Self.init(
       todos: DatabaseClient.Todos(
         delete: { try await database.delete(id: $0, from: .todos) },

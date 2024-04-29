@@ -589,7 +589,7 @@ extension PostgrestClient {
     )
   }
 
-    /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
+  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
   /// in the database to be "id" for matching the id value against.
   ///
   /// ### Example
@@ -611,7 +611,7 @@ extension PostgrestClient {
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
   ///   - type: The type to decode from the response.
   @discardableResult
-  public func upsertMany<
+  public func upsert<
     Value: Encodable, Model: Decodable
   >(
     in table: AnyTable,
