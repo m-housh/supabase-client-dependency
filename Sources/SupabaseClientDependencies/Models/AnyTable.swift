@@ -1,6 +1,14 @@
 import Foundation
 
-public struct AnyTable: TableRepresentable {
+/// A concrete ``TableRepresentable`` type that can be extended to include your custom tables.
+///
+/// **Example**
+/// ```swift
+/// extension AnyTable {
+///   static let todos: Self = .init("todos")
+/// }
+/// ```
+public struct AnyTable: Equatable, TableRepresentable {
   
   public let tableName: String
   
