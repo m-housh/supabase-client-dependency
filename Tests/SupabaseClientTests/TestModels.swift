@@ -2,9 +2,6 @@ import Dependencies
 import Foundation
 import SupabaseClientDependencies
 
-//enum Table: String, TableRepresentable {
-//  case todos
-//}
 extension AnyTable {
   static let todos = Self("todos")
 }
@@ -66,6 +63,17 @@ extension Todo {
     .finishDocs,
     .drinkCoffee
   ]
+}
+
+enum TodoRoute {
+  static let table = AnyTable.todos
+  
+  case delete(id: Todo.ID)
+  case fetch
+  case fetchOne(id: Todo.ID)
+  case insert(TodoInsertRequest)
+  case update(id: Todo.ID, updates: TodoUpdateRequest)
+  case upsert(Todo)
 }
 
 struct TodoInsertRequest: Codable, Hashable {
