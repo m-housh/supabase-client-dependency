@@ -74,6 +74,25 @@ enum TodoRoute {
   case insert(TodoInsertRequest)
   case update(id: Todo.ID, updates: TodoUpdateRequest)
   case upsert(Todo)
+
+  var builder: (PostgrestQueryBuilder) throws -> PostgrestBuilder {
+    return { query in
+      switch self {
+      case .delete(id: let id):
+        return query.delete().filter(by: .id(id))
+      case .fetch:
+        return query.select()
+      case .fetchOne(id: let id):
+        return query.select().filter(by: .id(id)).single()
+      case let .insert(todo):
+        return try query.insert(todo)
+      case .update(id: let id, updates: let updates):
+        return try query.update(updates).filter(by: .id(id))
+      case let .upsert(todo):
+        return try query.upsert(todo)
+      }
+    }
+  }
 }
 
 struct TodoInsertRequest: Codable, Hashable {

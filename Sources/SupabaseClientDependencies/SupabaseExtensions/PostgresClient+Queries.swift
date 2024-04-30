@@ -2,6 +2,81 @@ import Dependencies
 import Foundation
 import PostgREST
 
+extension PostgrestQueryBuilder {
+  public func delete(
+    filteredBy filters: [DatabaseRequest.Filter]
+  ) -> PostgrestFilterBuilder {
+    self.delete(returning: .minimal).filter(by: filters)
+  }
+
+  public func delete(
+    filteredBy filters: DatabaseRequest.Filter...
+  ) -> PostgrestFilterBuilder {
+    self.delete(filteredBy: filters)
+  }
+
+  public func delete<ID: URLQueryRepresentable>(
+    id: ID
+  ) -> PostgrestFilterBuilder {
+    self.delete(filteredBy: .id(id))
+  }
+
+  // MARK: - Fetch
+  public func fetch(
+    filteredBy filters: [DatabaseRequest.Filter] = [],
+    orderBy order: DatabaseRequest.Order? = nil
+  ) -> PostgrestTransformBuilder {
+    self.select().filter(by: filters).order(by: order)
+  }
+
+  public func fetch(
+    filteredBy filters: DatabaseRequest.Filter...,
+    orderBy order: DatabaseRequest.Order? = nil
+  ) -> PostgrestTransformBuilder  {
+    self.fetch(filteredBy: filters, orderBy: order)
+  }
+
+  public func fetchOne(
+    filteredBy filters: [DatabaseRequest.Filter]
+  ) -> PostgrestTransformBuilder {
+    self.fetch(filteredBy: filters).single()
+  }
+
+  public func fetchOne(
+    filteredBy filters: DatabaseRequest.Filter...
+  ) -> PostgrestTransformBuilder {
+    self.fetchOne(filteredBy: filters)
+  }
+
+  // MARK: - Update
+  public func update<Values: Encodable>(
+    _ values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    filteredBy filters: [DatabaseRequest.Filter]
+  ) throws -> PostgrestTransformBuilder {
+    try self.update(values, returning: returningOptions).filter(by: filters)
+  }
+
+  public func update<Values: Encodable>(
+    _ values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    filteredBy filters: DatabaseRequest.Filter...
+  ) throws -> PostgrestTransformBuilder {
+    try self.update(values, returning: returningOptions, filteredBy: filters)
+  }
+
+  public func update<
+    ID: URLQueryRepresentable, Values: Encodable
+  >(
+    id: ID,
+    with values: Values,
+    returning returningOptions: PostgrestReturningOptions = .representation
+  ) throws -> PostgrestTransformBuilder {
+    try self.update(values, returning: returningOptions, filteredBy: .id(id)).single()
+  }
+
+}
+
 extension PostgrestClient {
   private func delete(
     _ request: DatabaseRequest.DeleteRequest

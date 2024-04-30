@@ -16,6 +16,10 @@ let package = Package(
   ],
   dependencies: [
     .package(
+      url: "https://github.com/pointfreeco/swift-case-paths.git",
+      from: "1.0.0"
+    ),
+    .package(
       url: "https://github.com/pointfreeco/swift-dependencies.git",
       from: "1.0.0"
     ),
@@ -47,7 +51,10 @@ let package = Package(
     ),
     .testTarget(
       name: "SupabaseClientIntegrationTests",
-      dependencies: ["SupabaseClientDependencies"]
+      dependencies: [
+        "SupabaseClientDependencies",
+        .product(name: "CasePaths", package: "swift-case-paths")
+      ]
     ),
   ]
 )

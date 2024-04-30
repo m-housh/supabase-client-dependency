@@ -112,4 +112,66 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     let firstTodo = todos.first!
     try await database.delete(id: firstTodo.id, from: AnyTable.todos)
   }
+
+  public func testDatabaseRouter() async throws {
+    @Dependency(\.supabaseClient.database) var database;
+
+    var todos: IdentifiedArrayOf<Todo> = try await database.execute(
+      .todos(.fetch)
+    )
+    XCTAssertEqual(todos, [])
+
+    let insertedTodo: Todo = try await database.execute(.todos(.insert(
+      TodoInsertRequest(description: "Implement integration test for supabase-client-dependencies")
+    )))
+
+    todos = try await database.execute(.todos(.fetch()))
+    XCTAssertEqual(todos, [insertedTodo])
+    let insertedTodos: [Todo] = try await database.execute(.todos(.insert(
+      [
+        TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
+        TodoInsertRequest(description: "Drink some coffee.")
+      ]
+    )))
+
+    todos = try await database.execute(.todos(.fetch()))
+    XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
+
+    let orderedTodos: [Todo] = try await database.execute(.todos(.fetch(
+      orderedBy: TodoColumn.description.ascending()
+    )))
+    XCTAssertEqual(
+      orderedTodos,
+      [
+        insertedTodos[1],
+        insertedTodo,
+        insertedTodos[0]
+      ]
+    )
+
+    let drinkCoffeeTodo = insertedTodos[1]
+    let fetchOneTodo: Todo = try await database.execute(.todos(.fetchOne(
+      id: drinkCoffeeTodo.id
+    )))
+    XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
+
+    let updatedTodo: Todo = try await database.execute(.todos(.update(
+      id: drinkCoffeeTodo.id,
+      updates: TodoUpdateRequest(isComplete: true)
+    )))
+    XCTAssertEqual(updatedTodo.isComplete, true)
+
+    let completedTodos: [Todo] = try await database.execute(.todos(.fetch(
+      filteredBy: TodoColumn.isComplete.equals(true)
+    )))
+    XCTAssertEqual(completedTodos, [updatedTodo])
+
+    try await database.execute(.todos(.delete(TodoColumn.isComplete.equals(true))))
+    todos = try await database.fetch(from: .todos)
+    XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
+
+    let firstTodo = todos.first!
+    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
+  }
+
 }
