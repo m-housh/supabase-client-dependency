@@ -17,11 +17,12 @@ extension SupabaseClientDependency {
 
     return Self.init(
       auth: .live(client: client.auth),
-      database: .live(client: client.schema("public"))
+      client: client
     )
   }
-
 }
+
+
 
 extension SupabaseClientDependency.AuthClient {
 
@@ -167,72 +168,6 @@ extension SupabaseClientDependency.AuthClient {
           .user
         }
       }
-    )
-  }
-}
-
-extension SupabaseClientDependency.DatabaseClient {
-  /// Create a live ``SupabaseClientDependencies/SupabaseClientDependency/DatabaseClient`` instance.
-  ///
-  /// - Parameters:
-  ///   - client: The postgres client used to build the live client.
-  ///
-  public static func live(client: PostgrestClient) -> Self {
-    .init(
-      decoder: .databaseClientDecoder,
-      delete: { request in
-        try await client.from(request.table.tableName)
-          .delete(returning: .minimal)
-          .filter(by: request.filters)
-          .execute()
-          .value
-      },
-      encoder: .databaseClientEncoder,
-      fetch: { request in
-        try await client.from(request.table.tableName)
-          .select()
-          .filter(by: request.filters)
-          .order(by: request.order)
-          .execute()
-          .value
-      },
-      fetchOne: { request in
-        try await client.from(request.table.tableName)
-          .select()
-          .filter(by: request.filters)
-          .single()
-          .execute()
-          .value
-      },
-      from: { table in
-        client.from(table)
-      },
-      insert: { request in
-        try await client.from(request.table.tableName)
-          .insert(request.values, returning: request.returningOptions)
-          .single()
-          .execute()
-          .value
-      },
-      insertMany: { request in
-        try await client.from(request.table.tableName)
-          .insert(
-            request.values.anyJSON(encoder: .databaseClientEncoder),
-            returning: request.returningOptions
-          )
-          .execute()
-          .value
-      },
-      rpc: { try client.rpc($0.functionName, params: $0.params, count: $0.count) },
-      update: { request in
-        try await client.from(request.table.tableName)
-          .update(request.values, returning: request.returningOptions)
-          .filter(by: request.filters)
-          .single()
-          .execute()
-          .value
-      }
-
     )
   }
 }

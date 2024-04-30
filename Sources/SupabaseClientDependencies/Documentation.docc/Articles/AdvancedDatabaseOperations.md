@@ -4,7 +4,7 @@ Learn about advanced database operations.
 
 ## Overview
 
-This article describes advanced operations for the ``SupabaseClientDependency/DatabaseClient``.
+This article describes advanced operations for the ``SupabaseClientDependency``.
 
 ### Overriding Methods
 
@@ -55,19 +55,17 @@ extension TodoModel {
 #### Fetch Many
 
 To override / mock the values returned from any of the `fetch` methods on the database
-client.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetch`` property.
+client for a given table.
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.fetch = { _ in
-    // Ignore the incoming request and return mock todo's.
-    return try JSONEncoder().encode(TodoModel.mocks)
-  }
+  $0.supabaseClient.override(
+    .fetch(from: .todos),
+    with: TodoModel.mocks
+  )
 } operation: { 
-  @Dependency(\.supabaseClient.database) var database;
-  let todos: [TodoModel] = try await database.fetch(
+  @Dependency(\.supabaseClient) var client;
+  let todos: [TodoModel] = try await client.database().fetch(
     from: Table.todos
   )
   XCTAssertEqual(todos, TodoModel.mocks)
@@ -77,19 +75,17 @@ try await withDependencies {
 #### Fetch One
 
 To override / mock the values returned from any of the `fetchOne` methods on the database
-client.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetchOne`` property.
+client for a given table.
 
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.fetchOne = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .fetchOne(from: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
-  @Dependency(\.supabaseClient.database) var database;
-  let todo: TodoModel = try await database.fetchOne(
+  @Dependency(\.supabaseClient) var client;
+  let todo: TodoModel = try await client.database().fetchOne(
     id: UUID(0),
     from: Table.todos
   )
@@ -103,14 +99,12 @@ try await withDependencies {
 To override / mock the values returned from the `insert` methods on the database
 client for single value insert requests.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insert`` property.
-
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.insert = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .insert(into: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todo: TodoModel = try await database.insert(
@@ -127,14 +121,12 @@ try await withDependencies {
 To override / mock the values returned from any of the `insert` methods on the database
 client that insert multiple items.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insertMany`` property.
-
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.insertMany = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.mocks)
-  }
+  $0.supabaseClient.override(
+    .insertMany(into: .todos),
+    with: TodoModel.mocks
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todos: [TodoModel] = try await database.insert(
@@ -153,14 +145,12 @@ try await withDependencies {
 To override / mock the values returned from any of the `update` methods on the database
 client.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/update`` property.
-
 ```swift
 try await withDependencies { 
-  $0.supabaseClient.database.update = { _ in
-    // Ignore the incoming request and return a mock todo.
-    return try JSONEncoder().encode(TodoModel.finishDocs)
-  }
+  $0.supabaseClient.override(
+    .update(in: .todos),
+    with: TodoModel.finishDocs
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   let todo: TodoModel = try await database.update(
@@ -177,13 +167,11 @@ try await withDependencies {
 To override any of the `delete` methods on the database
 client.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/delete`` property.
-
 ```swift
-try await withDependencies { 
-  $0.supabaseClient.database.update = { _ in
-    // Ignore the incoming request and do nothing.
-  }
+try await withDependencies {
+  $0.supabaseClient.override(
+    .delete(from: .todos)
+  )
 } operation: { 
   @Dependency(\.supabaseClient.database) var database;
   try await database.delete(

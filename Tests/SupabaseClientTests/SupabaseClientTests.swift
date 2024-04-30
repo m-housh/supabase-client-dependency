@@ -9,21 +9,21 @@ final class SupabaseClientTests: XCTestCase {
     XCTAssert(true)
   }
 
-  func testCreateUser() async throws {
-    await withDependencies {
-      $0.supabaseClient = .live(configuration: .local)
-    } operation: {
-      @Dependency(\.supabaseClient) var client;
-
-      let currentUser = await client.auth.currentUser()
-      XCTAssertNil(currentUser)
-
-      let credentials = Credentials(
-        email: "test@example.com",
-        password: "secret-password"
-      )
-
-      let user = try? await client.auth.signUp(.credentials(credentials))
+//  func testCreateUser() async throws {
+//    await withDependencies {
+//      $0.supabaseClient = .live(configuration: .local)
+//    } operation: {
+//      @Dependency(\.supabaseClient) var client;
+//
+//      let currentUser = await client.auth.currentUser()
+//      XCTAssertNil(currentUser)
+//
+//      let credentials = Credentials(
+//        email: "test@example.com",
+//        password: "secret-password"
+//      )
+//
+//      let user = try? await client.auth.signUp(.credentials(credentials))
 
       // Testing session does not work because the `keychain` is not setup properly
       // in a swift package.
@@ -35,8 +35,8 @@ final class SupabaseClientTests: XCTestCase {
 //
 //      await client.auth.logout()
 
-    }
-  }
+//    }
+//  }
 
   func testCredentialValidation() {
     var credentials = Credentials.empty

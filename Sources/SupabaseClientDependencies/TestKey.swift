@@ -19,28 +19,15 @@ extension SupabaseClientDependency.AuthClient {
   )
 }
 
-extension SupabaseClientDependency.DatabaseClient {
-  static let unimplemented = Self.init(
-    decoder: JSONDecoder(),
-    delete: XCTestDynamicOverlay.unimplemented("\(Self.self).delete"),
-    encoder: JSONEncoder(),
-    fetch: XCTestDynamicOverlay.unimplemented("\(Self.self).fetch", placeholder: Data()),
-    fetchOne: XCTestDynamicOverlay.unimplemented("\(Self.self).fetchOne", placeholder: Data()),
-    from: XCTestDynamicOverlay.unimplemented("\(Self.self).from"),
-    insert: XCTestDynamicOverlay.unimplemented("\(Self.self).insert", placeholder: Data()),
-    insertMany: XCTestDynamicOverlay.unimplemented("\(Self.self).insertMany", placeholder: Data()),
-    rpc: XCTestDynamicOverlay.unimplemented("\(Self.self).rpc"),
-    update: XCTestDynamicOverlay.unimplemented("\(Self.self).update", placeholder: Data())
-  )
-}
-
 extension SupabaseClientDependency: TestDependencyKey {
 
   /// The unimplemented supabase client dependency for usage in tests.
   public static var testValue: Self {
     Self.init(
       auth: .unimplemented,
-      database: .unimplemented
+      client: .init(configuration: .local)
     )
   }
+
 }
+

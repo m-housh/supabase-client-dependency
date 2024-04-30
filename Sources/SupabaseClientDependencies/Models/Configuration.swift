@@ -1,3 +1,4 @@
+import Dependencies
 import Foundation
 import PostgREST
 import Supabase
@@ -29,7 +30,9 @@ extension SupabaseClientDependency {
     public init(
       url: URL,
       anonymousKey: String,
-      options: SupabaseClientOptions = .init()
+      options: SupabaseClientOptions = .init(
+        db: .init(encoder: .databaseClientEncoder, decoder: .databaseClientDecoder)
+      )
     ) {
       self.url = url
       self.anonymousKey = anonymousKey
@@ -58,29 +61,6 @@ extension SupabaseClient {
   }
 }
 
-extension PostgrestClient {
-
-  /// Create a new client from the configuration.
-  ///
-  /// - Parameters:
-  ///   - configuration: The configuration values used to generate the client.
-  ///   - schema: An optional schem for the database connection.
-  public convenience init(
-    configuration: SupabaseClientDependency.Configuration,
-    schema: String? = nil
-  ) {
-    self.init(
-      url: configuration.url
-        .appending(component: "rest")
-        .appending(component: "v1"),
-      schema: schema, 
-      headers: [
-        "apiKey": configuration.anonymousKey
-      ]
-    )
-  }
-}
-
 extension SupabaseClientDependency.Configuration {
 
   /// A configuration for a local supabase instance.
@@ -91,4 +71,6 @@ extension SupabaseClientDependency.Configuration {
 
 private let supabaseURL = URL(string: "http://localhost:54321")!
 private let localAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9." +
+  "CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"

@@ -5,7 +5,7 @@ import SupabaseClientDependencies
 
 final class DatabaseClientIntegrationTests: XCTestCase {
 
-  let postgrestClient = PostgrestClient(configuration: .local, schema: "public")
+  let postgrestClient = SupabaseClient(configuration: .local).schema("public")
 
   override func setUp() async throws {
     try await super.setUp()
@@ -21,13 +21,13 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     // delete all the todos that are complete, then delete all the ones that
     // are not complete.
     try await postgrestClient
-      .from(Table.todos.tableName)
+      .from(AnyTable.todos.tableName)
       .delete(returning: .minimal)
       .eq("complete", value: true)
       .execute()
 
     try await postgrestClient
-      .from(Table.todos.tableName)
+      .from(AnyTable.todos.tableName)
       .delete(returning: .minimal)
       .eq("complete", value: false)
       .execute()
@@ -35,9 +35,7 @@ final class DatabaseClientIntegrationTests: XCTestCase {
 
   override func invokeTest() {
     withDependencies {
-      $0.supabaseClient.database = .live(
-        client: postgrestClient
-      )
+      $0.supabaseClient = .live(configuration: .local)
     } operation: {
       super.invokeTest()
     }
@@ -46,15 +44,18 @@ final class DatabaseClientIntegrationTests: XCTestCase {
   public func testIntegration() async throws {
     @Dependency(\.supabaseClient.database) var database;
 
-    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(from: Table.todos)
+    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(
+      from: .todos,
+      decoding: IdentifiedArrayOf<Todo>.self
+    )
     XCTAssertEqual(todos, [])
 
     let insertedTodo: Todo = try await database.insert(
       TodoInsertRequest(description: "Implement integration tests for supabase-client-dependency."),
-      into: Table.todos
+      into: .todos
     )
 
-    todos = try await database.fetch(from: Table.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertEqual(todos, [insertedTodo])
 
     let insertedTodos: [Todo] = try await database.insert(
@@ -62,14 +63,14 @@ final class DatabaseClientIntegrationTests: XCTestCase {
         TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
         TodoInsertRequest(description: "Drink some coffee.")
       ],
-      into: Table.todos
+      into: .todos
     )
 
-    todos = try await database.fetch(from: Table.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
 
     let orderedTodos: [Todo] = try await database.fetch(
-      from: Table.todos,
+      from: .todos,
       orderBy: TodoColumn.description.ascending()
     )
     XCTAssertEqual(
@@ -84,31 +85,31 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     let drinkCoffeeTodo = insertedTodos[1]
     let fetchOneTodo: Todo = try await database.fetchOne(
       id: drinkCoffeeTodo.id,
-      from: Table.todos
+      from: .todos
     )
     XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
 
     let updatedTodo: Todo = try await database.update(
       id: drinkCoffeeTodo.id,
-      in: Table.todos,
+      in: .todos,
       with: TodoUpdateRequest(isComplete: true)
     )
     XCTAssertEqual(updatedTodo.isComplete, true)
 
     let completedTodos: [Todo] = try await database.fetch(
-      from: Table.todos,
+      from: .todos,
       filteredBy: TodoColumn.isComplete.equals(true)
     )
     XCTAssertEqual(completedTodos, [updatedTodo])
 
     try await database.delete(
-      from: Table.todos,
+      from: .todos,
       filteredBy: TodoColumn.isComplete.equals(true)
     )
-    todos = try await database.fetch(from: Table.todos)
+    todos = try await database.fetch(from: .todos)
     XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
 
     let firstTodo = todos.first!
-    try await database.delete(id: firstTodo.id, from: Table.todos)
+    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
   }
 }

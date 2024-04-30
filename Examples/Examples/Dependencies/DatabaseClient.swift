@@ -41,19 +41,21 @@ extension DatabaseClient: DependencyKey {
   
   static var liveValue: Self {
     @Dependency(\.supabaseClient) var client;
+    let database = client.database
     return Self.init(
       todos: DatabaseClient.Todos(
-        delete: { try await client.database.delete(id: $0, from: Table.todos) },
+        delete: { try await database.delete(id: $0, from: .todos) },
         fetch: {
           
           // get the current authenticated user.
           let user = try await client.auth.requireCurrentUser()
           
           // Return the todos.
-          return try await client.database.fetch(
-            from: Table.todos,
-            filteredBy: TodoColumn.ownerId.equals(user.id),
-            orderBy: TodoColumn.complete.ascending()
+          return try await database.fetch(
+            from: AnyTable.todos,
+//            filteredBy: TodoColumn.ownerId.equals(user.id),
+            filteredBy: .ownerId(equals: user.id),
+            orderBy: .complete
           )
         },
         insert: { request in
@@ -77,16 +79,16 @@ extension DatabaseClient: DependencyKey {
             }
           }
           
-          return try await client.database.insert(
+          return try await database.insert(
             InsertValues(
               complete: request.complete,
               description: request.description,
               ownerId: client.auth.requireCurrentUser().id
             ),
-            into: Table.todos
+            into: AnyTable.todos
           )
         },
-        update: { try await client.database.update(id: $0, in: Table.todos, with: $1) }
+        update: { try await database.update(id: $0, in: AnyTable.todos, with: $1) }
       )
     )
   }
@@ -119,13 +121,23 @@ extension DatabaseClient: DependencyKey {
  
 }
 
-fileprivate enum Table: String, TableRepresentable {
-  case todos
+extension AnyTable {
+  static let todos = Self.init("todos")
 }
 
 fileprivate enum TodoColumn: String, ColumnRepresentable {
   case complete
   case ownerId = "owner_id"
+}
+
+extension DatabaseRequest.Filter {
+  static func ownerId(equals value: User.ID) -> Self {
+    .equals(column: TodoColumn.ownerId, value: value)
+  }
+}
+
+extension DatabaseRequest.Order {
+  static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
 }
 
 extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {

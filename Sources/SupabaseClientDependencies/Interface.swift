@@ -12,6 +12,7 @@ extension DependencyValues {
     get { self[SupabaseClientDependency.self] }
     set { self[SupabaseClientDependency.self] = newValue }
   }
+
 }
 
 /// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate
@@ -19,17 +20,32 @@ extension DependencyValues {
 ///
 /// This adds some niceties around database operations and also includes an `auth` client.
 ///
+@dynamicMemberLookup
 public struct SupabaseClientDependency {
 
   /// The supabase authentication client for the application.
   ///
   /// - SeeAlso: ``AuthClient``
   public var auth: AuthClient
-
-  /// The supabase database client for the applicaiton.
+  
+  /// The supabase client for the application.
   ///
-  /// - SeeAlso: ``DatabaseClient``
-  public var database: DatabaseClient
+  public var client: SupabaseClient
+
+  /// Holds overrides and acts as a proxy for the postgrest client.
+  internal var databaseClient: DatabaseClient = .init()
+
+  /// Access a posgrest client focused in on the passed in schema.
+  public func schema(_ schema: String) -> PostgrestClient {
+    self.client.schema(schema)
+  }
+  
+  /// Access the postgrest client, focused in on the public schema, if you need access to a different schema.
+  /// then you can use ``SupabaseClientDependency/schema(_:)``.
+  ///
+  public var database: PostgrestClient {
+    self.schema("public")
+  }
 
   /// Create a new supabase client dependency.
   ///
@@ -38,10 +54,94 @@ public struct SupabaseClientDependency {
   ///   - database: The supabase database client dependency for the application.
   public init(
     auth: AuthClient,
-    database: DatabaseClient
+    client: SupabaseClient
   ) {
     self.auth = auth
-    self.database = database
+    self.client = client
+  }
+  
+  public subscript<T>(
+    dynamicMember keyPath: KeyPath<SupabaseClient, T>
+  ) -> T {
+    get { self.client[keyPath: keyPath] }
+  }
+
+  /// Override a database table route with the given value. This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(.fetch(from: .todos), with: Todo.mocks)
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
+  public mutating func override<A: Encodable>(
+    _ matching: DatabaseOverride,
+    with value: A
+  ) {
+    self.databaseClient.overrides.append(
+      (override: matching, response: OK(value))
+    )
+  }
+  
+  /// Override a database table route that does not return values (i.e. a delete route). This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(.delete(from: .todos))
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
+  public mutating func override(
+    _ matching: DatabaseOverride
+  ) {
+    self.databaseClient.overrides.append(
+      (override: matching, response: OK())
+    )
+  }
+  
+  /// Override all routes called. This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(with: Todo.mocks)
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
+  public mutating func override<A: Encodable>(
+    with value: A
+  ) {
+    self.databaseClient.overrides.append(
+      (override: .all, response: OK(value))
+    )
+  }
+
+  /// Represents database routes that can be overriden on the client.
+  ///
+  public enum DatabaseOverride: Equatable {
+    case all
+    case delete(from: AnyTable)
+    case fetch(from: AnyTable)
+    case fetchOne(from: AnyTable)
+    case insert(into: AnyTable)
+    case insertMany(into: AnyTable)
+    case update(in: AnyTable)
+    case upsert(in: AnyTable)
+    case upsertMany(in: AnyTable)
+  }
+
+  /// An internal helper, used as a proxy for the postgrest client, to provide override functionality.
+  internal struct DatabaseClient {
+    typealias ResponseHandler = (JSONEncoder) async throws -> (Data, URLResponse)
+    var overrides: [(override: DatabaseOverride, response: ResponseHandler)] = []
   }
 
   /// An authentication client to create and manage user sessions for access to data that is secured by
@@ -384,426 +484,83 @@ public struct SupabaseClientDependency {
           self.captchaToken = captchaToken
           self.redirectURL = redirectURL
           self.token = token
-//          self.type = type
         }
       }
     }
   }
 
-  /// Exposes database operations.
-  ///
-  /// This type mimicks the `PostgrestClient` and also adds some niceties around commonly used
-  /// `CRUD` operations.  See <doc:DatabaseOperations> for common database operation usage.
-  ///
-  public struct DatabaseClient {
+}
 
-    /// A decoder used for decoding data.
-    ///
-    /// In general care should be used if overriding this in a live implementation because the default
-    /// decoder supplied with the library has to do some custom date decoding logic for the supabase
-    /// integration.  For the test implementation the standard decoder is used.
-    public var decoder: JSONDecoder
+// MARK: - Helpers
 
-    /// Perform a delete request on the database.
-    ///
-    /// This is the root item used to perform a delete request, it is generally not used directly, unless you're
-    /// overriding the delete operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``SupabaseClientDependency/DatabaseClient/delete(id:from:)``.
-    ///
-    public var delete: (DeleteRequest) async throws -> Void
+fileprivate func OK<A: Encodable>(
+  _ value: A
+) -> (JSONEncoder) async throws -> (Data, URLResponse) {
+  return { encoder in
+    (
+      try encoder.encode(value),
+      HTTPURLResponse(
+        url: URL(string: "/")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+      )!
+    )
+  }
+}
 
-    /// An encoder used for encoding data.
-    ///
-    /// In general care should be used if overriding this in a live implementation because the default
-    /// encoder supplied with the library has to do some custom date decoding logic for the supabase
-    /// integration.  For the test implementation the standard encoder is used.
-    public var encoder: JSONEncoder
+fileprivate func OK() -> (JSONEncoder) async throws -> (Data, URLResponse) {
+  return { _ in
+    (
+      Data(),
+      HTTPURLResponse(
+        url: URL(string: "/")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+      )!
+    )
+  }
+}
 
+fileprivate extension SupabaseClientDependency.DatabaseOverride {
+  func isMatch(for request: URLRequest) -> Bool {
+    switch self {
+    case .all:
+      return true
 
-    /// Perform a multi-row fetch request on the database.
-    ///
-    /// This is the root item used to perform a fetch request, it is generally not used directly, unless you're
-    /// overriding the fetch operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``fetch(from:filteredBy:orderBy:decoding:)``.
-    ///
-    public var fetch: (FetchRequest) async throws -> Data
+    case let .delete(from: table):
+      return request.httpMethod == "DELETE" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Perform a single row fetch request on the database.
-    ///
-    /// This is the root item used to perform a fetch-one request, it is generally not used directly, unless you're
-    /// overriding the fetch-one operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``fetchOne(from:filteredBy:decoding:)``.
-    ///
-    public var fetchOne: (FetchOneRequest) async throws -> Data
+    case let .fetch(from: table):
+      return request.httpMethod == "GET" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Build a database query.
-    ///
-    /// This is the root item used to build a database query, it is generally not used directly, unless you're
-    /// overriding the build operations on the dependency. You generally would use the helper method
-    /// on the database client, such as
-    /// ``from(_:decoding:perform:)``.
-    ///
-    public var from: (String) -> PostgrestQueryBuilder
+    case let .fetchOne(from: table):
+      return request.httpMethod == "GET" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Perform an insert request on the database.
-    ///
-    /// This is the root item used to perform an insert request, it is generally not used directly, unless you're
-    /// overriding the insert operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-731w6``
-    ///
-    public var insert: (InsertRequest) async throws -> Data
+    case let .insert(into: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Perform an insert request for multiple rows on the database.
-    ///
-    /// This is the root item used to perform an insert-many request, it is generally not used directly, unless you're
-    /// overriding the insert-many operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-630da``.
-    ///
-    public var insertMany: (InsertManyRequest) async throws -> Data
+    case let .insertMany(into: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Build a remote function request.
-    ///
-    /// This is the root item used to build a remote function call, it is generally not used directly, unless you're
-    /// overriding the build operations on the dependency. You generally would use the helper method
-    /// on the database client, such as
-    /// ``rpc(_:params:count:decoding:perform:)``.
-    ///
-    public var rpc: (RpcRequest) throws -> PostgrestTransformBuilder
+    case let .update(in: table):
+      return request.httpMethod == "PATCH" &&
+      request.url?.lastPathComponent == table.tableName
 
-    /// Perform an update request on the database.
-    ///
-    /// This is the root item used to perform an update request, it is generally not used directly, unless you're
-    /// overriding the update operations on the dependency. You generally would use one of the helper methods
-    /// on the database client, such as
-    /// ``update(id:in:with:returning:decoding:)``.
-    ///
-    public var update: (UpdateRequest) async throws -> Data
-
-    /// Create a new database client.
-    ///
-    /// - Parameters:
-    ///   - decoder: A decoder used for decoding data.
-    ///   - delete: Perform a delete request on the database.
-    ///   - encoder: An encode used for encoding data.
-    ///   - fetch: Perform a multi-row fetch request on the database.
-    ///   - fetchOne: Perform a single-row fetch request on the database.
-    ///   - from: Build a database query.
-    ///   - insert: Perform an insert request on the database.
-    ///   - insertMany: Perform an insert request with multiple rows on the database.
-    ///   - rpc: Build a remote function request.
-    ///   - update: Perform an update request on the database.
-    public init(
-      decoder: JSONDecoder,
-      delete: @escaping (DeleteRequest) async throws -> Void,
-      encoder: JSONEncoder,
-      fetch: @escaping (FetchRequest) async throws -> Data,
-      fetchOne: @escaping (FetchOneRequest) async throws -> Data,
-      from: @escaping (String) -> PostgrestQueryBuilder,
-      insert: @escaping (InsertRequest) async throws -> Data,
-      insertMany: @escaping (InsertManyRequest) async throws -> Data,
-      rpc: @escaping (RpcRequest) throws -> PostgrestTransformBuilder,
-      update: @escaping (UpdateRequest) async throws -> Data
-    ) {
-      self.decoder = decoder
-      self.delete = delete
-      self.encoder = encoder
-      self.fetch = fetch
-      self.fetchOne = fetchOne
-      self.from = from
-      self.insert = insert
-      self.insertMany = insertMany
-      self.rpc = rpc
-      self.update = update
-    }
-
-    /// Perform a custom built query on the database.
-    ///
-    /// This is useful if you need to perform a custom query on the database beyond what this
-    /// library provides.  It gives you access to the `PostgrestQueryBuilder`.
-    ///
-    /// - Parameters:
-    ///   - table: The table to perform the query on.
-    ///   - decoding: The type to decode from the database (often inferred).
-    ///   - perform: Perform the request and decode the response type.
-    @discardableResult
-    public func from<R: Decodable>(
-      _ table: TableRepresentable,
-      decoding type: R.Type = R.self,
-      perform: (PostgrestQueryBuilder) async throws -> R
-    ) async throws -> R {
-      try await perform(self.from(table.tableName))
-    }
-
-    /// Perform a remote function call on the database.
-    ///
-    /// - Parameters:
-    ///   - function: The rpc function for the request.
-    ///   - params: Optional parameters for the function.
-    ///   - count: Optional count options for the request.
-    ///   - decoding: The type to decode from the response (often inferred).
-    ///   - perform: Build and perform the request.
-    @discardableResult
-    public func rpc<R: Decodable>(
-      _ function: RpcRepresentable,
-      params: (any Encodable)? = nil,
-      count countOptions: CountOption? = nil,
-      decoding type: R.Type = R.self,
-      perform: (PostgrestTransformBuilder) async throws -> R
-    ) async throws -> R {
-      try await perform(
-        self.rpc(.init(function: function, params: params, count: countOptions))
-      )
-    }
-
-    /// Represents the parameters for a delete request on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``delete(id:from:)``.
-    ///
-    public struct DeleteRequest {
-
-      /// The table to perform the delete on.
-      public let table: TableRepresentable
-
-      /// The row filters for the delete request.
-      public let filters: [Filter]
-
-      /// Create a new delete request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``delete(id:from:)``.
-      ///
-      ///  - Parameters:
-      ///   - table: The table to perform the delete request on.
-      ///   - filters: The row filters for the delete request.
-      public init(table: TableRepresentable, filters: [Filter]) {
-        self.table = table
-        self.filters = filters
-      }
-    }
-
-    /// Represents the requst parameters for a database fetch request.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``fetch(from:filteredBy:orderBy:decoding:)``.
-    ///
-    public struct FetchRequest {
-
-      /// The table to perform the fetch on.
-      public let table: TableRepresentable
-
-      /// The row filters for the request.
-      public let filters: [Filter]
-
-      /// The order by clause for the request.
-      public let order: Order?
-
-      /// Create a new fetch request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/fetch(from:filteredBy:orderBy:decoding:)``.
-      ///
-      /// - Parameters:
-      ///   - table: The table to perform the fetch requst on.
-      ///   - filters: The row filters for the request.
-      ///   - order: The order by clause for the request.
-      public init(
-        table: TableRepresentable,
-        filters: [Filter] = [],
-        order: Order? = nil
-      ) {
-        self.table = table
-        self.filters = filters
-        self.order = order
-      }
-    }
-
-    /// Represents a single row fetch request on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``fetchOne(id:from:decoding:)``.
-    ///
-    public struct FetchOneRequest {
-
-      /// The table to perform the request on.
-      public let table: TableRepresentable
-
-      /// Filters for the request.
-      public let filters: [Filter]
-
-      /// Create a new single row fetch request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/fetchOne(id:from:decoding:)``.
-      ///
-      /// - Parameters:
-      ///   - table: The table to perform the request on.
-      ///   - filters: The filters for the request.
-      public init(
-        table: TableRepresentable,
-        filters: [Filter] = []
-      ) {
-        self.table = table
-        self.filters = filters
-      }
-    }
-
-    /// Represents an insert request on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-731w6``
-    ///
-    public struct InsertRequest {
-
-      /// The table to insert the values into.
-      public let table: TableRepresentable
-
-      /// The returning options for the request.
-      public let returningOptions: PostgrestReturningOptions?
-
-      /// The values to insert into the database.
-      public let values: any Encodable
-
-      /// Create a new insert request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-731w6``.
-      ///
-      /// - Parameters:
-      ///   - table: The table to insert the values into.
-      ///   - values: The values to insert into the database.
-      ///   - returningOptions: The returning options for the response values.
-      public init(
-        table: TableRepresentable,
-        values: any Encodable,
-        returningOptions: PostgrestReturningOptions? = nil
-      ) {
-        self.table = table
-        self.returningOptions = returningOptions
-        self.values = values
-      }
-    }
-
-    /// Represents an insert many request on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``insert(_:into:returning:decoding:)-630da``.
-    ///
-    public struct InsertManyRequest {
-
-      /// The table to insert the values into.
-      public let table: TableRepresentable
-
-      /// The returning options for the request.
-      public let returningOptions: PostgrestReturningOptions?
-
-      /// The values to insert into the database.
-      public let values: [(any Encodable)]
-
-      /// Create a new insert request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/insert(_:into:returning:decoding:)-630da``.
-      ///
-      /// - Parameters:
-      ///   - table: The table to insert the values into.
-      ///   - values: The values to insert into the database.
-      ///   - returningOptions: The returning options for the response values.
-      public init(
-        table: TableRepresentable,
-        values: [(any Encodable)],
-        returningOptions: PostgrestReturningOptions? = nil
-      ) {
-        self.table = table
-        self.returningOptions = returningOptions
-        self.values = values
-      }
-    }
-
-    /// Represents the parameters need for a remote function call on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``rpc(_:params:count:decoding:perform:)``.
-    ///
-    public struct RpcRequest {
-
-      /// The remote function name.
-      public let functionName: String
-
-      /// The parameters for the function.
-      public let params: any Encodable
-
-      /// The count options for the function, if applicable.
-      public let count: CountOption?
-
-      /// Create a new rpc request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/rpc(_:params:count:decoding:perform:)``.
-      ///
-      /// - Parameters:
-      ///   - function: The remote function name.
-      ///   - params: The parameters for the function, if applicable.
-      ///   - count: The count options for the function, if applicable.
-      public init(
-        function: RpcRepresentable,
-        params: (any Encodable)? = nil,
-        count: CountOption? = nil
-      ) {
-        self.functionName = function.functionName
-        self.params = params ?? NoParams()
-        self.count = count
-      }
-
-      struct NoParams: Encodable {}
-    }
-
-    /// Represents an update request on the database.
-    ///
-    /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-    /// ``update(id:in:with:returning:decoding:)``.
-    ///
-    public struct UpdateRequest {
-
-      /// The table to perform the update request on.
-      public let table: TableRepresentable
-
-      /// The filters for the request.
-      public let filters: [Filter]
-
-      /// The returning options for the response type.
-      public let returningOptions: PostgrestReturningOptions
-
-      /// The values to update in the database.
-      public let values: any Encodable
-
-      /// Create a new update request.
-      ///
-      /// You generally do not instantiate this type directly, instead use one of the helper methods on the database client, such as
-      /// ``SupabaseClientDependency/DatabaseClient/update(id:in:with:returning:decoding:)``.
-      ///
-      /// - Parameters:
-      ///   - table: The table to perform the request on.
-      ///   - filters: The row filters for the request.
-      ///   - returningOptions: The returning options for the response type.
-      ///   - values: The values to update in the database.
-      public init(
-        table: TableRepresentable,
-        filters: [Filter],
-        returningOptions: PostgrestReturningOptions = .representation,
-        values: any Encodable
-      ) {
-        self.table = table
-        self.filters = filters
-        self.returningOptions = returningOptions
-        self.values = values
-      }
+    case let .upsert(in: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
+      
+    case let .upsertMany(in: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
     }
   }
-
 }
+
