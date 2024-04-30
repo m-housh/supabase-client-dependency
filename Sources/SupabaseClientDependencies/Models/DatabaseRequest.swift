@@ -8,7 +8,7 @@ public enum DatabaseRequest {
   public struct Filter {
 
     /// The column to filter the results by.
-    public let column: AnyColumn
+    public let column: String
 
     /// The operator to use to filter the results by.
     public let `operator`: PostgrestFilterBuilder.Operator
@@ -27,26 +27,11 @@ public enum DatabaseRequest {
       operator postgrestOperator: PostgrestFilterBuilder.Operator,
       value: URLQueryRepresentable
     ) {
-      self.column = column.eraseToAnyColumn()
+      self.column = column.columnName
       self.operator = postgrestOperator
       self.value = value
     }
 
-    /// Create a new filter.
-    ///
-    /// - Parameters:
-    ///   - column: The column to filter the results by.
-    ///   - operator: The operator to use to compare the column value to.
-    ///   - value: The value to use for the column filter.
-    public init(
-      column: AnyColumn,
-      operator postgrestOperator: PostgrestFilterBuilder.Operator,
-      value: URLQueryRepresentable
-    ) {
-      self.column = column
-      self.operator = postgrestOperator
-      self.value = value
-    }
     public static func equals<C: ColumnRepresentable>(
       column: C,
       value: URLQueryRepresentable
@@ -64,7 +49,7 @@ public enum DatabaseRequest {
   public struct Order: Equatable {
 
     /// The column name to use for the order by clause.
-    public let column: AnyColumn
+    public let column: String
 
     /// Whether the values are returned in ascending or descending order.
     public let ascending: Bool
@@ -88,29 +73,27 @@ public enum DatabaseRequest {
       nullsFirst: Bool = false,
       foreignTable: T? = nil
     ) {
-      self.column = column.eraseToAnyColumn()
+      self.column = column.columnName
       self.ascending = ascending
       self.nullsFirst = nullsFirst
       self.foreignTable = foreignTable?.tableName
     }
-
+    
     /// Create a new order by clause for the result with the specified `column`.
     ///
     /// - Parameters:
     ///   - column: The column to order on.
     ///   - ascending: If `true`, the result will be in ascending order.
     ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init<T: TableRepresentable>(
-      column: AnyColumn,
+    public init<C: ColumnRepresentable>(
+      column: C,
       ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: T? = nil
+      nullsFirst: Bool = false
     ) {
-      self.column = column
+      self.column = column.columnName
       self.ascending = ascending
       self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable?.tableName
+      self.foreignTable = nil
     }
   }
 

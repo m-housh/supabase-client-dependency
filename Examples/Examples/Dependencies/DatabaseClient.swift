@@ -41,7 +41,7 @@ extension DatabaseClient: DependencyKey {
   
   static var liveValue: Self {
     @Dependency(\.supabaseClient) var client;
-    let database = client.schema()
+    let database = client.database
     return Self.init(
       todos: DatabaseClient.Todos(
         delete: { try await database.delete(id: $0, from: .todos) },
@@ -53,8 +53,9 @@ extension DatabaseClient: DependencyKey {
           // Return the todos.
           return try await database.fetch(
             from: AnyTable.todos,
-            filteredBy: TodoColumn.ownerId.equals(user.id),
-            orderBy: TodoColumn.complete.ascending()
+//            filteredBy: TodoColumn.ownerId.equals(user.id),
+            filteredBy: .ownerId(equals: user.id),
+            orderBy: .complete
           )
         },
         insert: { request in
@@ -120,9 +121,6 @@ extension DatabaseClient: DependencyKey {
  
 }
 
-//fileprivate enum Table: String, TableRepresentable {
-//  case todos
-//}
 extension AnyTable {
   static let todos = Self.init("todos")
 }
@@ -130,6 +128,16 @@ extension AnyTable {
 fileprivate enum TodoColumn: String, ColumnRepresentable {
   case complete
   case ownerId = "owner_id"
+}
+
+extension DatabaseRequest.Filter {
+  static func ownerId(equals value: User.ID) -> Self {
+    .equals(column: TodoColumn.ownerId, value: value)
+  }
+}
+
+extension DatabaseRequest.Order {
+  static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
 }
 
 extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {
