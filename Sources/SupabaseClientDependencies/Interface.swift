@@ -33,17 +33,18 @@ public struct SupabaseClientDependency {
   public var client: SupabaseClient
 
   /// Holds overrides and acts as a proxy for the postgrest client.
-  var databaseClient: DatabaseClient = .init()
+  internal var databaseClient: DatabaseClient = .init()
 
-  public func schema(_ schema: String = "public") -> PostgrestClient {
-    self.databaseClient(client: self.client.schema(schema))
+  /// Access a posgrest client focused in on the passed in schema.
+  public func schema(_ schema: String) -> PostgrestClient {
+    self.client.schema(schema)
   }
   
   /// Access the postgrest client, focused in on the public schema, if you need access to a different schema.
   /// then you can use ``SupabaseClientDependency/schema(_:)``.
   ///
   public var database: PostgrestClient {
-    self.databaseClient(client: self.client.schema("public"))
+    self.schema("public")
   }
 
   /// Create a new supabase client dependency.
@@ -60,12 +61,22 @@ public struct SupabaseClientDependency {
   }
   
   public subscript<T>(
-    dynamicMember keyPath: WritableKeyPath<SupabaseClient, T>
+    dynamicMember keyPath: KeyPath<SupabaseClient, T>
   ) -> T {
     get { self.client[keyPath: keyPath] }
-    set { self.client[keyPath: keyPath] = newValue }
   }
 
+  /// Override a database table route with the given value. This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(.fetch(from: .todos), with: Todo.mocks)
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
   public mutating func override<A: Encodable>(
     _ matching: DatabaseOverride,
     with value: A
@@ -74,7 +85,18 @@ public struct SupabaseClientDependency {
       (override: matching, response: OK(value))
     )
   }
-
+  
+  /// Override a database table route that does not return values (i.e. a delete route). This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(.delete(from: .todos))
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
   public mutating func override(
     _ matching: DatabaseOverride
   ) {
@@ -82,7 +104,18 @@ public struct SupabaseClientDependency {
       (override: matching, response: OK())
     )
   }
-
+  
+  /// Override all routes called. This is useful for previews or tests ran with
+  /// your client.
+  ///
+  /// ### Example
+  /// ```swift
+  ///  client.override(with: Todo.mocks)
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - matching: The route to override.
+  ///   - value: The value to return when the route is called.
   public mutating func override<A: Encodable>(
     with value: A
   ) {
@@ -91,7 +124,9 @@ public struct SupabaseClientDependency {
     )
   }
 
-  public enum DatabaseOverride {
+  /// Represents database routes that can be overriden on the client.
+  ///
+  public enum DatabaseOverride: Equatable {
     case all
     case delete(from: AnyTable)
     case fetch(from: AnyTable)
@@ -100,35 +135,13 @@ public struct SupabaseClientDependency {
     case insertMany(into: AnyTable)
     case update(in: AnyTable)
     case upsert(in: AnyTable)
+    case upsertMany(in: AnyTable)
   }
 
-  /// Used as a proxy for the postgrest client, to provide override functionality.
-  struct DatabaseClient {
+  /// An internal helper, used as a proxy for the postgrest client, to provide override functionality.
+  internal struct DatabaseClient {
     typealias ResponseHandler = (JSONEncoder) async throws -> (Data, URLResponse)
-
     var overrides: [(override: DatabaseOverride, response: ResponseHandler)] = []
-
-    func callAsFunction(
-      client: PostgrestClient
-    ) -> PostgrestClient {
-      let configuration = client.configuration
-      return .init(
-        url: configuration.url,
-        schema: configuration.schema,
-        headers: configuration.headers,
-        logger: nil,
-        fetch: { request in
-          guard let match = self.overrides.first(
-            where: { $0.override.isMatch(for: request) }
-          ) else {
-            return try await configuration.fetch(request)
-          }
-          return try await match.response(configuration.encoder)
-        },
-        encoder: configuration.encoder,
-        decoder: configuration.decoder
-      )
-    }
   }
 
   /// An authentication client to create and manage user sessions for access to data that is secured by
@@ -543,6 +556,11 @@ fileprivate extension SupabaseClientDependency.DatabaseOverride {
     case let .upsert(in: table):
       return request.httpMethod == "POST" &&
       request.url?.lastPathComponent == table.tableName
+      
+    case let .upsertMany(in: table):
+      return request.httpMethod == "POST" &&
+      request.url?.lastPathComponent == table.tableName
     }
   }
 }
+

@@ -4,7 +4,7 @@ Learn about advanced database operations.
 
 ## Overview
 
-This article describes advanced operations for the ``SupabaseClientDependency/DatabaseClient``.
+This article describes advanced operations for the ``SupabaseClientDependency``.
 
 ### Overriding Methods
 
@@ -55,9 +55,7 @@ extension TodoModel {
 #### Fetch Many
 
 To override / mock the values returned from any of the `fetch` methods on the database
-client.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetch`` property.
+client for a given table.
 
 ```swift
 try await withDependencies { 
@@ -77,9 +75,7 @@ try await withDependencies {
 #### Fetch One
 
 To override / mock the values returned from any of the `fetchOne` methods on the database
-client.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/fetchOne`` property.
+client for a given table.
 
 ```swift
 try await withDependencies { 
@@ -103,8 +99,6 @@ try await withDependencies {
 To override / mock the values returned from the `insert` methods on the database
 client for single value insert requests.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insert`` property.
-
 ```swift
 try await withDependencies { 
   $0.supabaseClient.override(
@@ -126,8 +120,6 @@ try await withDependencies {
 
 To override / mock the values returned from any of the `insert` methods on the database
 client that insert multiple items.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/insertMany`` property.
 
 ```swift
 try await withDependencies { 
@@ -153,8 +145,6 @@ try await withDependencies {
 To override / mock the values returned from any of the `update` methods on the database
 client.
 
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/update`` property.
-
 ```swift
 try await withDependencies { 
   $0.supabaseClient.override(
@@ -176,8 +166,6 @@ try await withDependencies {
 
 To override any of the `delete` methods on the database
 client.
-
-Set a custom value for the ``SupabaseClientDependency/DatabaseClient/delete`` property.
 
 ```swift
 try await withDependencies {

@@ -3,14 +3,20 @@ import Foundation
 import PostgREST
 
 extension PostgrestClient {
-  func delete(
+  private func delete(
     _ request: DatabaseRequest.DeleteRequest
   ) async throws {
-    try await self.from(request.table.tableName)
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = self.from(request.table.tableName)
       .delete(returning: .minimal)
       .filter(by: request.filters)
-      .execute()
-      .value
+    
+    return try await db.execute(
+      .delete(table: request.table, builder: builder),
+      on: self
+    )
+    .value
   }
 
   /// A helper for deleting a database item by the provided filters.
@@ -19,7 +25,7 @@ extension PostgrestClient {
   ///
   /// ```swift
   ///  try await databaseClient.delete(
-  ///     from: Table.todos,
+  ///     from: .todos,
   ///     where: [
   ///       .equals(column: "complete", value: false),
   ///       .equals(column: "description", value: "Buy milk")
@@ -44,7 +50,7 @@ extension PostgrestClient {
   ///
   /// ```swift
   ///  try await databaseClient.delete(
-  ///     from: Table.todos,
+  ///     from: .todos,
   ///     filteredBy:
   ///       .equals(column: "complete", value: false),
   ///       .equals(column: "description", value: "Buy milk")
@@ -69,7 +75,7 @@ extension PostgrestClient {
   /// ```swift
   ///  try await databaseClient.delete(
   ///     id: UUID(0),
-  ///     from: Table.todos,
+  ///     from: .todos,
   ///  )
   /// ```
   /// - Parameters:
@@ -81,28 +87,34 @@ extension PostgrestClient {
   ) async throws {
     try await self.delete(from: table, filteredBy: .id(id))
   }
+
+
+  // MARK: - Fetch
   
-  func fetch<R: Decodable>(
+  private func fetch<R: Decodable>(
     _ request: DatabaseRequest.FetchRequest
   ) async throws -> R {
-
-    try await self.from(request.table.tableName)
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
       .order(by: request.order)
-      .execute()
-      .value
+    
+    return try await db.execute(
+      .fetch(table: request.table, builder: builder),
+      on: self
+    )
+    .value
   }
-
-  // MARK: - Fetch
-
+  
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// ### Example
   ///
   /// ```swift
   /// let todos = try await databaseClient.fetch(
-  ///   from: Table.todos,
+  ///   from: .todos,
   ///   where: [.equals("complete", "false")],
   ///   orderBy: .init(column: "description").ascending(),
   ///   decoding: [TodoModel].self // this is generally inferred and not needed depending on calling context.
@@ -131,7 +143,7 @@ extension PostgrestClient {
   ///
   /// ```swift
   /// let todos = try await databaseClient.fetch(
-  ///   from: Table.todos,
+  ///   from: .todos,
   ///   filteredBy: TodoColumn.complete.equals(false),
   ///   orderBy: TodoColumn.description.ascending(),
   ///   decoding: [TodoModel].self // this is generally inferred and not needed depending on calling context.
@@ -159,15 +171,22 @@ extension PostgrestClient {
 
   // MARK: - Fetch One
   
-  func fetchOne<R: Decodable>(
+  private func fetchOne<R: Decodable>(
     _ request: DatabaseRequest.FetchOneRequest
   ) async throws -> R {
-    try await self.from(request.table.tableName)
+    
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
       .single()
-      .execute()
-      .value
+    
+    return try await db.execute(
+      .fetchOne(table: request.table, builder: builder),
+      on: self
+    )
+    .value
   }
 
   /// A helper for fetching as single item from the database, using the table name and Filter's.
@@ -176,7 +195,7 @@ extension PostgrestClient {
   ///
   /// ```swift
   /// let todo = try await databaseClient.fetch(
-  ///   from: Table.todos,
+  ///   from: .todos,
   ///   where: [TodoColumn.id.equals(UUID(0))],
   ///   decoding: TodoModel.self // this is generally inferred and not needed depending on calling context.
   /// )
@@ -258,26 +277,39 @@ extension PostgrestClient {
 
   // MARK: - Insert
   
-  func insert<R: Decodable, V: Encodable>(
+  private func insert<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.InsertRequest<V>
   ) async throws -> R {
-    try await self.from(request.table.tableName)
+    
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = try self.from(request.table.tableName)
       .insert(request.values, returning: request.returningOptions)
       .single()
-      .execute()
-      .value
+    
+    return try await db.execute(
+      .insert(table: request.table, builder: builder),
+      on: self
+    )
+    .value
   }
   
-  func insertMany<R: Decodable, V: Encodable>(
+  private func insertMany<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.InsertManyRequest<V>
   ) async throws -> R {
-    return try await self.from(request.table.tableName)
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = try self.from(request.table.tableName)
       .insert(
         request.values.anyJSON(encoder: self.configuration.encoder),
         returning: request.returningOptions
       )
-      .execute()
-      .value
+    
+    return try await db.execute(
+      .insertMany(table: request.table, builder: builder),
+      on: self
+    )
+    .value
   }
 
   /// Helper for inserting a new value into the database.
@@ -351,14 +383,18 @@ extension PostgrestClient {
 
   // MARK: - Update
   
-  func update<R: Decodable, V: Encodable>(
+  private func update<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.UpdateRequest<V>
   ) async throws -> R {
-    try await self.from(request.table.tableName)
+    
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = try self.from(request.table.tableName)
       .update(request.values, returning: request.returningOptions)
       .filter(by: request.filters)
       .single()
-      .execute()
+    
+    return try await db.execute(.update(table: request.table, builder: builder), on: self)
       .value
   }
 
@@ -480,58 +516,62 @@ extension PostgrestClient {
 
 
   // MARK: - Upsert
-  func upsert<R: Decodable, V: Encodable>(
+  private func upsert<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.UpsertRequest<V>
   ) async throws -> R {
-    try await self.from(request.table.tableName)
+    
+    @Dependency(\.supabaseClient.databaseClient) var db
+   
+    let builder = try self.from(request.table.tableName)
       .upsert(request.values, returning: request.returningOptions, ignoreDuplicates: request.ignoreDuplicates)
       .filter(by: request.filters)
       .single()
-      .execute()
+    
+    return try await db.execute(.upsert(table: request.table, builder: builder), on: self)
       .value
   }
 
-  func upsertMany<R: Decodable, V: Encodable>(
+  private func upsertMany<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.UpsertManyRequest<V>
   ) async throws -> [R] {
-    try await self.from(request.table.tableName)
+    @Dependency(\.supabaseClient.databaseClient) var db
+    
+    let builder = try self.from(request.table.tableName)
       .upsert(
         request.values,
         returning: request.returningOptions,
         ignoreDuplicates: request.ignoreDuplicates
       )
       .filter(by: request.filters)
-      .execute()
+    
+    return try await db.execute(.upsertMany(table: request.table, builder: builder), on: self)
       .value
   }
 
-  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
-  /// in the database to be "id" for matching the id value against.
+  /// A helper for upserting an item in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
   ///
   /// ### Example
   ///
   /// ```swift
-  /// let todo = try await databaseClient.update(
-  ///   id: UUID(0)
-  ///   in: Table.todo,
-  ///   with: TodoUpdateRequest(complete: true),
-  ///   returning: .representation,
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
-  /// )
+  ///  let newTodo: Todo = try await databaseClient.upsert(
+  ///    Todo(id: .init(), description: "A new todo"),
+  ///    in: .todos
+  ///  )
   /// ```
   ///
   /// - Parameters:
-  ///   - id: The item's id.
-  ///   - table: The table to update the row.
   ///   - values: The values to updated in the row.
+  ///   - table: The table to update the row.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
   ///   - type: The type to decode from the response.
   @discardableResult
   public func upsert<
     Values: Encodable, Model: Decodable
   >(
+    _ values: Values,
     in table: AnyTable,
-    with values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
     ignoreDuplicates: Bool = false,
     decoding type: Model.Type = Model.self
@@ -547,33 +587,30 @@ extension PostgrestClient {
     )
   }
 
-  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
-  /// in the database to be "id" for matching the id value against.
+  /// A helper for upserting an item in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
   ///
   /// ### Example
   ///
   /// ```swift
-  /// let todo = try await databaseClient.update(
-  ///   id: UUID(0)
-  ///   in: Table.todo,
-  ///   with: TodoUpdateRequest(complete: true),
-  ///   returning: .representation,
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
-  /// )
+  ///  let newTodo: Todo = try await databaseClient.upsert(
+  ///    Todo(id: .init(), description: "A new todo"),
+  ///    in: .todos
+  ///  )
   /// ```
   ///
   /// - Parameters:
-  ///   - id: The item's id.
-  ///   - table: The table to update the row.
   ///   - values: The values to updated in the row.
+  ///   - table: The table to update the row.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
   ///   - type: The type to decode from the response.
   @discardableResult
   public func upsert<
     Values: Encodable
   >(
+    _ values: Values,
     in table: AnyTable,
-    with values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
     ignoreDuplicates: Bool = false,
     decoding type: Values.Type = Values.self
@@ -589,33 +626,33 @@ extension PostgrestClient {
     )
   }
 
-  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
-  /// in the database to be "id" for matching the id value against.
+  /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
   ///
   /// ### Example
   ///
   /// ```swift
-  /// let todo = try await databaseClient.update(
-  ///   id: UUID(0)
-  ///   in: Table.todo,
-  ///   with: TodoUpdateRequest(complete: true),
-  ///   returning: .representation,
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
-  /// )
+  ///  let newTodos: [Todo] = try await databaseClient.upsert(
+  ///    [
+  ///     Todo(id: .init(), description: "A new todo"),
+  ///     Todo(id: .init(), description: "Another new todo"),
+  ///    ],
+  ///    in: .todos
+  ///  )
   /// ```
   ///
   /// - Parameters:
-  ///   - id: The item's id.
-  ///   - table: The table to update the row.
   ///   - values: The values to updated in the row.
+  ///   - table: The table to update the row.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
   ///   - type: The type to decode from the response.
   @discardableResult
   public func upsert<
     Value: Encodable, Model: Decodable
   >(
+    _ values: [Value],
     in table: AnyTable,
-    with values: [Value],
     returning returningOptions: PostgrestReturningOptions = .representation,
     ignoreDuplicates: Bool = false,
     decoding type: [Model].Type = [Model].self
@@ -630,34 +667,74 @@ extension PostgrestClient {
       )
     )
   }
-
-  /// A helper for updating an item in the database, using the table name and the item's id. This method requires the column name
-  /// in the database to be "id" for matching the id value against.
+  
+  /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
   ///
   /// ### Example
   ///
   /// ```swift
-  /// let todo = try await databaseClient.update(
-  ///   id: UUID(0)
-  ///   in: Table.todo,
-  ///   with: TodoUpdateRequest(complete: true),
-  ///   returning: .representation,
-  ///   decoding: TodoModel.self // this is generally inferred and not needed depending on the calling context.
-  /// )
+  ///  let newTodos: [Todo] = try await databaseClient.upsert(
+  ///     Todo(id: .init(), description: "A new todo"),
+  ///     Todo(id: .init(), description: "Another new todo"),
+  ///    in: .todos
+  ///  )
   /// ```
   ///
   /// - Parameters:
-  ///   - id: The item's id.
-  ///   - table: The table to update the row.
-  ///   - values: The values to updated in the row.
+  ///   - values: The values to be upserted.
+  ///   - table: The table to upsert the values in.
   ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsert<
+    Value: Encodable, Model: Decodable
+  >(
+    _ values: Value...,
+    in table: AnyTable,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: [Model].Type = [Model].self
+  ) async throws -> [Model] where Value: Identifiable {
+    try await self.upsertMany(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+  
+  /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  ///  let newTodos: [Todo] = try await databaseClient.upsert(
+  ///    [
+  ///     Todo(id: .init(), description: "A new todo"),
+  ///     Todo(id: .init(), description: "Another new todo"),
+  ///    ],
+  ///    in: .todos
+  ///  )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - values: The values to be upserted.
+  ///   - table: The table to upsert the values in.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
   ///   - type: The type to decode from the response.
   @discardableResult
   public func upsert<
     Value: Encodable
   >(
+    _ values: [Value],
     in table: AnyTable,
-    with values: [Value],
     returning returningOptions: PostgrestReturningOptions = .representation,
     ignoreDuplicates: Bool = false,
     decoding type: [Value].Type = [Value].self
@@ -672,5 +749,153 @@ extension PostgrestClient {
       )
     )
   }
+  
+  /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
+  /// supplied.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  ///  let newTodos: [Todo] = try await databaseClient.upsert(
+  ///     Todo(id: .init(), description: "A new todo"),
+  ///     Todo(id: .init(), description: "Another new todo"),
+  ///    in: .todos
+  ///  )
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - values: The values to be upserted.
+  ///   - table: The table to upsert the values in.
+  ///   - returningOptions: The postgres returning options (defaults to `.representation`)
+  ///   - ignoringDuplicates: If `true` then duplicates are ignored, if `false` then duplicates are merged.
+  ///   - type: The type to decode from the response.
+  @discardableResult
+  public func upsert<
+    Value: Encodable
+  >(
+    _ values: Value...,
+    in table: AnyTable,
+    returning returningOptions: PostgrestReturningOptions = .representation,
+    ignoreDuplicates: Bool = false,
+    decoding type: [Value].Type = [Value].self
+  ) async throws -> [Value] where Value: Identifiable, Value: Decodable {
+    try await self.upsertMany(
+      .init(
+        table: table,
+        filters: [],
+        returningOptions: returningOptions,
+        ignoreDuplicates: ignoreDuplicates,
+        values: values
+      )
+    )
+  }
+}
 
+fileprivate extension SupabaseClientDependency.DatabaseClient {
+  
+  // An internal helper that is used as a proxy for overrides.
+  enum DatabaseExecutor {
+    case delete(table: AnyTable, builder: PostgrestBuilder)
+    case fetch(table: AnyTable, builder: PostgrestBuilder)
+    case fetchOne(table: AnyTable, builder: PostgrestBuilder)
+    case insert(table: AnyTable, builder: PostgrestBuilder)
+    case insertMany(table: AnyTable, builder: PostgrestBuilder)
+    case update(table: AnyTable, builder: PostgrestBuilder)
+    case upsert(table: AnyTable, builder: PostgrestBuilder)
+    case upsertMany(table: AnyTable, builder: PostgrestBuilder)
+
+    var builder: PostgrestBuilder {
+      switch self {
+      case let .delete(table: _, builder: builder):
+        return builder
+      case let .fetch(table: _, builder: builder):
+        return builder
+      case let .fetchOne(table: _, builder: builder):
+        return builder
+      case let .insert(table: _, builder: builder):
+        return builder
+      case let .insertMany(table: _, builder: builder):
+        return builder
+      case let .update(table: _, builder: builder):
+        return builder
+      case let .upsert(table: _, builder: builder):
+        return builder
+      case let .upsertMany(table: _, builder: builder):
+        return builder
+      }
+    }
+    
+    var override: SupabaseClientDependency.DatabaseOverride {
+      switch self {
+      case let .delete(table: table, builder: _):
+        return .delete(from: table)
+      case let .fetch(table: table, builder: _):
+        return .fetch(from: table)
+      case let .fetchOne(table: table, builder: _):
+        return .fetchOne(from: table)
+      case let .insert(table: table, builder: _):
+        return .insert(into: table)
+      case let .insertMany(table: table, builder: _):
+        return .insertMany(into: table)
+      case let .update(table: table, builder: _):
+        return .update(in: table)
+      case let .upsert(table: table, builder: _):
+        return .upsert(in: table)
+      case let .upsertMany(table: table, builder: _):
+        return .upsertMany(in: table)
+      }
+    }
+  }
+  
+  func execute(
+    _ executor: DatabaseExecutor,
+    on client: PostgrestClient
+  ) async throws -> PostgrestResponse<Void> {
+    
+    // Short circuit if there is an `all` override.
+    if let allMatch = overrides.first(where: { $0.override == .all }) {
+      let allResponse = try await allMatch.response(client.configuration.encoder)
+      return .init(data: allResponse.0, response: allResponse.1 as! HTTPURLResponse, value: ())
+    }
+    
+    // Check if there are any specific overrides for this route.
+    guard let firstMatch = overrides.first(where: {
+      $0.override == executor.override
+    }) else {
+      return try await executor.builder.execute()
+    }
+    let response = try await firstMatch.response(client.configuration.encoder)
+    return PostgrestResponse(
+      data: response.0,
+      response: response.1 as! HTTPURLResponse,
+      value: ()
+    )
+  }
+  
+  func execute<T: Decodable>(
+    _ executor: DatabaseExecutor,
+    on client: PostgrestClient
+  ) async throws -> PostgrestResponse<T> {
+    
+    // Short circuit if there is an `all` override.
+    if let allMatch = overrides.first(where: { $0.override == .all }) {
+      let allResponse = try await allMatch.response(client.configuration.encoder)
+      let decoded = try client.configuration.decoder.decode(T.self, from: allResponse.0)
+      return .init(data: allResponse.0, response: allResponse.1 as! HTTPURLResponse, value: decoded)
+    }
+    
+    // Check if there are any specific overrides for this route.
+    guard let firstMatch = overrides.first(where: {
+      $0.override == executor.override
+    }) else {
+      return try await executor.builder.execute()
+    }
+    let response = try await firstMatch.response(client.configuration.encoder)
+    let decoded = try client.configuration.decoder.decode(T.self, from: response.0)
+    return PostgrestResponse(
+      data: response.0,
+      response: response.1 as! HTTPURLResponse,
+      value: decoded
+    )
+  }
 }

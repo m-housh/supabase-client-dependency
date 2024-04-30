@@ -172,23 +172,6 @@ func deleteTodo(id: Todo.ID) async throws {
 }
 ```
 
-### Custom Queries
-
-To build your own custom query the library exposes a method that mimick's the underlying
-`PostgREST` client's `from` method.
-
-An example of creating a custom query.
-
-```swift
-func customFetchTodos() async throws -> [Todo] { 
-  try await database.from(.todos)
-    // Add customizations here, and return the result.
-    .select()
-    .execute()
-    .value
-}
-```
-
 ### Remote Function Calls
 
 The library also exposes a method that mimick's the underlying `PostgREST` client's
