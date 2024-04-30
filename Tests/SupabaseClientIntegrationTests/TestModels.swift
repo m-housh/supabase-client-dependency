@@ -93,7 +93,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 
 @CasePathable
 enum TodoRoute: TableRouter {
-  var table: AnyTable { AnyTable.todos }
+  public var table: AnyTable { AnyTable.todos }
 
   case delete(filteredBy: [DatabaseFilter])
   case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
@@ -102,7 +102,7 @@ enum TodoRoute: TableRouter {
   case update(id: Todo.ID, updates: TodoUpdateRequest)
   case upsert(Todo)
 
-  var builder: QueryBuilder<TodoRoute> {
+  public var builder: QueryBuilder<TodoRoute> {
     QueryBuilder { query, route in
       switch route {
       case let .delete(filters):
@@ -163,3 +163,38 @@ enum DbRoutes {
   case todos(TodoRoute)
 }
 
+struct RouterKey {
+  var router: DatabaseRouter<DbRoutes>
+}
+
+extension RouterKey: DependencyKey, TestDependencyKey {
+  public static var testValue: Self = .init(router: .init())
+  public static var liveValue: Self { .testValue }
+}
+
+extension DependencyValues {
+  var router: DatabaseRouter<DbRoutes> {
+    get { self[RouterKey.self].router }
+    set { self[RouterKey.self].router = newValue }
+  }
+}
+
+extension DatabaseExecutor {
+
+  func todos(_ route: TodoRoute) async throws {
+    try await self.run(route)
+  }
+
+  @discardableResult
+  func todos<A: Decodable>(_ route: TodoRoute) async throws -> A {
+    try await self.run(route)
+  }
+
+  func run<A: Decodable, T: TableRouter>(
+    _ route: T,
+    in table: CaseKeyPath<DbRoutes, T>
+  ) async throws -> A {
+    return try await run(route)
+  }
+
+}

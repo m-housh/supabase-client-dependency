@@ -46,3 +46,13 @@ public struct DatabaseExecutor {
 extension DatabaseExecutor: TestDependencyKey {
   public static let testValue = Self.init()
 }
+
+extension DatabaseExecutor {
+  public static func live(database: PostgrestClient) -> Self {
+    .init(
+      decoder: database.configuration.decoder,
+      execute: { try await $0.execute().data },
+      query: { database.from($0.tableName) }
+    )
+  }
+}

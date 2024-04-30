@@ -43,6 +43,7 @@ let package = Package(
       name: "DatabaseRouter",
       dependencies: [
         "SupabaseExtensions",
+        .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "DependenciesMacros", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
