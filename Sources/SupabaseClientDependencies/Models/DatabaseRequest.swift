@@ -1,101 +1,103 @@
 import Foundation
 import Supabase
+import SupabaseExtensions
 
+#warning("Remove me")
 public enum DatabaseRequest {
 
-  /// Represents a filter for use in database queries.
-  ///
-  public struct Filter {
-
-    /// The column to filter the results by.
-    public let column: String
-
-    /// The operator to use to filter the results by.
-    public let `operator`: PostgrestFilterBuilder.Operator
-
-    /// The value used to compare the column value to.
-    public let value: URLQueryRepresentable
-
-    /// Create a new filter.
-    ///
-    /// - Parameters:
-    ///   - column: The column to filter the results by.
-    ///   - operator: The operator to use to compare the column value to.
-    ///   - value: The value to use for the column filter.
-    public init<C: ColumnRepresentable>(
-      column: C,
-      operator postgrestOperator: PostgrestFilterBuilder.Operator,
-      value: URLQueryRepresentable
-    ) {
-      self.column = column.columnName
-      self.operator = postgrestOperator
-      self.value = value
-    }
-
-    public static func equals<C: ColumnRepresentable>(
-      column: C,
-      value: URLQueryRepresentable
-    ) -> Self {
-      .init(column: column, operator: .eq, value: value)
-    }
-
-    public static func id(_ value: URLQueryRepresentable) -> Self {
-      .equals(column: "id", value: value)
-    }
-  }
-
-  /// Represents an order by clause used for a database query.
-  ///
-  public struct Order: Equatable {
-
-    /// The column name to use for the order by clause.
-    public let column: String
-
-    /// Whether the values are returned in ascending or descending order.
-    public let ascending: Bool
-
-    /// Whether null values are returned at the front of the results.
-    public let nullsFirst: Bool
-
-    /// An foreign table to use if the column is a foreign column.
-    public let foreignTable: String?
-
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-    public init<C: ColumnRepresentable, T: TableRepresentable>(
-      column: C,
-      ascending: Bool = true,
-      nullsFirst: Bool = false,
-      foreignTable: T? = nil
-    ) {
-      self.column = column.columnName
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = foreignTable?.tableName
-    }
-    
-    /// Create a new order by clause for the result with the specified `column`.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order on.
-    ///   - ascending: If `true`, the result will be in ascending order.
-    ///   - nullsFirst: If `true`, `null`s appear first.
-    public init<C: ColumnRepresentable>(
-      column: C,
-      ascending: Bool = true,
-      nullsFirst: Bool = false
-    ) {
-      self.column = column.columnName
-      self.ascending = ascending
-      self.nullsFirst = nullsFirst
-      self.foreignTable = nil
-    }
-  }
+//  /// Represents a filter for use in database queries.
+//  ///
+//  public struct Filter {
+//
+//    /// The column to filter the results by.
+//    public let column: String
+//
+//    /// The operator to use to filter the results by.
+//    public let `operator`: PostgrestFilterBuilder.Operator
+//
+//    /// The value used to compare the column value to.
+//    public let value: URLQueryRepresentable
+//
+//    /// Create a new filter.
+//    ///
+//    /// - Parameters:
+//    ///   - column: The column to filter the results by.
+//    ///   - operator: The operator to use to compare the column value to.
+//    ///   - value: The value to use for the column filter.
+//    public init<C: ColumnRepresentable>(
+//      column: C,
+//      operator postgrestOperator: PostgrestFilterBuilder.Operator,
+//      value: URLQueryRepresentable
+//    ) {
+//      self.column = column.columnName
+//      self.operator = postgrestOperator
+//      self.value = value
+//    }
+//
+//    public static func equals<C: ColumnRepresentable>(
+//      column: C,
+//      value: URLQueryRepresentable
+//    ) -> Self {
+//      .init(column: column, operator: .eq, value: value)
+//    }
+//
+//    public static func id(_ value: URLQueryRepresentable) -> Self {
+//      .equals(column: "id", value: value)
+//    }
+//  }
+//
+//  /// Represents an order by clause used for a database query.
+//  ///
+//  public struct Order: Equatable {
+//
+//    /// The column name to use for the order by clause.
+//    public let column: String
+//
+//    /// Whether the values are returned in ascending or descending order.
+//    public let ascending: Bool
+//
+//    /// Whether null values are returned at the front of the results.
+//    public let nullsFirst: Bool
+//
+//    /// An foreign table to use if the column is a foreign column.
+//    public let foreignTable: String?
+//
+//    /// Create a new order by clause for the result with the specified `column`.
+//    ///
+//    /// - Parameters:
+//    ///   - column: The column to order on.
+//    ///   - ascending: If `true`, the result will be in ascending order.
+//    ///   - nullsFirst: If `true`, `null`s appear first.
+//    ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
+//    public init<C: ColumnRepresentable, T: TableRepresentable>(
+//      column: C,
+//      ascending: Bool = true,
+//      nullsFirst: Bool = false,
+//      foreignTable: T? = nil
+//    ) {
+//      self.column = column.columnName
+//      self.ascending = ascending
+//      self.nullsFirst = nullsFirst
+//      self.foreignTable = foreignTable?.tableName
+//    }
+//    
+//    /// Create a new order by clause for the result with the specified `column`.
+//    ///
+//    /// - Parameters:
+//    ///   - column: The column to order on.
+//    ///   - ascending: If `true`, the result will be in ascending order.
+//    ///   - nullsFirst: If `true`, `null`s appear first.
+//    public init<C: ColumnRepresentable>(
+//      column: C,
+//      ascending: Bool = true,
+//      nullsFirst: Bool = false
+//    ) {
+//      self.column = column.columnName
+//      self.ascending = ascending
+//      self.nullsFirst = nullsFirst
+//      self.foreignTable = nil
+//    }
+//  }
 
   /// Represents the parameters for a delete request on the database.
   ///
@@ -108,7 +110,7 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// The row filters for the delete request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// Create a new delete request.
     ///
@@ -118,12 +120,12 @@ public enum DatabaseRequest {
     ///  - Parameters:
     ///   - table: The table to perform the delete request on.
     ///   - filters: The row filters for the delete request.
-    public init<T: TableRepresentable>(table: T, filters: [Filter]) {
+    public init<T: TableRepresentable>(table: T, filters: [DatabaseFilter]) {
       self.table = table.eraseToAnyTable()
       self.filters = filters
     }
 
-    public init(table: AnyTable, filters: [Filter]) {
+    public init(table: AnyTable, filters: [DatabaseFilter]) {
       self.table = table
       self.filters = filters
     }
@@ -140,10 +142,10 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// The row filters for the request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// The order by clause for the request.
-    public let order: Order?
+    public let order: DatabaseOrder?
 
     /// Create a new fetch request.
     ///
@@ -156,8 +158,8 @@ public enum DatabaseRequest {
     ///   - order: The order by clause for the request.
     public init(
       table: AnyTable,
-      filters: [Filter] = [],
-      order: Order? = nil
+      filters: [DatabaseFilter] = [],
+      order: DatabaseOrder? = nil
     ) {
       self.table = table
       self.filters = filters
@@ -175,8 +177,8 @@ public enum DatabaseRequest {
     ///   - order: The order by clause for the request.
     public init<T: TableRepresentable>(
       table: T,
-      filters: [Filter] = [],
-      order: Order? = nil
+      filters: [DatabaseFilter] = [],
+      order: DatabaseOrder? = nil
     ) {
       self.table = table.eraseToAnyTable()
       self.filters = filters
@@ -195,7 +197,7 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// Filters for the request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// Create a new single row fetch request.
     ///
@@ -207,7 +209,7 @@ public enum DatabaseRequest {
     ///   - filters: The filters for the request.
     public init<T: TableRepresentable>(
       table: T,
-      filters: [Filter] = []
+      filters: [DatabaseFilter] = []
     ) {
       self.table = table.eraseToAnyTable()
       self.filters = filters
@@ -215,7 +217,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      filters: [Filter] = []
+      filters: [DatabaseFilter] = []
     ) {
       self.table = table
       self.filters = filters
@@ -363,7 +365,7 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// The filters for the request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// The returning options for the response type.
     public let returningOptions: PostgrestReturningOptions
@@ -383,7 +385,7 @@ public enum DatabaseRequest {
     ///   - values: The values to update in the database.
     public init<T: TableRepresentable>(
       table: T,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       values: Value
     ) {
@@ -395,7 +397,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       values: Value
     ) {
@@ -417,7 +419,7 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// The filters for the request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// The returning options for the response type.
     public let returningOptions: PostgrestReturningOptions
@@ -440,7 +442,7 @@ public enum DatabaseRequest {
     ///   - values: The values to update in the database.
     public init<T: TableRepresentable>(
       table: T,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       ignoreDuplicates: Bool = false,
       values: Value
@@ -454,7 +456,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       ignoreDuplicates: Bool = false,
       values: Value
@@ -478,7 +480,7 @@ public enum DatabaseRequest {
     public let table: AnyTable
 
     /// The filters for the request.
-    public let filters: [Filter]
+    public let filters: [DatabaseFilter]
 
     /// The returning options for the response type.
     public let returningOptions: PostgrestReturningOptions
@@ -501,7 +503,7 @@ public enum DatabaseRequest {
     ///   - values: The values to update in the database.
     public init<T: TableRepresentable>(
       table: T,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       ignoreDuplicates: Bool = false,
       values: [Value]
@@ -515,7 +517,7 @@ public enum DatabaseRequest {
 
     public init(
       table: AnyTable,
-      filters: [Filter],
+      filters: [DatabaseFilter],
       returningOptions: PostgrestReturningOptions = .representation,
       ignoreDuplicates: Bool = false,
       values: [Value]
@@ -529,13 +531,7 @@ public enum DatabaseRequest {
   }
 }
 
-extension DatabaseRequest.Filter: Equatable {
-  public static func == (lhs: DatabaseRequest.Filter, rhs: DatabaseRequest.Filter) -> Bool {
-    lhs.column == rhs.column &&
-    lhs.operator == rhs.operator &&
-    lhs.value.queryValue == rhs.value.queryValue
-  }
-}
+
 
 extension DatabaseRequest.InsertRequest: Equatable where Value: Equatable { }
 extension DatabaseRequest.InsertManyRequest: Equatable where Value: Equatable { }

@@ -3,9 +3,7 @@ import PostgREST
 
 extension ColumnRepresentable {
 
-  public func equals(_ value: URLQueryRepresentable)
-    -> DatabaseRequest.Filter
-  {
+  public func equals(_ value: URLQueryRepresentable) -> DatabaseFilter {
     .equals(column: self.columnName, value: value)
   }
 }
@@ -13,7 +11,7 @@ extension ColumnRepresentable {
 extension PostgrestFilterBuilder {
 
   @discardableResult
-  public func filter(by filters: [DatabaseRequest.Filter]) -> Self {
+  public func filter(by filters: [DatabaseFilter]) -> Self {
     filters.forEach { filter in
       _ = self.filter(
         filter.column.columnName,
@@ -25,12 +23,12 @@ extension PostgrestFilterBuilder {
   }
 
   @discardableResult
-  public func filter(_ filters: DatabaseRequest.Filter...) -> Self {
+  public func filter(_ filters: DatabaseFilter...) -> Self {
     self.filter(by: filters)
   }
 
   @discardableResult
-  public func filter(by filter: DatabaseRequest.Filter) -> Self {
+  public func filter(by filter: DatabaseFilter) -> Self {
     self.filter(by: [filter])
   }
 }

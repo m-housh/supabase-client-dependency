@@ -6,7 +6,7 @@ extension ColumnRepresentable {
   public func ascending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
-  ) -> DatabaseRequest.Order {
+  ) -> DatabaseOrder {
     .init(
       column: self,
       ascending: true,
@@ -18,7 +18,7 @@ extension ColumnRepresentable {
   public func ascending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
-  ) -> DatabaseRequest.Order {
+  ) -> DatabaseOrder {
     .init(
       column: self,
       ascending: true,
@@ -30,7 +30,7 @@ extension ColumnRepresentable {
   public func descending<T: TableRepresentable>(
     nullsFirst: Bool = false,
     foreignTable: T? = nil
-  ) -> DatabaseRequest.Order {
+  ) -> DatabaseOrder {
     .init(
       column: self,
       ascending: false,
@@ -42,7 +42,7 @@ extension ColumnRepresentable {
   public func descending(
     nullsFirst: Bool = false,
     foreignTable: String? = nil
-  ) -> DatabaseRequest.Order {
+  ) -> DatabaseOrder {
     .init(
       column: self,
       ascending: false,
@@ -59,7 +59,7 @@ extension PostgrestFilterBuilder {
   ///
   ///  - Parameters:
   ///   - order: The optional order by clause to apply to the query if applicable.
-  public func order(by order: DatabaseRequest.Order?)
+  public func order(by order: DatabaseOrder?)
     -> PostgrestTransformBuilder
   {
     if let order {

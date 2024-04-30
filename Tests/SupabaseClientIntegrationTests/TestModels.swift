@@ -97,48 +97,6 @@ protocol DatabaseRouter {
   func execute<A: Decodable>(on client: PostgrestClient) async throws -> A
 }
 
-struct RouteNotFoundError: Error { }
-
-extension DatabaseRouter {
-
-  static func execute<T: TableRouter>(
-    _ route: T,
-    on client: PostgrestClient
-  ) async throws {
-    try await AnyCasePath(\.self).embed(route).execute(on: client)
-  }
-
-  @discardableResult
-  static func execute<A: Decodable, T: TableRouter>(
-    _ route: T,
-    on client: PostgrestClient
-  ) async throws -> A {
-    try await AnyCasePath(\.self).embed(route).execute(on: client)
-  }
-
-  func execute<T: TableRouter>(
-    _ route: CaseKeyPath<Self, T>,
-    on client: PostgrestClient
-  ) async throws {
-    guard let router = AnyCasePath(route).extract(from: self) else {
-      throw RouteNotFoundError()
-    }
-    return try await router.execute(on: client)
-  }
-
-  @discardableResult
-  func execute<A: Decodable, T: TableRouter>(
-    _ route: CaseKeyPath<Self, T>,
-    on client: PostgrestClient
-  ) async throws -> A {
-    guard let router = AnyCasePath(route).extract(from: self) else {
-      throw RouteNotFoundError()
-    }
-    return try await router.execute(on: client)
-  }
-}
-
-
 struct QueryBuilder<Table> {
   let build: (PostgrestQueryBuilder, Table) throws -> PostgrestBuilder
 }
@@ -163,8 +121,8 @@ extension TableRouter {
 enum TodoRoute: TableRouter {
   var table: AnyTable { AnyTable.todos }
 
-  case delete(filteredBy: [DatabaseRequest.Filter])
-  case fetch(filteredBy: [DatabaseRequest.Filter] = [], orderedBy: DatabaseRequest.Order?)
+  case delete(filteredBy: [DatabaseFilter])
+  case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
   case fetchOne(id: Todo.ID)
   case insert(InsertRequest)
   case update(id: Todo.ID, updates: TodoUpdateRequest)
@@ -200,7 +158,7 @@ enum TodoRoute: TableRouter {
     case many([TodoInsertRequest])
   }
 
-  static func delete(_ filters: DatabaseRequest.Filter...) -> Self {
+  static func delete(_ filters: DatabaseFilter...) -> Self {
     .delete(filteredBy: filters)
   }
 
@@ -219,8 +177,8 @@ enum TodoRoute: TableRouter {
   static var fetch: Self { .fetch(filteredBy: [], orderedBy: nil) }
 
   static func fetch(
-    filteredBy filters: DatabaseRequest.Filter...,
-    orderedBy order: DatabaseRequest.Order? = nil
+    filteredBy filters: DatabaseFilter...,
+    orderedBy order: DatabaseOrder? = nil
   ) -> Self {
     .fetch(filteredBy: filters, orderedBy: order)
   }

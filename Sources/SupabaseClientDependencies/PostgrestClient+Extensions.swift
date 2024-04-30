@@ -1,92 +1,18 @@
 import Dependencies
 import Foundation
-import PostgREST
+import Supabase
 
-extension PostgrestQueryBuilder {
-  public func delete(
-    filteredBy filters: [DatabaseRequest.Filter]
-  ) -> PostgrestFilterBuilder {
-    self.delete(returning: .minimal).filter(by: filters)
-  }
-
-  public func delete(
-    filteredBy filters: DatabaseRequest.Filter...
-  ) -> PostgrestFilterBuilder {
-    self.delete(filteredBy: filters)
-  }
-
-  public func delete<ID: URLQueryRepresentable>(
-    id: ID
-  ) -> PostgrestFilterBuilder {
-    self.delete(filteredBy: .id(id))
-  }
-
-  // MARK: - Fetch
-  public func fetch(
-    filteredBy filters: [DatabaseRequest.Filter] = [],
-    orderBy order: DatabaseRequest.Order? = nil
-  ) -> PostgrestTransformBuilder {
-    self.select().filter(by: filters).order(by: order)
-  }
-
-  public func fetch(
-    filteredBy filters: DatabaseRequest.Filter...,
-    orderBy order: DatabaseRequest.Order? = nil
-  ) -> PostgrestTransformBuilder  {
-    self.fetch(filteredBy: filters, orderBy: order)
-  }
-
-  public func fetchOne(
-    filteredBy filters: [DatabaseRequest.Filter]
-  ) -> PostgrestTransformBuilder {
-    self.fetch(filteredBy: filters).single()
-  }
-
-  public func fetchOne(
-    filteredBy filters: DatabaseRequest.Filter...
-  ) -> PostgrestTransformBuilder {
-    self.fetchOne(filteredBy: filters)
-  }
-
-  // MARK: - Update
-  public func update<Values: Encodable>(
-    _ values: Values,
-    returning returningOptions: PostgrestReturningOptions = .representation,
-    filteredBy filters: [DatabaseRequest.Filter]
-  ) throws -> PostgrestTransformBuilder {
-    try self.update(values, returning: returningOptions).filter(by: filters)
-  }
-
-  public func update<Values: Encodable>(
-    _ values: Values,
-    returning returningOptions: PostgrestReturningOptions = .representation,
-    filteredBy filters: DatabaseRequest.Filter...
-  ) throws -> PostgrestTransformBuilder {
-    try self.update(values, returning: returningOptions, filteredBy: filters)
-  }
-
-  public func update<
-    ID: URLQueryRepresentable, Values: Encodable
-  >(
-    id: ID,
-    with values: Values,
-    returning returningOptions: PostgrestReturningOptions = .representation
-  ) throws -> PostgrestTransformBuilder {
-    try self.update(values, returning: returningOptions, filteredBy: .id(id)).single()
-  }
-
-}
-
+#warning("Remove all.")
 extension PostgrestClient {
   private func delete(
     _ request: DatabaseRequest.DeleteRequest
   ) async throws {
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = self.from(request.table.tableName)
       .delete(returning: .minimal)
       .filter(by: request.filters)
-    
+
     return try await db.execute(
       .delete(table: request.table, builder: builder),
       on: self
@@ -113,12 +39,12 @@ extension PostgrestClient {
   ///   - filters: The filters for the row to be deleted from the database.
   public func delete(
     from table: AnyTable,
-    where filters: [DatabaseRequest.Filter]
+    where filters: [DatabaseFilter]
   ) async throws {
     try await self.delete(.init(table: table, filters: filters))
   }
 
-  
+
   /// A helper for deleting a database item by the provided filters.
   ///
   /// ### Example
@@ -137,7 +63,7 @@ extension PostgrestClient {
   ///   - filters: The filters for the row to be deleted from the database.
   public func delete(
     from table: AnyTable,
-    filteredBy filters: DatabaseRequest.Filter...
+    filteredBy filters: DatabaseFilter...
   ) async throws {
     try await delete(from: table, where: filters)
   }
@@ -165,24 +91,24 @@ extension PostgrestClient {
 
 
   // MARK: - Fetch
-  
+
   private func fetch<R: Decodable>(
     _ request: DatabaseRequest.FetchRequest
   ) async throws -> R {
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
       .order(by: request.order)
-    
+
     return try await db.execute(
       .fetch(table: request.table, builder: builder),
       on: self
     )
     .value
   }
-  
+
   /// A helper for fetching items from the database, using the table name, Filter's, and Order types.
   ///
   /// ### Example
@@ -203,8 +129,8 @@ extension PostgrestClient {
   ///   - type: The return value type to decode.
   func fetch<Response: Decodable>(
     from table: AnyTable,
-    where filters: [DatabaseRequest.Filter] = [],
-    orderBy order: DatabaseRequest.Order? = nil,
+    where filters: [DatabaseFilter] = [],
+    orderBy order: DatabaseOrder? = nil,
     decoding type: Response.Type = Response.self
   ) async throws -> Response {
     return try await self.fetch(
@@ -232,8 +158,8 @@ extension PostgrestClient {
   ///   - type: The return value type to decode.
   public func fetch<Response: Decodable>(
     from table: AnyTable,
-    filteredBy filters: DatabaseRequest.Filter...,
-    orderBy order: DatabaseRequest.Order? = nil,
+    filteredBy filters: DatabaseFilter...,
+    orderBy order: DatabaseOrder? = nil,
     decoding type: Response.Type = Response.self
   ) async throws -> Response {
     try await self.fetch(
@@ -245,18 +171,18 @@ extension PostgrestClient {
   }
 
   // MARK: - Fetch One
-  
+
   private func fetchOne<R: Decodable>(
     _ request: DatabaseRequest.FetchOneRequest
   ) async throws -> R {
-    
+
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = self.from(request.table.tableName)
       .select()
       .filter(by: request.filters)
       .single()
-    
+
     return try await db.execute(
       .fetchOne(table: request.table, builder: builder),
       on: self
@@ -282,7 +208,7 @@ extension PostgrestClient {
   ///   - type: The return value type to decode.
   public func fetchOne<Model: Decodable>(
     from table: AnyTable,
-    where filters: [DatabaseRequest.Filter],
+    where filters: [DatabaseFilter],
     decoding type: Model.Type = Model.self
   ) async throws -> Model {
     return try await self.fetchOne(
@@ -311,7 +237,7 @@ extension PostgrestClient {
   ///   - type: The return value type to decode.
   public func fetchOne<Model: Decodable>(
     from table: AnyTable,
-    filteredBy filters: DatabaseRequest.Filter...,
+    filteredBy filters: DatabaseFilter...,
     decoding type: Model.Type = Model.self
   ) async throws -> Model {
     try await self.fetchOne(
@@ -351,35 +277,35 @@ extension PostgrestClient {
   }
 
   // MARK: - Insert
-  
+
   private func insert<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.InsertRequest<V>
   ) async throws -> R {
-    
+
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = try self.from(request.table.tableName)
       .insert(request.values, returning: request.returningOptions)
       .single()
-    
+
     return try await db.execute(
       .insert(table: request.table, builder: builder),
       on: self
     )
     .value
   }
-  
+
   private func insertMany<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.InsertManyRequest<V>
   ) async throws -> R {
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = try self.from(request.table.tableName)
       .insert(
         request.values.anyJSON(encoder: self.configuration.encoder),
         returning: request.returningOptions
       )
-    
+
     return try await db.execute(
       .insertMany(table: request.table, builder: builder),
       on: self
@@ -457,18 +383,18 @@ extension PostgrestClient {
   }
 
   // MARK: - Update
-  
+
   private func update<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.UpdateRequest<V>
   ) async throws -> R {
-    
+
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = try self.from(request.table.tableName)
       .update(request.values, returning: request.returningOptions)
       .filter(by: request.filters)
       .single()
-    
+
     return try await db.execute(.update(table: request.table, builder: builder), on: self)
       .value
   }
@@ -497,7 +423,7 @@ extension PostgrestClient {
   @discardableResult
   public func update<Values: Encodable, Model: Decodable>(
     table: AnyTable,
-    where filters: [DatabaseRequest.Filter],
+    where filters: [DatabaseFilter],
     values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
     decoding type: Model.Type = Model.self
@@ -535,7 +461,7 @@ extension PostgrestClient {
   @discardableResult
   public func update<Values: Encodable, Model: Decodable>(
     table: AnyTable,
-    filteredBy filters: DatabaseRequest.Filter...,
+    filteredBy filters: DatabaseFilter...,
     values: Values,
     returning returningOptions: PostgrestReturningOptions = .representation,
     decoding type: Model.Type = Model.self
@@ -594,14 +520,14 @@ extension PostgrestClient {
   private func upsert<R: Decodable, V: Encodable>(
     _ request: DatabaseRequest.UpsertRequest<V>
   ) async throws -> R {
-    
+
     @Dependency(\.supabaseClient.databaseClient) var db
-   
+
     let builder = try self.from(request.table.tableName)
       .upsert(request.values, returning: request.returningOptions, ignoreDuplicates: request.ignoreDuplicates)
       .filter(by: request.filters)
       .single()
-    
+
     return try await db.execute(.upsert(table: request.table, builder: builder), on: self)
       .value
   }
@@ -610,7 +536,7 @@ extension PostgrestClient {
     _ request: DatabaseRequest.UpsertManyRequest<V>
   ) async throws -> [R] {
     @Dependency(\.supabaseClient.databaseClient) var db
-    
+
     let builder = try self.from(request.table.tableName)
       .upsert(
         request.values,
@@ -618,7 +544,7 @@ extension PostgrestClient {
         ignoreDuplicates: request.ignoreDuplicates
       )
       .filter(by: request.filters)
-    
+
     return try await db.execute(.upsertMany(table: request.table, builder: builder), on: self)
       .value
   }
@@ -742,7 +668,7 @@ extension PostgrestClient {
       )
     )
   }
-  
+
   /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
   /// supplied.
   ///
@@ -782,7 +708,7 @@ extension PostgrestClient {
       )
     )
   }
-  
+
   /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
   /// supplied.
   ///
@@ -824,7 +750,7 @@ extension PostgrestClient {
       )
     )
   }
-  
+
   /// A helper for upserting multiple items in the database, using the table name and the item. This method requires the id to be
   /// supplied.
   ///
@@ -867,7 +793,7 @@ extension PostgrestClient {
 }
 
 fileprivate extension SupabaseClientDependency.DatabaseClient {
-  
+
   // An internal helper that is used as a proxy for overrides.
   enum DatabaseExecutor {
     case delete(table: AnyTable, builder: PostgrestBuilder)
@@ -899,7 +825,7 @@ fileprivate extension SupabaseClientDependency.DatabaseClient {
         return builder
       }
     }
-    
+
     var override: SupabaseClientDependency.DatabaseOverride {
       switch self {
       case let .delete(table: table, builder: _):
@@ -921,18 +847,18 @@ fileprivate extension SupabaseClientDependency.DatabaseClient {
       }
     }
   }
-  
+
   func execute(
     _ executor: DatabaseExecutor,
     on client: PostgrestClient
   ) async throws -> PostgrestResponse<Void> {
-    
+
     // Short circuit if there is an `all` override.
     if let allMatch = overrides.first(where: { $0.override == .all }) {
       let allResponse = try await allMatch.response(client.configuration.encoder)
       return .init(data: allResponse.0, response: allResponse.1 as! HTTPURLResponse, value: ())
     }
-    
+
     // Check if there are any specific overrides for this route.
     guard let firstMatch = overrides.first(where: {
       $0.override == executor.override
@@ -946,19 +872,19 @@ fileprivate extension SupabaseClientDependency.DatabaseClient {
       value: ()
     )
   }
-  
+
   func execute<T: Decodable>(
     _ executor: DatabaseExecutor,
     on client: PostgrestClient
   ) async throws -> PostgrestResponse<T> {
-    
+
     // Short circuit if there is an `all` override.
     if let allMatch = overrides.first(where: { $0.override == .all }) {
       let allResponse = try await allMatch.response(client.configuration.encoder)
       let decoded = try client.configuration.decoder.decode(T.self, from: allResponse.0)
       return .init(data: allResponse.0, response: allResponse.1 as! HTTPURLResponse, value: decoded)
     }
-    
+
     // Check if there are any specific overrides for this route.
     guard let firstMatch = overrides.first(where: {
       $0.override == executor.override

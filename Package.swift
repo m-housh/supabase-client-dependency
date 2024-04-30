@@ -12,7 +12,9 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"])
+    .library(name: "DatabaseRouter", targets: ["DatabaseRouter"]),
+    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
+    .library(name: "SupabaseExtensions", targets: ["SupabaseExtensions"])
   ],
   dependencies: [
     .package(
@@ -38,10 +40,23 @@ let package = Package(
   ],
   targets: [
     .target(
+      name: "DatabaseRouter",
+      dependencies: [
+        .product(name: "Supabase", package: "supabase-swift"),
+      ]
+    ),
+    .target(
       name: "SupabaseClientDependencies",
       dependencies: [
+        "SupabaseExtensions",
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
+        .product(name: "Supabase", package: "supabase-swift"),
+      ]
+    ),
+    .target(
+      name: "SupabaseExtensions",
+      dependencies: [
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),

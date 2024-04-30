@@ -9,9 +9,9 @@ import Foundation
 /// }
 /// ```
 public struct AnyTable: Equatable, TableRepresentable {
-  
+
   public let tableName: String
-  
+
   public init<T: TableRepresentable>(_ table: T) {
     self.tableName = table.tableName
   }

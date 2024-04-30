@@ -1,5 +1,4 @@
 import Foundation
-import Supabase
 
 /// A helper type that allows you to model table's generally as an enum.
 ///
