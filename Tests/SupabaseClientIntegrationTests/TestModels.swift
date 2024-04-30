@@ -1,5 +1,6 @@
 import CasePaths
 import CasePathsMacros
+import DatabaseRouter
 import Dependencies
 import Foundation
 import SupabaseClientDependencies
@@ -90,33 +91,6 @@ struct TodoUpdateRequest: Codable, Hashable {
   }
 }
 
-protocol DatabaseRouter {
-  func execute(on client: PostgrestClient) async throws
-
-  @discardableResult
-  func execute<A: Decodable>(on client: PostgrestClient) async throws -> A
-}
-
-struct QueryBuilder<Table> {
-  let build: (PostgrestQueryBuilder, Table) throws -> PostgrestBuilder
-}
-
-protocol TableRouter {
-  var table: AnyTable { get }
-  var builder: QueryBuilder<Self> { get }
-}
-
-extension TableRouter {
-  func execute(on client: PostgrestClient) async throws {
-    try await builder.build(client.from(table.tableName), self).execute().value
-  }
-
-  @discardableResult
-  func execute<A: Decodable>(on client: PostgrestClient) async throws -> A {
-    try await builder.build(client.from(table.tableName), self).execute().value
-  }
-}
-
 @CasePathable
 enum TodoRoute: TableRouter {
   var table: AnyTable { AnyTable.todos }
@@ -185,46 +159,7 @@ enum TodoRoute: TableRouter {
 }
 
 @CasePathable
-enum MyRouter: DatabaseRouter {
+enum DbRoutes {
   case todos(TodoRoute)
-
-  func execute(on client: PostgrestClient) async throws {
-    switch self {
-    case let .todos(route):
-      return try await route.execute(on: client)
-    }
-  }
-
-  @discardableResult
-  func execute<A: Decodable>(on client: PostgrestClient) async throws -> A {
-    switch self {
-    case let .todos(route):
-      return try await route.execute(on: client)
-    }
-  }
 }
 
-extension PostgrestClient {
-
-  func execute<D: DatabaseRouter>(_ route: D) async throws {
-    try await route.execute(on: self)
-  }
-
-  @discardableResult
-  func execute<A: Decodable, D: DatabaseRouter>(
-    _ route: D
-  ) async throws -> A {
-    return try await route.execute(on: self)
-  }
-
-  func execute(_ route: MyRouter) async throws {
-    try await self.execute<MyRouter>(route)
-  }
-
-  @discardableResult
-  func execute<A: Decodable>(
-    _ route: MyRouter
-  ) async throws -> A {
-    try await self.execute<MyRouter>(route)
-  }
-}

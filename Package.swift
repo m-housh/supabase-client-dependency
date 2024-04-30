@@ -42,6 +42,9 @@ let package = Package(
     .target(
       name: "DatabaseRouter",
       dependencies: [
+        "SupabaseExtensions",
+        .product(name: "Dependencies", package: "swift-dependencies"),
+        .product(name: "DependenciesMacros", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),
@@ -67,6 +70,7 @@ let package = Package(
     .testTarget(
       name: "SupabaseClientIntegrationTests",
       dependencies: [
+        "DatabaseRouter",
         "SupabaseClientDependencies",
         .product(name: "CasePaths", package: "swift-case-paths")
       ]

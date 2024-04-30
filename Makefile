@@ -19,6 +19,7 @@ clean:
 test-macos: clean
 		set -o pipefail && \
 		xcodebuild test \
+				-skipMacroValidation \
 				-scheme "$(SCHEME)" \
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MACOS)"
@@ -26,6 +27,7 @@ test-macos: clean
 test-ios: clean
 		set -o pipefail && \
 		xcodebuild test \
+				-skipMacroValidation \
 				-scheme "$(SCHEME)" \
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_IOS)"
@@ -33,6 +35,7 @@ test-ios: clean
 test-mac-catalyst: clean
 		set -o pipefail && \
 		xcodebuild test \
+				-skipMacroValidation \
 				-scheme "$(SCHEME)" \
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MAC_CATALYST)"
@@ -40,6 +43,7 @@ test-mac-catalyst: clean
 test-tvos: clean
 		set -o pipefail && \
 		xcodebuild test \
+				-skipMacroValidation \
 				-scheme "$(SCHEME)" \
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_TVOS)"
@@ -47,6 +51,7 @@ test-tvos: clean
 test-watchos: clean
 		set -o pipefail && \
 		xcodebuild test \
+				-skipMacroValidation \
 				-scheme "$(SCHEME)" \
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_WATCHOS)"
@@ -59,6 +64,7 @@ test-library: test-macos test-ios test-mac-catalyst test-tvos test-watchos
 test-integration:
 	set -o pipefail && \
 	xcodebuild test \
+		-skipMacroValidation \
 		-scheme SupabaseClientDependencies \
 		-configuration "$(CONFIG)" \
 		-destination="$(PLATFORM_MACOS)"
