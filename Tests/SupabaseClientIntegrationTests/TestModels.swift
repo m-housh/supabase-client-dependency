@@ -169,14 +169,17 @@ enum DbRoutes: DatabaseController {
   }
 }
 
+
 struct RouterKey {
-  var router: DatabaseRouter<DbRoutes>
+  var router: DatabaseRouter<DbRoutes> = .init()
 }
 
+
 extension RouterKey: DependencyKey, TestDependencyKey {
-  public static var testValue: Self = .init(router: .init())
+  public static var testValue: Self = .init()
   public static var liveValue: Self { .testValue }
 }
+
 
 extension DependencyValues {
   var router: DatabaseRouter<DbRoutes> {

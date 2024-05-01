@@ -188,4 +188,32 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     try await database.delete(id: firstTodo.id, from: AnyTable.todos)
   }
 
+  func testOverrides() async throws {
+    let mocks = withDependencies {
+      $0.date.now = .init(timeIntervalSince1970: 1234567890)
+    } operation: {
+      Todo.mocks
+    }
+
+    try await withDependencies {
+      $0.router.override(.todos(.fetch), with: mocks)
+    } operation: {
+      @Dependency(\.router) var router
+      let sut: [Todo] = try await router(.todos(.fetch))
+      XCTAssertEqual(sut, mocks)
+    }
+  }
+
 }
+
+//extension DatabaseRouter where Routes == DbRoutes {
+//
+//  func override<T, A>(
+//    _ keyPath: KeyPath<AllCasePaths, T>,
+//    with value: A
+//  ) {
+//    print(Self.allCasePaths[keyPath: keyPath])
+//    print("\(keyPath)")
+//    print("\(value)")
+//  }
+//}
