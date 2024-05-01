@@ -42,10 +42,10 @@ import PostgREST
 ///   }
 /// }
 ///
-/// struct RouterKey: DependencyKey where {
-///   var router: DatabaseRouter<DBRoutes>
+/// struct RouterKey: DependencyKey {
+///   var router: DatabaseRouter<DBRoutes> = .init()
 ///
-///   static let testValue: Self = .init(router: .init())
+///   static let testValue: Self = .init()
 ///   static var liveValue: Self { .testValue }
 /// }
 ///
@@ -64,17 +64,17 @@ import PostgREST
 /// ```
 @dynamicMemberLookup
 public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
-
+  
   public typealias AllCasePaths = Routes.AllCasePaths
-
+  
   private var overrides: [(route: AnyOverride, value: Any)] = []
-
+  
   public init() { }
-
+  
   public static var allCasePaths: AllCasePaths {
     Routes.allCasePaths
   }
-
+  
   /// Access a route controller from the router.   This is used when narrowing down to a controller
   /// from the router.
   ///
@@ -83,7 +83,7 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   public subscript<T>(dynamicMember keyPath: KeyPath<AllCasePaths, T>) -> T {
     Self.allCasePaths[keyPath: keyPath]
   }
-
+  
   /// Execute the given route, ignoring the output.
   ///
   /// ### Example
@@ -98,7 +98,7 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   public func callAsFunction(_ route: Routes) async throws {
     @Dependency(\.databaseExecutor) var executor
     let route = try route.route()
-    if let match = overrides.first(where: { $0.route.matches(route) }) { return }
+    if overrides.first(where: { $0.route.matches(route) }) != nil { return }
     try await executor.run(route)
   }
   
@@ -127,32 +127,52 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
     }
     return try await executor.run(route)
   }
+  
+}
+
+#if DEBUG
+extension DatabaseRouter {
 
   // MARK: - Overrides
-
+  
+  /// Override the given route with the value.
+  ///
+  /// - Parameters:
+  ///   - route: The route to override.
+  ///   - value: The value to return when the route is called.
   public mutating func override<A>(
     _ route: Routes,
     with value: A
   ) {
-    guard let route = try? route.route() else { return }
+    let route = try! route.route()
     overrides.insert(
       (route: .route(route), value: value as Any),
       at: 0
     )
   }
-
+  
+  /// Override the given route with a void value.
+  ///
+  /// - Parameters:
+  ///   - route: The route to override.
   public mutating func override(
     _ route: Routes
   ) {
-    guard let route = try? route.route() else { return }
+    let route = try! route.route()
     overrides.insert(
       (route: .route(route), value: () as Any),
       at: 0
     )
   }
-
+  
+  /// Override the given route method with the value.
+  ///
+  /// - Parameters:
+  ///   - method: The route method to override.
+  ///   - table: The table to override the method in.
+  ///   - value: The value to return when the route is called.
   public mutating func override<A>(
-    _ method: RouteMethod,
+    _ method: RouteContainer.Method,
     in table: AnyTable,
     with value: A
   ) {
@@ -161,9 +181,13 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
       at: 0
     )
   }
-
+  /// Override the given route with a void value.
+  ///
+  /// - Parameters:
+  ///   - method: The route method to override.
+  ///   - table: The table to override the method in.
   public mutating func override(
-    _ method: RouteMethod,
+    _ method: RouteContainer.Method,
     in table: AnyTable
   ) {
     overrides.insert(
@@ -171,49 +195,64 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
       at: 0
     )
   }
+  
+  /// Override the given route method with the value.
+  ///
+  /// - Parameters:
+  ///   - id: The route identifier to override.
+  ///   - table: The table to override the method in.
+  ///   - value: The value to return when the route is called.
+  public mutating func override<A>(
+    id: String,
+    in table: AnyTable,
+    with value: A
+  ) {
+    overrides.insert(
+      (route: .id(id, table: table), value: value as Any),
+      at: 0
+    )
+  }
+  
+  /// Override the given route with a void value.
+  ///
+  /// - Parameters:
+  ///   - id: The route identifier to override.
+  ///   - table: The table to override the method in.
+  public mutating func override(
+    id: String,
+    in table: AnyTable
+  ) {
+    overrides.insert(
+      (route: .id(id, table: table), value: () as Any),
+      at: 0
+    )
+  }
 }
 
-public enum RouteMethod {
-  case delete
-  case fetch
-  case fetchOne
-  case insert
-  case update
-  case upsert
-}
-
+// Used internally to match route overrides.
 fileprivate enum AnyOverride: Equatable {
 
+  // Match a full route.
   case route(RouteContainer)
-  case partial(table: AnyTable, method: RouteMethod)
+  
+  // Match a partial route.
+  case partial(table: AnyTable, method: RouteContainer.Method)
+  
+  // Match a route by id and table.
+  case id(String, table: AnyTable)
 
   func matches(_ route: RouteContainer) -> Bool {
     switch self {
     case let .route(route):
       return route == route
     case let .partial(table: table, method: method):
-      let (otherTable, otherMethod) = parse(route: route)
-      return table == otherTable && method == otherMethod
-    }
-  }
-
-  func parse(route: RouteContainer) -> (AnyTable, RouteMethod) {
-    switch route {
-    case let .delete(table: table, filters: _):
-      return (table, .delete)
-    case let .fetch(table: table, filters: _, order: _):
-      return (table, .fetch)
-    case let .fetchOne(table: table, filters: _):
-      return (table, .fetchOne)
-    case let .insert(table: table, data: _, returning: _):
-      return (table, .insert)
-    case let .update(table: table, data: _, filters: _, returning: _):
-      return (table, .update)
-    case let .upsert(table: table, data: _, returning: _):
-      return (table, .upsert)
+      return table == route.table && method == route.method
+    case let .id(id, table: table):
+      return route.table == table && route.id == id
     }
   }
 }
+#endif
 
 extension AnyCasePath where Root: RouteController {
 

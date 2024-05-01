@@ -104,11 +104,11 @@ enum TodoRoute: RouteController {
   public func route() throws -> RouteContainer {
     switch self {
     case let .delete(filters):
-      return .delete(table: Self.table, filters: filters)
+      return .delete(from: Self.table, filters: filters)
     case let .fetch(filters, order):
-      return .fetch(table: Self.table, filters: filters, order: order)
+      return .fetch(from: Self.table, filters: filters, order: order)
     case .fetchOne(id: let id):
-      return .fetchOne(table: Self.table, filters: [.id(id)])
+      return .fetchOne(from: Self.table, filteredBy: .id(id))
     case let .insert(request):
       switch request {
       case let .single(todo):

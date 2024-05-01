@@ -15,7 +15,7 @@ extension DependencyValues {
 
 /// Execute queries on the database and decode the results.
 ///
-/// This type does generally need to be extended to provide the live implementation in your application,
+/// This type  needs to be extended to provide the live implementation in your application,
 /// by  passing in a `PostgrestClient` and using the ``live(database:)`` helper.
 ///
 @DependencyClient
