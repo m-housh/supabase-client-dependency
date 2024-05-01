@@ -91,7 +91,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 }
 
 @CasePathable
-enum TodoRoute: TableRouter {
+enum TodoRoute: RouteController {
   static var table: AnyTable { AnyTable.todos }
 
   case delete(filteredBy: [DatabaseFilter])
@@ -101,28 +101,25 @@ enum TodoRoute: TableRouter {
   case update(id: Todo.ID, updates: TodoUpdateRequest)
   case upsert(Todo)
 
-  public var build: QueryBuilder<TodoRoute> {
-    QueryBuilder { query, route in
-      switch route {
-      case let .delete(filters):
-        return query.delete(filteredBy: filters)
-      case let .fetch(filters, order):
-        return query.fetch(filteredBy: filters, orderBy: order)
-      case .fetchOne(id: let id):
-        return query.fetchOne(filteredBy: .id(id))
-      case let .insert(request):
-        switch request {
-        case let .single(todo):
-          return try query.insert(todo, returning: .representation).single()
-        case let .many(todos):
-          return try query.insert(todos, returning: .representation)
-        }
-      case .update(id: let id, updates: let updates):
-        return try query.update(id: id, with: updates)
-
-      case let .upsert(todo):
-        return try query.upsert(todo)
+  public func route() throws -> RouteContainer {
+    switch self {
+    case let .delete(filters):
+      return .delete(table: Self.table, filters: filters)
+    case let .fetch(filters, order):
+      return .fetch(table: Self.table, filters: filters, order: order)
+    case .fetchOne(id: let id):
+      return .fetchOne(table: Self.table, filters: [.id(id)])
+    case let .insert(request):
+      switch request {
+      case let .single(todo):
+        return try .insert(todo, into: Self.table)
+      case let .many(todos):
+        return try .insert(todos, into: Self.table)
       }
+    case .update(id: let id, updates: let updates):
+      return try .update(id: id, in: Self.table, with: updates)
+    case let .upsert(todo):
+      return try .upsert(todo, in: Self.table)
     }
   }
 
@@ -157,9 +154,19 @@ enum TodoRoute: TableRouter {
   }
 }
 
+//struct NotFoundError: Error { }
+
 @CasePathable
-enum DbRoutes {
+enum DbRoutes: DatabaseController {
+
   case todos(TodoRoute)
+
+  func route() throws -> RouteContainer {
+    switch self {
+    case let .todos(todos):
+      return try todos.route()
+    }
+  }
 }
 
 struct RouterKey {
