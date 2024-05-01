@@ -51,4 +51,56 @@ public struct DatabaseOrder: Equatable {
     self.nullsFirst = nullsFirst
     self.foreignTable = nil
   }
+}
+
+extension ColumnRepresentable {
+
+  public func ascending<T: TableRepresentable>(
+    nullsFirst: Bool = false,
+    foreignTable: T? = nil
+  ) -> DatabaseOrder {
+    .init(
+      column: self,
+      ascending: true,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
   }
+
+  public func ascending(
+    nullsFirst: Bool = false,
+    foreignTable: String? = nil
+  ) -> DatabaseOrder {
+    .init(
+      column: self,
+      ascending: true,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+
+  public func descending<T: TableRepresentable>(
+    nullsFirst: Bool = false,
+    foreignTable: T? = nil
+  ) -> DatabaseOrder {
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+
+  public func descending(
+    nullsFirst: Bool = false,
+    foreignTable: String? = nil
+  ) -> DatabaseOrder {
+    .init(
+      column: self,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+
+}

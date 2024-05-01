@@ -1,13 +1,6 @@
 import Foundation
 import PostgREST
 
-extension ColumnRepresentable {
-
-  public func equals(_ value: URLQueryRepresentable) -> DatabaseFilter {
-    .equals(column: self.columnName, value: value)
-  }
-}
-
 extension PostgrestFilterBuilder {
 
   @discardableResult
@@ -32,3 +25,4 @@ extension PostgrestFilterBuilder {
     self.filter(by: [filter])
   }
 }
+

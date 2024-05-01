@@ -1,1 +1,1 @@
-@_exported import SupabaseExtensions
+@_exported import DatabaseExtensions

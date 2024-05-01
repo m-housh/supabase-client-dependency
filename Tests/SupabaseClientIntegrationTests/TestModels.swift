@@ -1,5 +1,4 @@
 import CasePaths
-import CasePathsMacros
 import DatabaseRouter
 import Dependencies
 import Foundation
@@ -93,7 +92,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 
 @CasePathable
 enum TodoRoute: TableRouter {
-  public var table: AnyTable { AnyTable.todos }
+  static var table: AnyTable { AnyTable.todos }
 
   case delete(filteredBy: [DatabaseFilter])
   case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
@@ -102,7 +101,7 @@ enum TodoRoute: TableRouter {
   case update(id: Todo.ID, updates: TodoUpdateRequest)
   case upsert(Todo)
 
-  public var builder: QueryBuilder<TodoRoute> {
+  public var build: QueryBuilder<TodoRoute> {
     QueryBuilder { query, route in
       switch route {
       case let .delete(filters):
@@ -179,22 +178,22 @@ extension DependencyValues {
   }
 }
 
-extension DatabaseExecutor {
+//extension TableRouter {
+//  var table: AnyTable { Self.table }
+//}
 
-  func todos(_ route: TodoRoute) async throws {
-    try await self.run(route)
-  }
-
-  @discardableResult
-  func todos<A: Decodable>(_ route: TodoRoute) async throws -> A {
-    try await self.run(route)
-  }
-
-  func run<A: Decodable, T: TableRouter>(
-    _ route: T,
-    in table: CaseKeyPath<DbRoutes, T>
-  ) async throws -> A {
-    return try await run(route)
-  }
-
-}
+//extension DatabaseRouter where Routes: CasePathable {
+//  
+//  func run<Input>(
+//    _ caseKeyPath: CaseKeyPath<Routes, Input>,
+//    _ input: () -> Input
+//  ) {
+//    let r = caseKeyPath(input())
+//    
+//    for k in Routes.allCasePaths {
+//      if let found = k.e
+//    }
+////    let upper = caseKeyPath.
+//    
+//  }
+//}

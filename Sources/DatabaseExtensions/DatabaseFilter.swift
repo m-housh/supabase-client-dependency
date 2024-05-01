@@ -1,5 +1,5 @@
 import Foundation
-import Supabase
+import PostgREST
 
 /// Represents a filter for use in database queries.
 ///
@@ -47,5 +47,12 @@ extension DatabaseFilter: Equatable {
     lhs.column == rhs.column &&
     lhs.operator == rhs.operator &&
     lhs.value.queryValue == rhs.value.queryValue
+  }
+}
+
+extension ColumnRepresentable {
+
+  public func equals(_ value: URLQueryRepresentable) -> DatabaseFilter {
+    .equals(column: self.columnName, value: value)
   }
 }

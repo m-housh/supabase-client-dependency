@@ -1,6 +1,6 @@
 import Foundation
 import Supabase
-import SupabaseExtensions
+import DatabaseExtensions
 
 #warning("Remove me")
 public enum DatabaseRequest {

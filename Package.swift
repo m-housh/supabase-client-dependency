@@ -12,9 +12,9 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
+    .library(name: "DatabaseExtensions", targets: ["DatabaseExtensions"]),
     .library(name: "DatabaseRouter", targets: ["DatabaseRouter"]),
     .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
-    .library(name: "SupabaseExtensions", targets: ["SupabaseExtensions"])
   ],
   dependencies: [
     .package(
@@ -40,27 +40,27 @@ let package = Package(
   ],
   targets: [
     .target(
+      name: "DatabaseExtensions",
+      dependencies: [
+        .product(name: "PostgREST", package: "supabase-swift"),
+      ]
+    ),
+    .target(
       name: "DatabaseRouter",
       dependencies: [
-        "SupabaseExtensions",
+        "DatabaseExtensions",
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "DependenciesMacros", package: "swift-dependencies"),
-        .product(name: "Supabase", package: "supabase-swift"),
+        .product(name: "PostgREST", package: "supabase-swift"),
       ]
     ),
     .target(
       name: "SupabaseClientDependencies",
       dependencies: [
-        "SupabaseExtensions",
+        "DatabaseExtensions",
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
-        .product(name: "Supabase", package: "supabase-swift"),
-      ]
-    ),
-    .target(
-      name: "SupabaseExtensions",
-      dependencies: [
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),
