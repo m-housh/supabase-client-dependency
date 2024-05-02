@@ -4,7 +4,6 @@ import Dependencies
 import Foundation
 import PostgREST
 
-#warning("Executor needs to hold on to overrides so that they are used.")
 /// A router for the database, this generally wraps a type that knows how to handle all the routes to the database and is
 /// used to declare a dependency that can be used in the application.
 ///
@@ -82,7 +81,11 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   /// - Parameters:
   ///   - keyPath: The keypath to the route controller.
   public subscript<T>(dynamicMember keyPath: KeyPath<AllCasePaths, T>) -> T {
-    Self.allCasePaths[keyPath: keyPath]
+    withDependencies {
+      $0.databaseExecutor.overrides = self.overrides
+    } operation: {
+       Self.allCasePaths[keyPath: keyPath]
+    }
   }
   
   /// Execute the given route, ignoring the output.
@@ -97,10 +100,12 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   /// - Parameters:
   ///   - route: The route to execute.
   public func callAsFunction(_ route: Routes) async throws {
-    @Dependency(\.databaseExecutor) var executor
-    let route = try route.route()
-    if overrides.first(where: { $0.route.matches(route) }) != nil { return }
-    try await executor.run(route)
+    try await withDependencies {
+      $0.databaseExecutor.overrides = self.overrides
+    } operation: {
+      @Dependency(\.databaseExecutor) var executor
+      try await executor.run(route.route())
+    }
   }
   
   /// Execute the given route, decoding the output.
@@ -118,15 +123,12 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   public func callAsFunction<A: Decodable>(
     _ route: Routes
   ) async throws -> A {
-    @Dependency(\.databaseExecutor) var executor
-    let route = try route.route()
-    if let match = overrides.first(where: { $0.route.matches(route) }) {
-      guard let value = match.value as? A else {
-        throw UnmatchedOverrideError()
-      }
-      return value
+    try await withDependencies {
+      $0.databaseExecutor.overrides = self.overrides
+    } operation: {
+      @Dependency(\.databaseExecutor) var executor
+      return try await executor.run(route.route())
     }
-    return try await executor.run(route)
   }
   
 }

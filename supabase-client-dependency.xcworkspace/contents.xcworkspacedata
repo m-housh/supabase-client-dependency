@@ -25,7 +25,4 @@
    <FileRef
       location = "group:Tests/TestPlans/SupabaseClientIntegrationTests.xctestplan">
    </FileRef>
-   <FileRef
-      location = "group:Tests/TestPlans/AuthController.xctestplan">
-   </FileRef>
 </Workspace>

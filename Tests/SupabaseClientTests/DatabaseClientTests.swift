@@ -22,21 +22,14 @@ final class DatabaseClientTests: XCTestCase {
     }
 
     await withDependencies {
-      $0.supabaseClient.router.override(
-        .delete,
-        in: .todos,
-        with: ()
-      )
+      $0.supabaseClient.router.override(.delete, in: .todos)
     } operation: {
-      @Dependency(\.supabaseClient.router) var db;
       @Dependency(\.supabaseClient.router.todos) var router;
 
-//      print(db.overrides)
-
       do {
-        try await db(.todos(.delete(
+        try await router(.delete(
           id: mock.id
-        )))
+        ))
         XCTAssert(true)
       } catch {
         XCTFail("\(error)")

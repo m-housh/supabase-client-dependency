@@ -25,6 +25,8 @@ extension DependencyValues {
 @DependencyClient
 public struct DatabaseExecutor {
   
+  var overrides: [(route: AnyOverride, value: Any)] = []
+  
   /// The json decoder used to decode responses.
   public var decoder: JSONDecoder = .init()
   
@@ -36,6 +38,7 @@ public struct DatabaseExecutor {
 
   /// Run the route on the database.
   public func run(_ route: RouteContainer) async throws {
+    if overrides.first(where: { $0.route.matches(route) }) != nil { return }
     _ = try await self.execute(
       route.build(self.query)
     )
@@ -46,6 +49,12 @@ public struct DatabaseExecutor {
   public func run<A: Decodable>(
     _ route: RouteContainer
   ) async throws -> A {
+    if let match = overrides.first(where: { $0.route.matches(route) }) {
+      guard let value = match.value as? A else {
+        throw UnmatchedOverrideError()
+      }
+      return value
+    }
     let data = try await self.execute(
       route.build(self.query)
     )
