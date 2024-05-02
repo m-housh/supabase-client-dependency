@@ -4,6 +4,7 @@ import Dependencies
 import Foundation
 import PostgREST
 
+#warning("Executor needs to hold on to overrides so that they are used.")
 /// A router for the database, this generally wraps a type that knows how to handle all the routes to the database and is
 /// used to declare a dependency that can be used in the application.
 ///
@@ -67,7 +68,7 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
   
   public typealias AllCasePaths = Routes.AllCasePaths
   
-  private var overrides: [(route: AnyOverride, value: Any)] = []
+  var overrides: [(route: AnyOverride, value: Any)] = []
   
   public init() { }
   
@@ -216,7 +217,7 @@ extension DatabaseRouter {
 }
 
 // Used internally to match route overrides.
-fileprivate enum AnyOverride: Equatable {
+enum AnyOverride: Equatable {
 
   // Match a full route.
   case route(RouteContainer)

@@ -13,7 +13,7 @@ extension DependencyValues {
   }
 }
 
-/// Execute queries on the database and decode the results.  
+/// Execute queries on the database and decode the results.
 ///
 /// This is provided to allow an override hook into all queries ran by a ``DatabaseRouter`` or a ``RouteController``
 /// by overriding the ``DatabaseExecutor/execute`` variable, however it is more common to override individual routes using

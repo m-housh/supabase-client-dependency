@@ -35,7 +35,6 @@ public struct SupabaseClientDependency<Routes: DatabaseController> {
   public subscript<T>(dynamicMember keyPath: KeyPath<SupabaseClient, T>) -> T {
     client[keyPath: keyPath]
   }
-
 }
 
 extension SupabaseClientDependency: TestDependencyKey {

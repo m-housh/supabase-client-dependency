@@ -37,10 +37,10 @@ final class DatabaseClientIntegrationTests: XCTestCase {
   }
 
   override func invokeTest() {
-    let client = SupabaseClientDependency<DbRoutes>.live(client: .local())
-    let database = client.client.schema("public")
+    let supabase = SupabaseClientDependency<DbRoutes>.live(client: .local())
+    let database = supabase.client.schema("public")
     withDependencies {
-      $0.supabaseClient = client
+      $0.supabaseClient = supabase
       $0.databaseExecutor = .live(database: database)
     } operation: {
       super.invokeTest()

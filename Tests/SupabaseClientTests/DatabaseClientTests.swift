@@ -1,35 +1,49 @@
-//import XCTest
-//import Dependencies
-//@testable import SupabaseClientDependencies
-//
-//final class DatabaseClientTests: XCTestCase {
-//
-//  func testDeleteOverride() async throws {
-//    let mock = withDependencies {
-//      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-//    } operation: {
-//      Todo.finishDocs
-//    }
-//
-//    await withDependencies {
-//      $0.supabaseClient.override(
-//        .delete(from: .todos)
-//      )
-//    } operation: {
-//      @Dependency(\.supabaseClient.database) var database;
-//
-//      do {
-//        _ = try await database.delete(
-//          id: mock.id,
-//          from: .todos
-//        )
-//        XCTAssert(true)
-//      } catch {
-//        XCTFail("\(error)")
-//      }
-//    }
-//  }
-//
+import XCTest
+import Dependencies
+@testable import SupabaseClientDependencies
+
+final class DatabaseClientTests: XCTestCase {
+
+  override func invokeTest() {
+    let supabase = SupabaseClientDependency<DbRoutes>.live(client: .local())
+    withDependencies {
+      $0.supabaseClient = supabase
+      $0.databaseExecutor = .live(database: supabase.client.schema("public"))
+    } operation: {
+      super.invokeTest()
+    }
+  }
+
+  func testDeleteOverride() async throws {
+    let mock = withDependencies {
+      $0.date.now = Date(timeIntervalSince1970: 1234567890)
+    } operation: {
+      Todo.finishDocs
+    }
+
+    await withDependencies {
+      $0.supabaseClient.router.override(
+        .delete,
+        in: .todos,
+        with: ()
+      )
+    } operation: {
+      @Dependency(\.supabaseClient.router) var db;
+      @Dependency(\.supabaseClient.router.todos) var router;
+
+//      print(db.overrides)
+
+      do {
+        try await db(.todos(.delete(
+          id: mock.id
+        )))
+        XCTAssert(true)
+      } catch {
+        XCTFail("\(error)")
+      }
+    }
+  }
+
 //  func testFetchOverride() async throws {
 //    let mocks = withDependencies {
 //      $0.date.now = Date(timeIntervalSince1970: 1234567890)
@@ -169,4 +183,4 @@
 //      XCTAssertEqual(todo, mock)
 //    }
 //  }
-//}
+}

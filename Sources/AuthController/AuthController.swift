@@ -9,7 +9,8 @@ import Foundation
 @dynamicMemberLookup
 public struct AuthController {
   
-  private var client: AuthClient
+  /// The supabase auth client used on the controller.
+  public let client: AuthClient
 
   /// Exposes an override hook for methods that return a `User` on the current controller instance.
   ///
