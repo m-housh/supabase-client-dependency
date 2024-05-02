@@ -12,6 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
+    .library(name: "AuthController", targets: ["AuthController"]),
     .library(name: "DatabaseExtensions", targets: ["DatabaseExtensions"]),
     .library(name: "DatabaseRouter", targets: ["DatabaseRouter"]),
     .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
@@ -39,6 +40,12 @@ let package = Package(
     ),
   ],
   targets: [
+    .target(
+      name: "AuthController",
+      dependencies: [
+        .product(name: "Auth", package: "supabase-swift"),
+      ]
+    ),
     .target(
       name: "DatabaseExtensions",
       dependencies: [
