@@ -13,7 +13,11 @@ extension DependencyValues {
   }
 }
 
-/// Execute queries on the database and decode the results.
+/// Execute queries on the database and decode the results.  
+///
+/// This is provided to allow an override hook into all queries ran by a ``DatabaseRouter`` or a ``RouteController``
+/// by overriding the ``DatabaseExecutor/execute`` variable, however it is more common to override individual routes using
+/// one of the `override` methods on your ``DatabaseRouter``.
 ///
 /// This type  needs to be extended to provide the live implementation in your application,
 /// by  passing in a `PostgrestClient` and using the ``live(database:)`` helper.
@@ -49,14 +53,14 @@ public struct DatabaseExecutor {
   }
 
   /// Run the route on the database, ignoring any output.
-  public func run<T: RouteController>(_ router: T) async throws {
+  public func run<R: RouteController>(_ router: R) async throws {
     try await self.run(router.route())
   }
 
-  /// Run the table route on the database.
+  /// Run the route on the database, decoding the output.
   @discardableResult
-  public func run<A: Decodable, T: RouteController>(
-    _ router: T
+  public func run<A: Decodable, R: RouteController>(
+    _ router: R
   ) async throws -> A {
     try await self.run(router.route())
   }
@@ -71,6 +75,8 @@ extension DatabaseExecutor {
 
   /// A helper to create the live dependency from the given `PostgrestClient`.
   ///
+  /// - Parameters:
+  ///   - database: The postgrest client used to execute and build queries.
   public static func live(database: PostgrestClient) -> Self {
     .init(
       decoder: database.configuration.decoder,

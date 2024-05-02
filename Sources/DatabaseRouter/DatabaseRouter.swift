@@ -134,7 +134,11 @@ public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
 extension DatabaseRouter {
 
   // MARK: - Overrides
-  
+
+  private mutating func insertOverride<V>(route: AnyOverride, value: V) {
+    overrides.insert((route: route, value: value as Any), at: 0)
+  }
+
   /// Override the given route with the value.
   ///
   /// - Parameters:
@@ -145,10 +149,7 @@ extension DatabaseRouter {
     with value: A
   ) {
     let route = try! route.route()
-    overrides.insert(
-      (route: .route(route), value: value as Any),
-      at: 0
-    )
+    insertOverride(route: .route(route), value: value)
   }
   
   /// Override the given route with a void value.
@@ -159,10 +160,7 @@ extension DatabaseRouter {
     _ route: Routes
   ) {
     let route = try! route.route()
-    overrides.insert(
-      (route: .route(route), value: () as Any),
-      at: 0
-    )
+    insertOverride(route: .route(route), value: ())
   }
   
   /// Override the given route method with the value.
@@ -176,10 +174,7 @@ extension DatabaseRouter {
     in table: AnyTable,
     with value: A
   ) {
-    overrides.insert(
-      (route: .partial(table: table, method: method), value: value as Any),
-      at: 0
-    )
+    insertOverride(route: .partial(table: table, method: method), value: value)
   }
   /// Override the given route with a void value.
   ///
@@ -190,10 +185,7 @@ extension DatabaseRouter {
     _ method: RouteContainer.Method,
     in table: AnyTable
   ) {
-    overrides.insert(
-      (route: .partial(table: table, method: method), value: () as Any),
-      at: 0
-    )
+    insertOverride(route: .partial(table: table, method: method), value: ())
   }
   
   /// Override the given route method with the value.
@@ -207,10 +199,7 @@ extension DatabaseRouter {
     in table: AnyTable,
     with value: A
   ) {
-    overrides.insert(
-      (route: .id(id, table: table), value: value as Any),
-      at: 0
-    )
+    insertOverride(route: .id(id, table: table), value: value)
   }
   
   /// Override the given route with a void value.
@@ -222,10 +211,7 @@ extension DatabaseRouter {
     id: String,
     in table: AnyTable
   ) {
-    overrides.insert(
-      (route: .id(id, table: table), value: () as Any),
-      at: 0
-    )
+    insertOverride(route: .id(id, table: table), value: ())
   }
 }
 

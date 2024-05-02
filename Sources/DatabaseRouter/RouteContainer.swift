@@ -6,15 +6,31 @@ import PostgREST
 #warning("Fix me.")
 public struct RouteContainer {
   
+  // A unique identifier if applicable, that can be set to differentiate routes.
   let id: String?
+
+  // The table that the route operates on.
   let table: AnyTable
+
+  // The route method.
   let method: Method
+
+  // Any associated data for the route (used in insert, update, and upsert requests).
   let data: AnyJSON?
+
+  // Any associated database filters.
   let filters: [DatabaseFilter]
+
+  // Any associated database order.
   let order: DatabaseOrder?
+
+  // The returning options used for many of the query types.
   let returning: PostgrestReturningOptions
+
+  // A handler for building a custom route, only used if the method type is `.custom`
   let customBuilder: ((PostgrestQueryBuilder) throws -> PostgrestBuilder)?
 
+  // Internal initialization only.
   init(
     id: String? = nil,
     table: AnyTable,
@@ -35,16 +51,31 @@ public struct RouteContainer {
     self.customBuilder = customBuilder
   }
 
+  /// Represents the query method on the database.
   public enum Method {
+    /// Used to provide a custom query.
     case custom
+
+    /// Represents a delete query.
     case delete
+
+    /// Represents a fetch query that returns mutliple values.
     case fetch
+
+    /// Represents a fetch query that only returns a single value.
     case fetchOne
+
+    /// Represents an insert query.
     case insert
+
+    /// Represents an update query.
     case update
+
+    /// Represents an upsert query.
     case upsert
   }
 
+  // An internal helper that builds the entire database query to be executed.
   func build(_ query: (AnyTable) throws -> PostgrestQueryBuilder) throws -> PostgrestBuilder {
     switch method {
     case .custom:
@@ -84,7 +115,7 @@ public struct RouteContainer {
 }
 
 // Needs custom equality check because of the custom builder, which is ignored
-// in equality checking, but all other properties are checked.
+// in equality checking, but all other properties are checked for equality.
 extension RouteContainer: Equatable {
   
   public static func == (lhs: RouteContainer, rhs: RouteContainer) -> Bool {
@@ -101,6 +132,12 @@ extension RouteContainer: Equatable {
 // MARK: - Helpers
 extension RouteContainer {
   
+  /// Create a route container that generates a custom query.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
+  ///   - build: The operation used to buld the final query.
   public static func custom(
     _ table: AnyTable,
     routeId: String? = nil,
@@ -108,7 +145,13 @@ extension RouteContainer {
   ) -> Self {
     .init(id: routeId, table: table, method: .custom, returning: .representation, customBuilder: build)
   }
-  
+
+  /// Create a route container that generates a delete query.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the row to delete.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
     from table: AnyTable,
     filters: [DatabaseFilter],
@@ -116,7 +159,13 @@ extension RouteContainer {
   ) -> Self {
     return .init(id: routeId, table: table, method: .delete, filters: filters, returning: .minimal)
   }
-  
+
+  /// Create a route container that generates a delete query.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the row to delete.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
     from table: AnyTable,
     filteredBy filters: DatabaseFilter...,
@@ -125,6 +174,12 @@ extension RouteContainer {
     return .delete(from: table, filters: filters, routeId: routeId)
   }
 
+  /// Create a route container that generates a delete query.
+  ///
+  /// - Parameters:
+  ///   - id: The identifier for the row to delete.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete<ID: URLQueryRepresentable>(
     id: ID,
     from table: AnyTable,
@@ -132,7 +187,14 @@ extension RouteContainer {
   ) -> Self {
     return .delete(from: table, filteredBy: .id(id), routeId: routeId)
   }
-  
+
+  /// Create a route container that generates a fetch query.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the query.
+  ///   - order: An optional order by clause for the return values.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: AnyTable,
     filters: [DatabaseFilter],
@@ -148,7 +210,13 @@ extension RouteContainer {
       returning: .representation
     )
   }
-
+  /// Create a route container that generates a fetch query.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the query.
+  ///   - order: An optional order by clause for the return values.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: AnyTable,
     filteredBy filters: DatabaseFilter...,
@@ -157,7 +225,12 @@ extension RouteContainer {
   ) -> Self {
     return .fetch(from: table, filters: filters, order: order, routeId: routeId)
   }
-
+  /// Create a route container that generates a fetch query for a single row.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the query.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: AnyTable,
     filters: [DatabaseFilter],
@@ -165,7 +238,12 @@ extension RouteContainer {
   ) -> Self {
     return .init(id: routeId, table: table, method: .fetchOne, filters: filters, returning: .representation)
   }
-  
+  /// Create a route container that generates a fetch query for a single row.
+  ///
+  /// - Parameters:
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the query.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: AnyTable,
     filteredBy filters: DatabaseFilter...,
@@ -173,7 +251,13 @@ extension RouteContainer {
   ) -> Self {
     return .fetchOne(from: table, filters: filters, routeId: routeId)
   }
-
+  /// Create a route container that generates an insert query.
+  ///
+  /// - Parameters:
+  ///   - value: The value(s) to insert into the database.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - returning: The returning options (defaults to .representation).
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func insert<V>(
     _ value: V,
     into table: AnyTable,
@@ -182,7 +266,14 @@ extension RouteContainer {
   ) throws -> Self where V: Codable, V: Sendable {
     return try .init(id: routeId, table: table, method: .insert, data: .init(value), returning: returning)
   }
-
+  /// Create a route container that generates an update query.
+  ///
+  /// - Parameters:
+  ///   - value: The value to update into the database.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - filters: The filters for the query.
+  ///   - returning: The returning options (defaults to .representation).
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func update<V>(
     _ value: V,
     in table: AnyTable,
@@ -192,7 +283,14 @@ extension RouteContainer {
   ) throws -> Self where V: Codable, V: Sendable {
     return try .init(id: routeId, table: table, method: .update, data: .init(value), filters: filters, returning: returning)
   }
-
+  /// Create a route container that generates an update query.
+  ///
+  /// - Parameters:
+  ///   - id: The identifier for the row.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - value: The value to update into the database.
+  ///   - returning: The returning options (defaults to .representation).
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func update<ID: URLQueryRepresentable, V>(
     id: ID,
     in table: AnyTable,
@@ -202,7 +300,13 @@ extension RouteContainer {
   ) throws -> Self where V: Codable, V: Sendable {
     try .update(value, in: table, filteredBy: .id(id), returning: returning, routeId: routeId)
   }
-
+  /// Create a route container that generates an upsert query.
+  ///
+  /// - Parameters:
+  ///   - value: The value(s) to upsert in the database.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - returning: The returning options (defaults to .representation).
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func upsert<V>(
     _ value: V,
     in table: AnyTable,
