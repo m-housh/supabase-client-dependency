@@ -1,566 +1,81 @@
+@_exported import AuthController
+@_exported import DatabaseExtensions
+@_exported import DatabaseRouter
 import Dependencies
 import Foundation
-//@_exported import GoTrue
 @_exported import PostgREST
 @_exported import Supabase
-import XCTestDynamicOverlay
 
-extension DependencyValues {
-
-  /// Access the supbase client as a dependency in the application.
-  public var supabaseClient: SupabaseClientDependency {
-    get { self[SupabaseClientDependency.self] }
-    set { self[SupabaseClientDependency.self] = newValue }
-  }
-
-}
-
-/// A wrapper around the `SupabaseClient` that can be used as a dependency in your projects that integrate
-/// with supabase.
-///
-/// This adds some niceties around database operations and also includes an `auth` client.
-///
 @dynamicMemberLookup
-public struct SupabaseClientDependency {
+public struct SupabaseClientDependency<Routes: DatabaseController> {
 
-  /// The supabase authentication client for the application.
-  ///
-  /// - SeeAlso: ``AuthClient``
-  public var auth: AuthClient
-  
-  /// The supabase client for the application.
-  ///
-  public var client: SupabaseClient
+  public var auth: AuthController
+  public let client: SupabaseClient
+  public var router: DatabaseRouter<Routes>
 
-  /// Holds overrides and acts as a proxy for the postgrest client.
-  internal var databaseClient: DatabaseClient = .init()
-
-  /// Access a posgrest client focused in on the passed in schema.
-  public func schema(_ schema: String) -> PostgrestClient {
-    self.client.schema(schema)
-  }
-  
-  /// Access the postgrest client, focused in on the public schema, if you need access to a different schema.
-  /// then you can use ``SupabaseClientDependency/schema(_:)``.
-  ///
-  public var database: PostgrestClient {
-    self.schema("public")
-  }
-
-  /// Create a new supabase client dependency.
-  ///
-  /// - Parameters:
-  ///   - auth: The supabase authentication client dependency for the application.
-  ///   - database: The supabase database client dependency for the application.
   public init(
-    auth: AuthClient,
-    client: SupabaseClient
+    auth: AuthController? = nil,
+    client: SupabaseClient,
+    router: DatabaseRouter<Routes>? = nil
   ) {
-    self.auth = auth
+    self.auth = auth ?? .live(auth: client.auth)
     self.client = client
-  }
-  
-  public subscript<T>(
-    dynamicMember keyPath: KeyPath<SupabaseClient, T>
-  ) -> T {
-    get { self.client[keyPath: keyPath] }
+    self.router = router ?? .init()
   }
 
-  /// Override a database table route with the given value. This is useful for previews or tests ran with
-  /// your client.
-  ///
-  /// ### Example
-  /// ```swift
-  ///  client.override(.fetch(from: .todos), with: Todo.mocks)
-  ///  ```
+  /// Create a database query for the given table.
   ///
   /// - Parameters:
-  ///   - matching: The route to override.
-  ///   - value: The value to return when the route is called.
-  public mutating func override<A: Encodable>(
-    _ matching: DatabaseOverride,
-    with value: A
-  ) {
-    self.databaseClient.overrides.append(
-      (override: matching, response: OK(value))
+  ///   - table: The table to create the query on.
+  public func from(_ table: AnyTable) -> PostgrestQueryBuilder {
+    self.client.from(table.tableName)
+  }
+
+  /// Access the properties on the supabase client.
+  public subscript<T>(dynamicMember keyPath: KeyPath<SupabaseClient, T>) -> T {
+    client[keyPath: keyPath]
+  }
+
+}
+
+extension SupabaseClientDependency: TestDependencyKey {
+  static public var testValue: SupabaseClientDependency<Routes> {
+    let client = SupabaseClient.local()
+    return .init(
+      auth: XCTestDynamicOverlay.unimplemented("\(Self.self).auth", placeholder: .live(auth: client.auth)),
+      client: XCTestDynamicOverlay.unimplemented("\(Self.self).client", placeholder: client),
+      router: XCTestDynamicOverlay.unimplemented("\(Self.self).router", placeholder: .init())
     )
   }
-  
-  /// Override a database table route that does not return values (i.e. a delete route). This is useful for previews or tests ran with
-  /// your client.
+}
+
+extension SupabaseClientDependency {
+
+  /// A helper to generate a live ``SupabaseClientDependency``.
   ///
-  /// ### Example
-  /// ```swift
-  ///  client.override(.delete(from: .todos))
-  ///  ```
+  /// This is generally used to conform the supabase client dependency to `DependencyKey` and
+  /// provide it's `liveValue` in your project.
   ///
   /// - Parameters:
-  ///   - matching: The route to override.
-  ///   - value: The value to return when the route is called.
-  public mutating func override(
-    _ matching: DatabaseOverride
-  ) {
-    self.databaseClient.overrides.append(
-      (override: matching, response: OK())
-    )
+  ///   - client: The supabase client to use.
+  public static func live(client: SupabaseClient) -> Self {
+    .init(client: client)
   }
-  
-  /// Override all routes called. This is useful for previews or tests ran with
-  /// your client.
+}
+
+extension SupabaseClient {
+
+  /// A configuration for a local supabase instance.
   ///
-  /// ### Example
-  /// ```swift
-  ///  client.override(with: Todo.mocks)
-  ///  ```
-  ///
-  /// - Parameters:
-  ///   - matching: The route to override.
-  ///   - value: The value to return when the route is called.
-  public mutating func override<A: Encodable>(
-    with value: A
-  ) {
-    self.databaseClient.overrides.append(
-      (override: .all, response: OK(value))
-    )
-  }
-
-  /// Represents database routes that can be overriden on the client.
-  ///
-  public enum DatabaseOverride: Equatable {
-    case all
-    case delete(from: AnyTable)
-    case fetch(from: AnyTable)
-    case fetchOne(from: AnyTable)
-    case insert(into: AnyTable)
-    case insertMany(into: AnyTable)
-    case update(in: AnyTable)
-    case upsert(in: AnyTable)
-    case upsertMany(in: AnyTable)
-  }
-
-  /// An internal helper, used as a proxy for the postgrest client, to provide override functionality.
-  internal struct DatabaseClient {
-    typealias ResponseHandler = (JSONEncoder) async throws -> (Data, URLResponse)
-    var overrides: [(override: DatabaseOverride, response: ResponseHandler)] = []
-  }
-
-  /// An authentication client to create and manage user sessions for access to data that is secured by
-  /// access policies.
-  ///
-  /// This exposes all of the api's of the `GoTrue` client with some niceities around some of them, but can
-  /// mocked or overriden for usage in your `TCA` based applications.
-  ///
-  ///
-  public struct AuthClient {
-
-    /// Asynchronous sequence of authentication change events emitted during life of `GoTrueClient`.
-    public var events: @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>
-
-    /// Log in an existing user via a third-party provider.
-    public var getOAuthURL: @Sendable (OAuthRequest) throws -> URL
-
-    /// Initialize the client session from storage.
-    ///
-    /// This method is called automatically when instantiating the client, but it's recommended to
-    /// call this method on the app startup, for making sure that the client is fully initialized
-    /// before proceeding.
-    public var initialize: @Sendable () async -> Void
-
-    /// Perform session operations on the auth client.
-    public var session: @Sendable (SessionRequest?) async throws -> Session
-
-    /// Login users.
-    public var login: @Sendable (LoginRequest?) async throws -> Session?
-
-    /// Logout users.
-    public var logout: @Sendable () async throws -> Void
-
-    /// Sends a reset request to an email address.
-    public var resetPassword: @Sendable (ResetPasswordRequest) async throws -> Void
-
-    /// Signup users.
-    public var signUp: @Sendable (SignUpRequest) async throws -> User
-
-    /// Update users.
-    public var update: @Sendable (UserAttributes) async throws -> User
-
-    /// Login a user given a User supplied OTP
-    public var verifyOTP: @Sendable (VerifyOTPRequest) async throws -> User
-
-    public init(
-      events: @escaping @Sendable () -> AsyncStream<(event: AuthChangeEvent, session: Session?)>,
-      getOAuthURL: @escaping @Sendable (OAuthRequest) throws -> URL,
-      initialize: @escaping @Sendable () async -> Void,
-      login: @escaping @Sendable (LoginRequest?) async throws -> Session?,
-      logout: @escaping @Sendable () async throws -> Void,
-      resetPassword: @escaping @Sendable (ResetPasswordRequest) async throws -> Void,
-      session: @escaping @Sendable (SessionRequest?) async throws -> Session,
-      signUp: @escaping @Sendable (SignUpRequest) async throws -> User,
-      update: @escaping @Sendable (UserAttributes) async throws -> User,
-      verifyOTP: @escaping @Sendable (VerifyOTPRequest) async throws -> User
-    ) {
-      self.events = events
-      self.getOAuthURL = getOAuthURL
-      self.initialize = initialize
-      self.session = session
-      self.login = login
-      self.logout = logout
-      self.resetPassword = resetPassword
-      self.signUp = signUp
-      self.update = update
-      self.verifyOTP = verifyOTP
-    }
-
-    /// Access the currently logged in user.
-    public func currentUser() async -> User? {
-      try? await self.session().user
-    }
-
-    /// Attempt to login with credentials stored in the user's key-chain, if they've logged in
-    /// in the past.
-    ///
-    @discardableResult
-    public func login() async throws -> Session? {
-      try await self.login(nil)
-    }
-
-    /// Login a user with the supplied credentials.
-    ///
-    @discardableResult
-    public func login(credentials: Credentials) async throws -> Session? {
-      try await self.login(.email(credentials.email, password: credentials.password))
-    }
-
-    /// A helper that will throw an error if there is not a current user logged in.
-    ///
-    /// This is useful for requiring authentication to certain views / routes in your application.
-    ///
-    public func requireCurrentUser() async throws -> User {
-      guard let user = await currentUser() else {
-        throw AuthenticationError.notAuthenticated
-      }
-      return user
-    }
-
-    /// Attempt to login with a previously stored session in the session storage, if they've logged in
-    /// in the past.
-    ///
-    public func session() async throws -> Session {
-      try await session(nil)
-    }
-
-    /// Represents parameters needed to perform a OAuth request.
-    ///
-    ///
-    public struct OAuthRequest: Equatable {
-
-      /// The OAuth provider.
-      public let provider: Provider
-
-      /// The query parameters.
-      public let queryParams: [QueryParam]
-
-      /// The redirect to URL.
-      public let redirectURL: URL?
-
-      /// The scopes.
-      public let scopes: String?
-
-      /// Create a new OAuth request.
-      ///
-      /// - Parameters:
-      ///   - provider: The OAuth provider.
-      ///   - queryParams: The query parameters.
-      ///   - redirectURL: The optional redirect-to url.
-      ///   - scopes: The optional scopes.
-      public init(
-        provider: Provider,
-        queryParams: [QueryParam] = [],
-        redirectURL: URL? = nil,
-        scopes: String? = nil
-      ) {
-        self.provider = provider
-        self.queryParams = queryParams
-        self.redirectURL = redirectURL
-        self.scopes = scopes
-      }
-
-      /// Represent an OAuth query parameters.
-      ///
-      public struct QueryParam: Equatable {
-        /// The parameter name.
-        public let name: String
-
-        /// The optional value
-        public let value: String?
-
-        /// Create a new OAuth query parameter.
-        ///
-        /// - Parameters:
-        ///   - name: The parameter name.
-        ///   - value: The optional value.
-        public init(name: String, value: String? = nil) {
-          self.name = name
-          self.value = value
-        }
-      }
-    }
-
-    /// Represents the parameters required for a reset password request.
-    ///
-    public struct ResetPasswordRequest: Equatable {
-
-      /// The email to use for the request.
-      public let email: String
-
-      /// An optional redirect-to URL.
-      public let redirectURL: URL?
-
-      /// An optional captcha token.
-      public let captchaToken: String?
-
-      /// Create a new reset password request.
-      ///
-      /// - Parameters:
-      ///   - email: The email to use for the request.
-      ///   - redirectURL: An optional redirect-to URL.
-      ///   - captchaToken: An optional captcha token.
-      public init(
-        email: String,
-        redirectURL: URL? = nil,
-        captchaToken: String? = nil
-      ) {
-        self.email = email
-        self.redirectURL = redirectURL
-        self.captchaToken = captchaToken
-      }
-    }
-
-    /// Represents request parameters for managing authentication session.
-    public enum SessionRequest: Equatable {
-      case oAuth(URL, storeSession: Bool = true)
-      case refresh(String)
-      case set(accessToken: String, refreshToken: String)
-    }
-
-    /// Represents request parameters for loggiing users in.
-    public enum LoginRequest: Equatable {
-
-      /// Login with an email and password.
-      case email(String, password: String)
-
-      /// Login with a phone number and a password.
-      case phone(String, password: String)
-      //    case idToken(OpenIDConnectCredentials)
-
-      /// Login with a one-time-password.
-      case otp(
-        OTPRequest,
-        shouldCreateUser: Bool? = nil,
-        options: SharedOptions = .init()
-      )
-
-      /// Login with a credentials instance.
-      public static func credentials(_ credentials: Credentials) -> Self {
-        .email(credentials.email, password: credentials.password)
-      }
-
-      /// Represents a one-time-password login request.
-      public enum OTPRequest: Equatable {
-
-        /// The email address for the request.
-        case email(String)
-
-        /// The phone number for the request.
-        case phone(String)
-
-        /// The underlying string value for either the email or the phone number.
-        public var value: String {
-          switch self {
-          case let .email(email):
-            return email
-          case let .phone(phone):
-            return phone
-          }
-        }
-      }
-    }
-
-    /// Represents options used in several of the signup or login request types.
-    ///
-    /// > Note: Not all options are required for all signup request types, refer to the underlying `GoTrue` request.
-    ///
-    public struct SharedOptions: Equatable {
-
-      /// An optional captcha token.
-      public let captchaToken: String?
-
-      /// Optional data for the request.
-      public let data: [String: AnyJSON]?
-
-      /// An optional redirect-to URL for the request.
-      public let redirectURL: URL?
-
-      /// Create a new signup option.
-      ///
-      /// - Parameters:
-      ///   - captchaToken: An optional captcha token.
-      ///   - data: Optional data for the request.
-      ///   - redirectURL: An optional redirect-to URL for the request.
-      public init(
-        captchaToken: String? = nil,
-        data: [String: AnyJSON]? = nil,
-        redirectURL: URL? = nil
-      ) {
-        self.captchaToken = captchaToken
-        self.data = data
-        self.redirectURL = redirectURL
-      }
-    }
-
-    /// Represents parameters for signing users up.
-    ///
-    public enum SignUpRequest: Equatable {
-
-      /// Signup with an email and a password.
-      case email(
-        String,
-        password: String,
-        options: SharedOptions = .init()
-      )
-
-      /// Signup with a credentials instance.
-      public static func credentials(
-        _ credentials: Credentials,
-        options: SharedOptions = .init()
-      ) -> Self {
-        .email(
-          credentials.email,
-          password: credentials.password,
-          options: options
-        )
-      }
-
-      /// Signup with a phone number and a password.
-      case phone(
-        String,
-        password: String,
-        options: SharedOptions = .init()
-      )
-    }
-
-    /// Login a user with a one-time password token request.
-    public enum VerifyOTPRequest: Equatable {
-
-      /// The email and token used for the request.
-      case email(String, options: Options, type: EmailOTPType)
-
-      /// The phone and token used for the request.
-      case phone(String, options: Options, type: MobileOTPType)
-
-      /// Represents the shared option parameters for the one-time password token request.
-      public struct Options: Equatable {
-
-        /// An optional captcha token.
-        public let captchaToken: String?
-
-        /// An optional redirect-to URL.
-        public let redirectURL: URL?
-
-        /// The one-time password token.
-        public let token: String
-
-        /// Create a new one-time password option instance.
-        ///
-        /// - Parameters:
-        ///   - captchaToken: An optional captcha token.
-        ///   - redirectURL: An optional redirect-to URL.
-        ///   - token: The one-time password token.
-        public init(
-          captchaToken: String? = nil,
-          redirectURL: URL? = nil,
-          token: String
-        ) {
-          self.captchaToken = captchaToken
-          self.redirectURL = redirectURL
-          self.token = token
-        }
-      }
-    }
+  /// In general this may not be the same for different machines and should not be used in production.
+  public static func local() -> Self {
+    Self.init(supabaseURL: supabaseURL, supabaseKey: localAnonKey)
   }
 
 }
 
-// MARK: - Helpers
-
-fileprivate func OK<A: Encodable>(
-  _ value: A
-) -> (JSONEncoder) async throws -> (Data, URLResponse) {
-  return { encoder in
-    (
-      try encoder.encode(value),
-      HTTPURLResponse(
-        url: URL(string: "/")!,
-        statusCode: 200,
-        httpVersion: nil,
-        headerFields: nil
-      )!
-    )
-  }
-}
-
-fileprivate func OK() -> (JSONEncoder) async throws -> (Data, URLResponse) {
-  return { _ in
-    (
-      Data(),
-      HTTPURLResponse(
-        url: URL(string: "/")!,
-        statusCode: 200,
-        httpVersion: nil,
-        headerFields: nil
-      )!
-    )
-  }
-}
-
-fileprivate extension SupabaseClientDependency.DatabaseOverride {
-  func isMatch(for request: URLRequest) -> Bool {
-    switch self {
-    case .all:
-      return true
-
-    case let .delete(from: table):
-      return request.httpMethod == "DELETE" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .fetch(from: table):
-      return request.httpMethod == "GET" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .fetchOne(from: table):
-      return request.httpMethod == "GET" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .insert(into: table):
-      return request.httpMethod == "POST" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .insertMany(into: table):
-      return request.httpMethod == "POST" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .update(in: table):
-      return request.httpMethod == "PATCH" &&
-      request.url?.lastPathComponent == table.tableName
-
-    case let .upsert(in: table):
-      return request.httpMethod == "POST" &&
-      request.url?.lastPathComponent == table.tableName
-      
-    case let .upsertMany(in: table):
-      return request.httpMethod == "POST" &&
-      request.url?.lastPathComponent == table.tableName
-    }
-  }
-}
-
+private let supabaseURL = URL(string: "http://localhost:54321")!
+private let localAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9." +
+  "CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"

@@ -1,5 +1,6 @@
 import CasePaths
 import XCTest
+import DatabaseExtensions
 import DatabaseRouter
 import Dependencies
 import IdentifiedCollections
@@ -7,7 +8,7 @@ import SupabaseClientDependencies
 
 final class DatabaseClientIntegrationTests: XCTestCase {
 
-  let postgrestClient = SupabaseClient(configuration: .local).schema("public")
+  let postgrestClient = SupabaseClient.local().schema("public")
 
   override func setUp() async throws {
     try await super.setUp()
@@ -36,47 +37,44 @@ final class DatabaseClientIntegrationTests: XCTestCase {
   }
 
   override func invokeTest() {
-    let client = SupabaseClientDependency.live(configuration: .local)
+    let client = SupabaseClientDependency<DbRoutes>.live(client: .local())
+    let database = client.client.schema("public")
     withDependencies {
       $0.supabaseClient = client
-      $0.databaseExecutor = .live(database: client.database)
+      $0.databaseExecutor = .live(database: database)
     } operation: {
       super.invokeTest()
     }
   }
 
   public func testIntegration() async throws {
-    @Dependency(\.supabaseClient.database) var database;
+    @Dependency(\.supabaseClient) var database;
 
-    var todos: IdentifiedArrayOf<Todo> = try await database.fetch(
-      from: .todos,
-      decoding: IdentifiedArrayOf<Todo>.self
-    )
+    var todos: IdentifiedArrayOf<Todo> = try await database.from(.todos).fetch().execute().value
     XCTAssertEqual(todos, [])
 
-    let insertedTodo: Todo = try await database.insert(
-      TodoInsertRequest(description: "Implement integration tests for supabase-client-dependency."),
-      into: .todos
+    let insertedTodo: Todo = try await database.from(.todos).insert(
+      TodoInsertRequest(description: "Implement integration tests for supabase-client-dependency.")
     )
+    .execute()
+    .value
 
-    todos = try await database.fetch(from: .todos)
+    todos = try await database.from(.todos).fetch().execute().value
     XCTAssertEqual(todos, [insertedTodo])
 
-    let insertedTodos: [Todo] = try await database.insert(
+    let insertedTodos: [Todo] = try await database.from(.todos).insert(
       [
         TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
         TodoInsertRequest(description: "Drink some coffee.")
-      ],
-      into: .todos
-    )
+      ]
+    ).execute().value
 
-    todos = try await database.fetch(from: .todos)
+    todos = try await database.from(.todos).fetch().execute().value
     XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
 
-    let orderedTodos: [Todo] = try await database.fetch(
-      from: .todos,
+    let orderedTodos: [Todo] = try await database.from(.todos).fetch(
       orderBy: TodoColumn.description.ascending()
-    )
+    ).execute().value
     XCTAssertEqual(
       orderedTodos,
       [
@@ -87,39 +85,34 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     )
 
     let drinkCoffeeTodo = insertedTodos[1]
-    let fetchOneTodo: Todo = try await database.fetchOne(
-      id: drinkCoffeeTodo.id,
-      from: .todos
-    )
+    let fetchOneTodo: Todo = try await database.from(.todos).fetchOne(
+      id: drinkCoffeeTodo.id
+    ).execute().value
     XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
 
-    let updatedTodo: Todo = try await database.update(
+    let updatedTodo: Todo = try await database.from(.todos).update(
       id: drinkCoffeeTodo.id,
-      in: .todos,
       with: TodoUpdateRequest(isComplete: true)
-    )
+    ).execute().value
     XCTAssertEqual(updatedTodo.isComplete, true)
 
-    let completedTodos: [Todo] = try await database.fetch(
-      from: .todos,
+    let completedTodos: [Todo] = try await database.from(.todos).fetch(
       filteredBy: TodoColumn.isComplete.equals(true)
-    )
+    ).execute().value
     XCTAssertEqual(completedTodos, [updatedTodo])
 
-    try await database.delete(
-      from: .todos,
+    try await database.from(.todos).delete(
       filteredBy: TodoColumn.isComplete.equals(true)
-    )
-    todos = try await database.fetch(from: .todos)
+    ).execute().value
+    todos = try await database.from(.todos).fetch().execute().value
     XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
 
     let firstTodo = todos.first!
-    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
+    try await database.from(.todos).delete(id: firstTodo.id).execute().value
   }
 
   public func testDatabaseRouter() async throws {
-    @Dependency(\.supabaseClient.database) var database;
-    @Dependency(\.router) var router
+    @Dependency(\.supabaseClient.router) var router;
     @Dependency(\.router.todos) var todosRouter
 
     var todos: IdentifiedArrayOf<Todo> = try await router(.todos(.fetch))
@@ -181,11 +174,12 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     XCTAssertEqual(completedTodos, [updatedTodo])
 
     try await router(.todos(.delete(TodoColumn.isComplete.equals(true))))
-    todos = try await database.fetch(from: .todos)
+    todos = try await router(.todos(.fetch))
     XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
 
     let firstTodo = todos.first!
-    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
+    try await todosRouter(.delete(id: firstTodo.id))
+//    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
   }
 
   func testOverrides() async throws {
@@ -205,15 +199,3 @@ final class DatabaseClientIntegrationTests: XCTestCase {
   }
 
 }
-
-//extension DatabaseRouter where Routes == DbRoutes {
-//
-//  func override<T, A>(
-//    _ keyPath: KeyPath<AllCasePaths, T>,
-//    with value: A
-//  ) {
-//    print(Self.allCasePaths[keyPath: keyPath])
-//    print("\(keyPath)")
-//    print("\(value)")
-//  }
-//}

@@ -28,8 +28,15 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "SupabaseClientIntegrationTests",
-        "name" : "SupabaseClientIntegrationTests"
+        "identifier" : "AuthControllerTests",
+        "name" : "AuthControllerTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DatabaseRouterIntegrationTests",
+        "name" : "DatabaseRouterIntegrationTests"
       }
     }
   ],

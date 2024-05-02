@@ -4,9 +4,6 @@ import Dependencies
 import Foundation
 import SupabaseClientDependencies
 
-//enum Table: String, TableRepresentable {
-//  case todos
-//}
 extension AnyTable {
   static var todos: Self { .init("todos") }
 }
@@ -188,22 +185,9 @@ extension DependencyValues {
   }
 }
 
-//extension TableRouter {
-//  var table: AnyTable { Self.table }
-//}
-
-//extension DatabaseRouter where Routes: CasePathable {
-//  
-//  func run<Input>(
-//    _ caseKeyPath: CaseKeyPath<Routes, Input>,
-//    _ input: () -> Input
-//  ) {
-//    let r = caseKeyPath(input())
-//    
-//    for k in Routes.allCasePaths {
-//      if let found = k.e
-//    }
-////    let upper = caseKeyPath.
-//    
-//  }
-//}
+extension DependencyValues {
+  var supabaseClient: SupabaseClientDependency<DbRoutes> {
+    get { self[SupabaseClientDependency<DbRoutes>.self] }
+    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+  }
+}

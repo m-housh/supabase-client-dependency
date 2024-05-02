@@ -70,10 +70,20 @@ let package = Package(
         .product(name: "PostgREST", package: "supabase-swift"),
       ]
     ),
+    .testTarget(
+      name: "DatabaseRouterIntegrationTests",
+      dependencies: [
+        "DatabaseRouter",
+        "SupabaseClientDependencies",
+        .product(name: "CasePaths", package: "swift-case-paths")
+      ]
+    ),
     .target(
       name: "SupabaseClientDependencies",
       dependencies: [
+        "AuthController",
         "DatabaseExtensions",
+        "DatabaseRouter",
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
         .product(name: "Supabase", package: "supabase-swift"),
@@ -82,14 +92,6 @@ let package = Package(
     .testTarget(
       name: "SupabaseClientTests",
       dependencies: ["SupabaseClientDependencies"]
-    ),
-    .testTarget(
-      name: "SupabaseClientIntegrationTests",
-      dependencies: [
-        "DatabaseRouter",
-        "SupabaseClientDependencies",
-        .product(name: "CasePaths", package: "swift-case-paths")
-      ]
     ),
   ]
 )
