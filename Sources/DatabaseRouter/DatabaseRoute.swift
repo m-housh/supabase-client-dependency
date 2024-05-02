@@ -2,9 +2,7 @@ import DatabaseExtensions
 import Foundation
 import PostgREST
 
-// TODO: Rename to DatabaseRoute, requires the type to be deleted from SupabaseClientDependencies package.
-#warning("Fix me.")
-public struct RouteContainer {
+public struct DatabaseRoute {
   
   // A unique identifier if applicable, that can be set to differentiate routes.
   let id: String?
@@ -116,9 +114,9 @@ public struct RouteContainer {
 
 // Needs custom equality check because of the custom builder, which is ignored
 // in equality checking, but all other properties are checked for equality.
-extension RouteContainer: Equatable {
+extension DatabaseRoute: Equatable {
   
-  public static func == (lhs: RouteContainer, rhs: RouteContainer) -> Bool {
+  public static func == (lhs: DatabaseRoute, rhs: DatabaseRoute) -> Bool {
     return lhs.table == rhs.table &&
     lhs.method == rhs.method &&
     lhs.data == rhs.data &&
@@ -130,8 +128,7 @@ extension RouteContainer: Equatable {
 }
 
 // MARK: - Helpers
-extension RouteContainer {
-  
+extension DatabaseRoute {
   /// Create a route container that generates a custom query.
   ///
   /// - Parameters:
@@ -145,7 +142,6 @@ extension RouteContainer {
   ) -> Self {
     .init(id: routeId, table: table, method: .custom, returning: .representation, customBuilder: build)
   }
-
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -159,7 +155,6 @@ extension RouteContainer {
   ) -> Self {
     return .init(id: routeId, table: table, method: .delete, filters: filters, returning: .minimal)
   }
-
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -173,7 +168,6 @@ extension RouteContainer {
   ) -> Self {
     return .delete(from: table, filters: filters, routeId: routeId)
   }
-
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -187,7 +181,6 @@ extension RouteContainer {
   ) -> Self {
     return .delete(from: table, filteredBy: .id(id), routeId: routeId)
   }
-
   /// Create a route container that generates a fetch query.
   ///
   /// - Parameters:

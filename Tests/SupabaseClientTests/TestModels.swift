@@ -98,7 +98,7 @@ enum TodoRoute: RouteController {
   case update(id: Todo.ID, updates: TodoUpdateRequest)
   case upsert(Todo)
 
-  public func route() throws -> RouteContainer {
+  public func route() throws -> DatabaseRoute {
     switch self {
     case let .delete(filters):
       return .delete(from: Self.table, filters: filters)
@@ -158,7 +158,7 @@ enum DbRoutes: DatabaseController {
 
   case todos(TodoRoute)
 
-  func route() throws -> RouteContainer {
+  func route() throws -> DatabaseRoute {
     switch self {
     case let .todos(todos):
       return try todos.route()

@@ -24,9 +24,23 @@ extension DependencyValues {
 ///
 @DependencyClient
 public struct DatabaseExecutor {
-  
-  var overrides: [(route: AnyOverride, value: Any)] = []
-  
+  #if DEBUG
+  private static var _Overrides = LockIsolated<OverridesContainer>(.init())
+
+  // NB: Holds overrides as a global, so they act correctly / can be overridden when accessing
+  // a sub-route controller on a database router.
+  internal static var currentOverrides: OverridesContainer {
+    get {
+      return _Overrides.value
+    }
+    set {
+      _Overrides.withValue { value in
+        value = newValue
+      }
+    }
+  }
+  #endif
+
   /// The json decoder used to decode responses.
   public var decoder: JSONDecoder = .init()
   
@@ -37,8 +51,10 @@ public struct DatabaseExecutor {
   public var query: (AnyTable) throws -> PostgrestQueryBuilder
 
   /// Run the route on the database.
-  public func run(_ route: RouteContainer) async throws {
-    if overrides.first(where: { $0.route.matches(route) }) != nil { return }
+  public func run(_ route: DatabaseRoute) async throws {
+    if Self.currentOverrides.firstMatch(of: route) != nil {
+      return
+    }
     _ = try await self.execute(
       route.build(self.query)
     )
@@ -47,10 +63,10 @@ public struct DatabaseExecutor {
   /// Run the route on the database and decode the output.
   @discardableResult
   public func run<A: Decodable>(
-    _ route: RouteContainer
+    _ route: DatabaseRoute
   ) async throws -> A {
-    if let match = overrides.first(where: { $0.route.matches(route) }) {
-      guard let value = match.value as? A else {
+    if let match = Self.currentOverrides.firstMatch(of: route) {
+      guard let value = match as? A else {
         throw UnmatchedOverrideError()
       }
       return value
@@ -87,10 +103,54 @@ extension DatabaseExecutor {
   /// - Parameters:
   ///   - database: The postgrest client used to execute and build queries.
   public static func live(database: PostgrestClient) -> Self {
-    .init(
+    // Just a precaution... Reset any overrides, since they're global.
+    DatabaseExecutor.currentOverrides.reset()
+    return .init(
       decoder: database.configuration.decoder,
       execute: { try await $0.execute().data },
       query: { database.from($0.tableName) }
     )
   }
 }
+
+#if DEBUG
+struct OverridesContainer {
+  var overrides: [(route: AnyOverride, value: Any)] = []
+
+  func firstMatch(of route: DatabaseRoute) -> Any? {
+    overrides.first(where: { $0.route.matches(route) })?.value
+  }
+
+  mutating func insert<V>(_ override: AnyOverride, value: V) {
+    overrides.insert((route: override, value: value as Any), at: 0)
+  }
+
+  mutating func reset() {
+    self.overrides = []
+  }
+}
+
+// Used internally to match route overrides.
+enum AnyOverride: Equatable {
+
+  // Match a full route.
+  case route(DatabaseRoute)
+
+  // Match a partial route.
+  case partial(table: AnyTable, method: DatabaseRoute.Method)
+
+  // Match a route by id and table.
+  case id(String, table: AnyTable)
+
+  func matches(_ route: DatabaseRoute) -> Bool {
+    switch self {
+    case let .route(route):
+      return route == route
+    case let .partial(table: table, method: method):
+      return table == route.table && method == route.method
+    case let .id(id, table: table):
+      return route.table == table && route.id == id
+    }
+  }
+}
+#endif
