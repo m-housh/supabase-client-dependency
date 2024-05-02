@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "EB27F7E9-1B6F-42F3-BF6D-201FF7447962",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AuthControllerTests",
+        "name" : "AuthControllerTests"
+      }
+    }
+  ],
+  "version" : 1
+}

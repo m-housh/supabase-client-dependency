@@ -15,7 +15,7 @@ public struct Credentials: Codable, Equatable, Sendable {
   ///
   /// - SeeAlso: ``validate(_:validateEmail:validatePassword:)``
   public var isValid: Bool {
-    guard let isValid = try? Credentials.validate(self)
+    guard let isValid = try? self.validate()
     else { return false }
     return isValid
   }
@@ -46,6 +46,7 @@ public struct Credentials: Codable, Equatable, Sendable {
   ///   - credentials: The credentials to validate.
   ///   - validateEmail: Override the default email validation logic.
   ///   - validatePassword: Override the default password validation logic.
+  @discardableResult
   public static func validate(
     _ credentials: Self,
     validateEmail: ((String) throws -> Void)? = nil,
@@ -83,6 +84,18 @@ public struct Credentials: Codable, Equatable, Sendable {
         passwordError: passwordError.localizedDescription
       )
     }
+  }
+
+  @discardableResult
+  public func validate(
+    validateEmail: ((String) throws -> Void)? = nil,
+    validatePassword: ((String) throws -> Void)? = nil
+  ) throws -> Bool {
+    try Self.validate(
+      self,
+      validateEmail: validateEmail,
+      validatePassword: validatePassword
+    )
   }
 
 }

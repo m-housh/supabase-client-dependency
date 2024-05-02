@@ -46,6 +46,13 @@ let package = Package(
         .product(name: "Auth", package: "supabase-swift"),
       ]
     ),
+    .testTarget(
+      name: "AuthControllerTests",
+      dependencies: [
+        "AuthController",
+        .product(name: "Dependencies", package: "swift-dependencies"),
+      ]
+    ),
     .target(
       name: "DatabaseExtensions",
       dependencies: [

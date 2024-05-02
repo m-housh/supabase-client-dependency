@@ -42,7 +42,12 @@ public struct AuthController {
     }
     return session
   }
-  
+
+  @discardableResult
+  public func login(credentials: Credentials) async throws -> Session {
+    return try await self.login(.credentials(credentials))
+  }
+
   public var currentUser: User? {
     get async {
       guard let getCurrentUser else {
@@ -70,7 +75,56 @@ public struct AuthController {
 }
 
 extension AuthController {
-  static func live(auth: AuthClient) -> Self {
+  public static func live(auth: AuthClient) -> Self {
     self.init(client: auth)
   }
+
+  #if DEBUG
+  public static func mock(
+    allowedCredentials: AllowedCredentials = .any,
+    user: User = .mock,
+    session: Session? = nil,
+    uuid: @escaping () -> UUID = UUID.init,
+    date: @escaping () -> Date = Date.init
+  ) -> Self {
+
+    final class Storage {
+      var currentUser: User
+      var currentSession: Session? = nil
+
+      init(currentUser: User, currentSession: Session? = nil) {
+        self.currentUser = currentUser
+        self.currentSession = currentSession
+      }
+    }
+
+    let storage = Storage(currentUser: user, currentSession: session)
+
+    return self.init(
+      client: .init(configuration: .init(
+        url: URL(string: "/")!,
+        localStorage: AuthClient.Configuration.defaultLocalStorage,
+        logger: nil
+      )),
+      currentUser: { storage.currentUser },
+      loginHandler: { loginRequest in
+        guard allowedCredentials.isAllowedToAuthenticate(.login(loginRequest)) else {
+          throw AuthenticationError.notAuthenticated
+        }
+        if storage.currentSession == nil {
+          storage.currentSession = .mock(user: storage.currentUser)
+        }
+        return storage.currentSession!
+      },
+      signupHandler: { signUp in
+        guard allowedCredentials.isAllowedToAuthenticate(.signUp(signUp)) else {
+          throw AuthenticationError.notAuthenticated
+        }
+        storage.currentUser = signUp.mockUser(date: date(), uuid: uuid)
+        storage.currentSession = .mock(user: storage.currentUser)
+        return storage.currentUser
+      }
+    )
+  }
+  #endif
 }
