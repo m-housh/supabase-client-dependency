@@ -1,6 +1,5 @@
 import DatabaseExtensions
 import Dependencies
-import DependenciesMacros
 import Foundation
 import PostgREST
 
@@ -22,7 +21,6 @@ extension DependencyValues {
 /// This type  needs to be extended to provide the live implementation in your application,
 /// by  passing in a `PostgrestClient` and using the ``live(database:)`` helper.
 ///
-@DependencyClient
 public struct DatabaseExecutor {
   #if DEBUG
   private static var _Overrides = LockIsolated<OverridesContainer>(.init())
@@ -93,7 +91,10 @@ public struct DatabaseExecutor {
 }
 
 extension DatabaseExecutor: TestDependencyKey {
-  public static let testValue = Self.init()
+  public static let testValue = Self.init(
+    execute: XCTestDynamicOverlay.unimplemented("\(Self.self).execute", placeholder: Data()),
+    query: XCTestDynamicOverlay.unimplemented("\(Self.self).query")
+  )
 }
 
 extension DatabaseExecutor {

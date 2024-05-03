@@ -127,15 +127,6 @@
       }
     },
     {
-      "identity" : "swift-identified-storage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/m-housh/swift-identified-storage.git",
-      "state" : {
-        "revision" : "d2af38e901a34405ddada93220f0ad36f7a553ac",
-        "version" : "0.1.2"
-      }
-    },
-    {
       "identity" : "swift-perception",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-perception",

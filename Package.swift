@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.9
 
 import PackageDescription
 
@@ -29,10 +29,6 @@ let package = Package(
     .package(
       url: "https://github.com/supabase/supabase-swift.git",
       from: "2.0.0"
-    ),
-    .package(
-      url: "https://github.com/m-housh/swift-identified-storage.git",
-      from: "0.1.0"
     ),
     .package(
       url: "https://github.com/apple/swift-docc-plugin.git",
@@ -66,7 +62,7 @@ let package = Package(
         "DatabaseExtensions",
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "DependenciesMacros", package: "swift-dependencies"),
+//        .product(name: "DependenciesMacros", package: "swift-dependencies"),
         .product(name: "PostgREST", package: "supabase-swift"),
       ]
     ),
@@ -85,7 +81,6 @@ let package = Package(
         "DatabaseExtensions",
         "DatabaseRouter",
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),
