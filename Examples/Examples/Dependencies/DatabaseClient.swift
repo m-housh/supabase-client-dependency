@@ -5,20 +5,18 @@ import IdentifiedStorage
 import SupabaseClientDependencies
 import XCTestDynamicOverlay
 
-@CasePathable
-enum DatabaseRoutes: RouteController {
-
-  case todos(Todos)
-
-  func route() async throws -> DatabaseRoute {
-    switch self {
-    case let .todos(todos):
-      return try await todos.route()
-    }
+extension DependencyValues {
+  var database: DatabaseRoutes {
+    get { self[DatabaseRoutes.self] }
+    set { self[DatabaseRoutes.self] = newValue }
   }
+}
 
-  @CasePathable
-  enum Todos: RouteController {
+struct DatabaseRoutes {
+
+  var todos: DBRouter<TodoRoute>
+
+  enum TodoRoute: RouteController {
     case delete(id: TodoModel.ID)
     case fetch
     case insert(InsertRequest)
@@ -26,7 +24,7 @@ enum DatabaseRoutes: RouteController {
 
 
     func route() async throws -> DatabaseRoute {
-      @Dependency(\.supabase.auth) var auth
+      @Dependency(\.auth) var auth
 
       switch self {
       case let .delete(id: id):
@@ -83,6 +81,34 @@ enum DatabaseRoutes: RouteController {
     }
   }
 }
+
+extension DatabaseRoutes: TestDependencyKey {
+  static var testValue: DatabaseRoutes { .init(todos: .testValue) }
+  static var previewValue: DatabaseRoutes {
+    let todos = IdentifiedStorageOf<TodoModel>(initialValues: TodoModel.mocks)
+
+    return .init(
+      todos: .init(
+        decoder: JSONDecoder(),
+        encoder: JSONEncoder(),
+        execute: { route in
+          switch route {
+          case let .delete(id: id):
+              return .void { try await todos.delete(id: id) }
+          case .fetch:
+            return .data { try await todos.fetch() }
+          case let .insert(todo):
+            return .data { try await todos.insert(request: todo) }
+          case let .update(id: id, updates: updates):
+            return .data { try await todos.update(id: id, request: updates) }
+          }
+        }
+      )
+    )
+  }
+}
+
+
 
 //extension DatabaseClient: DependencyKey {
 //  
@@ -187,24 +213,24 @@ extension DatabaseOrder {
   static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
 }
 
-//extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {
-//  typealias ID = TodoModel.ID
-//  
-//  func transform() -> TodoModel {
-//    @Dependency(\.uuid) var uuid;
-//    return .init(id: uuid(), description: description, isComplete: complete)
-//  }
-//}
-//
-//extension DatabaseClient.Todos.UpdateRequest: UpdateRequestConvertible {
-//  typealias ID = TodoModel.ID
-//  
-//  func apply(to state: inout TodoModel) {
-//    if let description {
-//      state.description = description
-//    }
-//    if let complete {
-//      state.isComplete = complete
-//    }
-//  }
-//}
+extension DatabaseRoutes.TodoRoute.InsertRequest: InsertRequestConvertible {
+  typealias ID = TodoModel.ID
+  
+  func transform() -> TodoModel {
+    @Dependency(\.uuid) var uuid;
+    return .init(id: uuid(), description: description, isComplete: complete)
+  }
+}
+
+extension DatabaseRoutes.TodoRoute.UpdateRequest: UpdateRequestConvertible {
+  typealias ID = TodoModel.ID
+  
+  func apply(to state: inout TodoModel) {
+    if let description {
+      state.description = description
+    }
+    if let complete {
+      state.isComplete = complete
+    }
+  }
+}

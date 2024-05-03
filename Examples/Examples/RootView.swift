@@ -30,7 +30,7 @@ struct RootFeature: Reducer {
     case loggedOut(AuthFeature)
   }
 
-  @Dependency(\.supabase.auth) var auth;
+  @Dependency(\.auth) var auth;
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in

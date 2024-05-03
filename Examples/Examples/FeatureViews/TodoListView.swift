@@ -28,7 +28,7 @@ struct TodoListFeature {
     case task
   }
 
-  @Dependency(\.supabase.router.todos) var database
+  @Dependency(\.database.todos) var database
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -141,7 +141,7 @@ struct TodoListFeature {
   ) async -> TaskResult<TodoModel>? {
 
     // Create the update request with changes from the original todo.
-    let updateRequest = DatabaseRoutes.Todos.UpdateRequest(
+    let updateRequest = DatabaseRoutes.TodoRoute.UpdateRequest(
       description: form.description == original.description ? nil : form.description,
       complete: form.isComplete == original.isComplete ? nil : form.isComplete
     )
@@ -228,9 +228,11 @@ struct TodoListView: View {
       TodoListFeature()._printChanges()
     } withDependencies: {
       $0.uuid = .init { UUID() }
-//      $0.supabaseClient.database.fetch = { _ in
-//        try! JSONEncoder().encode(TodoModel.mocks)
-//      }
+      $0.database.todos.override(
+        .fetch,
+        with: IdentifiedArray(uniqueElements: [TodoModel.mocks[0]])
+      )
+
     }
   )
 }

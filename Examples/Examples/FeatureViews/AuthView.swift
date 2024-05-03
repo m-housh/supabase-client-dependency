@@ -70,7 +70,7 @@ struct AuthFeature {
     case task
   }
 
-  @Dependency(\.supabase.auth) var auth
+  @Dependency(\.auth) var auth
 
   var body: some ReducerOf<Self> {
     BindingReducer()
@@ -184,7 +184,7 @@ struct AuthView: View {
         store: .init(initialState: .init()) {
           AuthFeature()
         } withDependencies: {
-          $0.supabase.auth = .mock()
+          $0.auth = .mock()
         }
       )
     }
