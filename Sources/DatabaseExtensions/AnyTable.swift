@@ -8,7 +8,7 @@ import Foundation
 ///   static let todos: Self = .init("todos")
 /// }
 /// ```
-public struct AnyTable: Equatable, TableRepresentable {
+public struct AnyTable: Equatable, Sendable, TableRepresentable {
 
   public let tableName: String
 

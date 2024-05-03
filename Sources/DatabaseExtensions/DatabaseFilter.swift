@@ -3,7 +3,7 @@ import PostgREST
 
 /// Represents a filter for use in database queries.
 ///
-public struct DatabaseFilter {
+public struct DatabaseFilter: Sendable {
 
   /// The column to filter the results by.
   public let column: String
@@ -12,7 +12,7 @@ public struct DatabaseFilter {
   public let `operator`: PostgrestFilterBuilder.Operator
 
   /// The value used to compare the column value to.
-  public let value: URLQueryRepresentable
+  public let value: String
 
   /// Create a new filter.
   ///
@@ -27,7 +27,7 @@ public struct DatabaseFilter {
   ) {
     self.column = column.columnName
     self.operator = postgrestOperator
-    self.value = value
+    self.value = value.queryValue
   }
 
   public static func equals<C: ColumnRepresentable>(
@@ -46,7 +46,7 @@ extension DatabaseFilter: Equatable {
   public static func == (lhs: DatabaseFilter, rhs: DatabaseFilter) -> Bool {
     lhs.column == rhs.column &&
     lhs.operator == rhs.operator &&
-    lhs.value.queryValue == rhs.value.queryValue
+    lhs.value == rhs.value
   }
 }
 

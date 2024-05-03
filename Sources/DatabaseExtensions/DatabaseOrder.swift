@@ -2,7 +2,7 @@ import Foundation
 
 /// Represents an order by clause used for a database query.
 ///
-public struct DatabaseOrder: Equatable {
+public struct DatabaseOrder: Equatable, Sendable {
 
   /// The column name to use for the order by clause.
   public let column: String

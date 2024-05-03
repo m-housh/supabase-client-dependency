@@ -2,7 +2,7 @@ import DatabaseExtensions
 import Foundation
 import PostgREST
 
-public struct DatabaseRoute {
+public struct DatabaseRoute: @unchecked Sendable {
   
   // A unique identifier if applicable, that can be set to differentiate routes.
   let id: String?
@@ -50,7 +50,7 @@ public struct DatabaseRoute {
   }
 
   /// Represents the query method on the database.
-  public enum Method {
+  public enum Method: Sendable {
     /// Used to provide a custom query.
     case custom
 
