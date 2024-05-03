@@ -32,35 +32,7 @@ let package = Package(
 
 This package does not have an official `liveValue` declared on the dependency because it is intended 
 that the live value is setup in the project that depends on it. It does conform to the 
-`TestDependencyKey` and has an `unimplemented` version used in tests. It also has a `mock` factory 
-method for the `auth` portion of the client dependency, which is helpful for use in previews and test's.
-
-### Define the configuration for the supabase client.
-
-```swift
-import Dependencies
-import SupabaseClientDependencies
-
-extension SupabaseClientDependency.Configuration {
-  public static let live = Self.init(url: supabaseURL, anonKey: localAnonKey)
-}
-
-// This url in general is used for local supabase installations and should be
-// changed to your live url.
-fileprivate let supabaseURL = URL(string: "http://localhost:54321")!
-
-// Set this to the anonymous key for your project, for local supabase installations this
-// is printed to the screen when you call `supabase start` on your machine.
-fileprivate let localAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-
-// Conform the `SupabaseClientDependency` to `DependencyKey` and implement the `liveValue`.
-extension SupabaseClientDependency: DependencyKey {
-  static var liveValue: Self {
-    .live(configuration: .live)
-  }
-}
-```
+`TestDependencyKey` and has an `unimplemented` version used in tests.
 
 ### The Todo model
 
@@ -72,16 +44,8 @@ create table if not exists todos (
   id uuid primary key default uuid_generate_v4(),
   description text not null,
   complete boolean not null default false,
-  owner_id uuid references auth.users (id) not null,
   created_at timestamptz default (now() at time zone 'utc'::text) not null
 );
-
-alter table todos enable row level security;
-
-create policy "Allow access to owner only" on todos as permissive
-    for all to authenticated
-        using (auth.uid () = owner_id)
-        with check (auth.uid () = owner_id);
 ```
 
 #### The swift model implementation.
@@ -115,144 +79,138 @@ struct TodoModel: Codable, Equatable, Identifiable, Sendable {
     case isComplete = "complete"
   }
 }
+
+// MARK: - Helper types.
+
+struct TodoInsertRequest: Codable, Hashable {
+  let description: String
+  let isComplete: Bool = false
+
+  enum CodingKeys: String, CodingKey {
+    case description
+    case isComplete = "complete"
+  }
+}
+
+struct TodoUpdateRequest: Codable, Hashable {
+  var description: String? = nil
+  var isComplete: Bool? = nil
+
+  enum CodingKeys: String, CodingKey {
+    case description
+    case isComplete = "complete"
+  }
+}
+
 ```
 
-### Create your database client dependency.
+### The `Todo` route controller
 
-The database client that is used for interactions with the supabase instance for your project.
+A route controller is used to declare a group of routes, generally for a specific table in
+the database.
 
 ```swift
-import Dependencies
-import SupabaseClientDependencies
+@CasePathable
+enum TodoRoute: RouteController {
+  static var table: AnyTable { "todos" }
 
+  // The fetch route, which can optionally take filters and an order.
+  case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
+  
+  // The insert route.
+  case insert(TodoInsertRequest)
+
+  // Provide the database route.
+  public func route() throws -> DatabaseRoute {
+    switch self {
+    case let .fetch(filters, order):
+      // Returns a fetch query with the given filters and order.
+      return .fetch(from: Self.table, filters: filters, order: order)
+    case let .insert(request):
+      // Returns an insert query with the new todo request.
+      return try .insert(todo, into: Self.table)
+    }
+  }
+
+  static var fetch: Self { .fetch(filteredBy: [], orderedBy: nil) }
+
+}
+
+```
+
+### Create your database router.
+
+A database router holds on to all your route controllers.
+
+```swift
+@CasePathable
+enum DbRoutes: DatabaseController {
+
+  case todos(TodoRoute)
+  ...
+
+  func route() throws -> DatabaseRoute {
+    switch self {
+    case let .todos(todos):
+      return try todos.route()
+    ...
+    }
+  }
+}
+```
+
+### Setup the supabase dependency.
+
+The supabase client dependency needs to be extended to provide the live value.
+
+```swift
 extension DependencyValues {
-  
-  // Access the database client as a dependency.
-  var database: DatabaseClient {
-    get { self[DatabaseClient.self] }
-    set { self[DatabaseClient.self] = newValue }
+  var supabase: SupabaseClientDependency<DbRoutes> {
+    get { self[SupabaseClientDependency<DbRoutes>.self] }
+    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
   }
-
 }
 
-// The database client interface.
-struct DatabaseClient {
-  
-  var todos: Todos
-  
-  // Represents interactions with the todos table in the database.
-  struct Todos {
-
-    // Delete a todo by it's id.
-    var delete: (TodoModel.ID) async throws -> Void
-    
-    // Fetch all the todo's for the authenticated user.
-    var fetch: () async throws -> IdentifiedArrayOf<TodoModel>
-    
-    // Insert a new todo in the database.
-    var insert: (InsertRequest) async throws -> TodoModel
-
-    // Update an existing todo in the database.
-    var update: (TodoModel.ID, UpdateRequest) async throws -> TodoModel
-   
-    // Represents the columns / fields needed to insert a new todo in the database.
-    struct InsertRequest: Encodable {
-      var description: String
-      var complete: Bool
-    }
-    
-    // Represents the columns / fields to be updated for an existing todo.
-    struct UpdateRequest: Encodable {
-      var description: String?
-      var complete: Bool?
-      
-      var hasChanges: Bool {
-        description != nil || complete != nil
-      }
-    }
-  }
+extension SupabaseClientDependency<DbRoutes>: DependencyKey {
+  // Use the `.live(client:)` method with your supabase client configuration.
+  static let liveValue: Self = .live(client: SupabaseClient(...))
 }
 ```
 
-### The live implementation of the database client.
+### Use the supabase dependency.
+
+The supabase dependency contains an authentication controller that has some convenience
+methods for interacting with the supabase authentication client. Providing hooks that can allow
+you to override the current user, session, and convenience methods for logging in users.
+
+See <doc:AuthControllerUsage> for more authentication methods.
+
 ```swift
-// Extending the `AnyTable` struct allows for convenient access to
-// database operations.
-extension AnyTable {
-  static let todos = Self("todos")
-}
 
-extension DatabaseClient: DependencyKey {
-  
-  static var liveValue: Self {
-    // Use the supabase client dependency and it's helper methods for interacting
-    // with the supabase postgresql database.
-    @Dependency(\.supabaseClient) var client;
-    let database = client.database(schema: "public")
-
-    return Self.init(
-      todos: DatabaseClient.Todos(
-        delete: { try await database.delete(id: $0, from: .todos) },
-        fetch: {
-          
-          // get the current authenticated user.
-          let user = try await client.auth.requireCurrentUser()
-         
-          // Return the todos.
-          return try await .init(
-            uniqueElements: database.fetch(
-              from: .todos,
-              filteredBy: TodoColumn.ownerId.equals(user.id),
-              orderBy: TodoColumn.complete.ascending()
-            )
-          )
-        },
-        insert: { request in
-          
-          // A helper type that includes the authenticated user's
-          // id as the owner of the todo in the database, which is
-          // required by the row level security.
-          //
-          // This allows this implementation detail to be hidden away
-          // from the user and requires that the user is authenticated
-          // when inserting a todo.
-          struct InsertValues: Encodable {
-            let complete: Bool
-            let description: String
-            let ownerId: UUID
-            
-            enum CodingKeys: String, CodingKey {
-              case complete
-              case description
-              case ownerId = "owner_id"
-            }
-          }
-          
-          return try await database.insert(
-            InsertValues(
-              complete: request.complete,
-              description: request.description,
-              ownerId: client.auth.requireCurrentUser().id
-            ),
-            into: .todos
-          )
-        },
-        update: { try await database.update(id: $0, in: .todos, with: $1) }
-      )
-    )
-  }
-
-  static let previewValue: Self { 
-    ...
-  }
-
-  static let testValue: Self { 
-    ...
-  }
+func login(credentials: Credentials) async throws -> Session {
+  @Dependency(\.supabase.auth) var auth
+  return try await auth.login(credentials: credentials)
 }
 ```
 
-See <doc:DatabaseOperations> for database common operations.
+Use the database router to perform operations on the database.
+
+```swift
+func fetchTodos() async throws -> [Todo] {
+  @Dependency(\.supabase.router.todos)
+  return try await todos(.fetch)
+}
+
+func insertTodo(description: String, isComplete: Bool = false) -> Todo {
+  @Dependency(\.supabase.router.todos)
+  return try await todos(.insert(
+    TodoInsertRequest(description: description, isComplete: isComplete)
+  ))
+}
+```
+
+See <doc:DatabaseRouterUsage> for more details about modeling your database routes.
+See <doc:DatabaseOperations> for database operations / convenience methods.
 
 See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.

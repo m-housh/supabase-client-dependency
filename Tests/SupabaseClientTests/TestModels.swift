@@ -151,10 +151,8 @@ enum TodoRoute: RouteController {
   }
 }
 
-//struct NotFoundError: Error { }
-
 @CasePathable
-enum DbRoutes: DatabaseController {
+enum DbRoutes: RouteController {
 
   case todos(TodoRoute)
 

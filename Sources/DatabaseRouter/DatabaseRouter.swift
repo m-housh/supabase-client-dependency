@@ -70,7 +70,7 @@ import PostgREST
 ///
 /// ```
 @dynamicMemberLookup
-public struct DatabaseRouter<Routes: DatabaseController>: CasePathable {
+public struct DatabaseRouter<Routes: RouteController>: CasePathable where Routes: CasePathable {
   
   public typealias AllCasePaths = Routes.AllCasePaths
   
