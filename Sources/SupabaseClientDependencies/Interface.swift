@@ -83,7 +83,7 @@ import Supabase
 /// }
 ///```
 @dynamicMemberLookup
-public struct SupabaseClientDependency<Routes: RouteController> where Routes: CasePathable {
+public struct SupabaseClientDependency<Routes: RouteCollection> where Routes: CasePathable {
 
   /// The authentication controller, which gives control over the current user, session, and offers
   /// convenience methods for signing-up and logging in users.

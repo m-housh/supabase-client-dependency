@@ -14,9 +14,9 @@ extension DependencyValues {
 
 struct DatabaseRoutes {
 
-  var todos: DBRouter<TodoRoute>
+  var todos: RouteController<TodoRoute>
 
-  enum TodoRoute: RouteController {
+  enum TodoRoute: RouteCollection {
     case delete(id: TodoModel.ID)
     case fetch
     case insert(InsertRequest)
@@ -92,107 +92,22 @@ extension DatabaseRoutes: TestDependencyKey {
         decoder: JSONDecoder(),
         encoder: JSONEncoder(),
         execute: { route in
+          // Overrides for preview mode.
           switch route {
           case let .delete(id: id):
-              return .void { try await todos.delete(id: id) }
+              return .ok { try await todos.delete(id: id) }
           case .fetch:
-            return .data { try await todos.fetch() }
+            return .ok { try await todos.fetch() }
           case let .insert(todo):
-            return .data { try await todos.insert(request: todo) }
+            return .ok { try await todos.insert(request: todo) }
           case let .update(id: id, updates: updates):
-            return .data { try await todos.update(id: id, request: updates) }
+            return .ok { try await todos.update(id: id, request: updates) }
           }
         }
       )
     )
   }
 }
-
-
-
-//extension DatabaseClient: DependencyKey {
-//  
-//  static var liveValue: Self {
-//    @Dependency(\.supabaseClient) var client;
-//    let database = client.database
-//    return Self.init(
-//      todos: DatabaseClient.Todos(
-//        delete: { try await database.delete(id: $0, from: .todos) },
-//        fetch: {
-//          
-//          // get the current authenticated user.
-//          let user = try await client.auth.requireCurrentUser()
-//          
-//          // Return the todos.
-//          return try await database.fetch(
-//            from: AnyTable.todos,
-////            filteredBy: TodoColumn.ownerId.equals(user.id),
-//            filteredBy: .ownerId(equals: user.id),
-//            orderBy: .complete
-//          )
-//        },
-//        insert: { request in
-//
-//          // A helper type that includes the authenticated user's
-//          // id as the owner of the todo in the database, which is
-//          // required by the row level security.
-//          //
-//          // This allows this implementation detail to be hidden away
-//          // from the user and requires that the user is authenticated
-//          // when inserting a todo.
-//          struct InsertValues: Encodable {
-//            let complete: Bool
-//            let description: String
-//            let ownerId: UUID
-//            
-//            enum CodingKeys: String, CodingKey {
-//              case complete
-//              case description
-//              case ownerId = "owner_id"
-//            }
-//          }
-//          
-//          return try await database.insert(
-//            InsertValues(
-//              complete: request.complete,
-//              description: request.description,
-//              ownerId: client.auth.requireCurrentUser().id
-//            ),
-//            into: AnyTable.todos
-//          )
-//        },
-//        update: { try await database.update(id: $0, in: AnyTable.todos, with: $1) }
-//      )
-//    )
-//  }
-//  
-//  
-//  static var previewValue: DatabaseClient {
-//    let storage = IdentifiedStorageOf<TodoModel>(initialValues: TodoModel.mocks)
-//    
-//    return Self.init(
-//      todos: DatabaseClient.Todos(
-//        delete: { try await storage.delete(id: $0) },
-//        fetch: { try await storage.fetch() },
-//        insert: { try await storage.insert(request: $0) },
-//        update: { try await storage.update(id: $0, request: $1) }
-//      )
-//    )
-//  }
-//  
-//  static var testValue: DatabaseClient {
-//    Self.init(
-//      todos: DatabaseClient.Todos(
-//        delete: unimplemented(),
-//        fetch: unimplemented(placeholder: []),
-//        insert: unimplemented(placeholder: TodoModel.mocks[0]),
-//        update: unimplemented(placeholder: TodoModel.mocks[0])
-//      )
-//    )
-//  }
-//  
-// 
-//}
 
 extension AnyTable {
   static let todos = Self.init("todos")

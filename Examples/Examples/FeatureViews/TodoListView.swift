@@ -230,9 +230,8 @@ struct TodoListView: View {
       $0.uuid = .init { UUID() }
       $0.database.todos.override(
         .fetch,
-        with: IdentifiedArray(uniqueElements: [TodoModel.mocks[0]])
+        with: .ok([TodoModel.mocks[0]])
       )
-
     }
   )
 }

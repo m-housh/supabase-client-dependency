@@ -70,7 +70,7 @@ import PostgREST
 ///
 /// ```
 @dynamicMemberLookup
-public struct DatabaseRouter<Routes: RouteController>: CasePathable where Routes: CasePathable {
+public struct DatabaseRouter<Routes: RouteCollection>: CasePathable where Routes: CasePathable {
   
   public typealias AllCasePaths = Routes.AllCasePaths
   
@@ -252,7 +252,7 @@ extension DatabaseRouter {
 }
 #endif
 
-extension AnyCasePath where Root: RouteController {
+extension AnyCasePath where Root: RouteCollection {
 
   /// Provides functionality to treat a case path that wraps a ``RouteController`` like a
   /// controller. This is used when narrowing down a dependency on a ``DatabaseRouter`` in

@@ -18,7 +18,9 @@ extension AuthController: DependencyKey {
 }
 
 extension DatabaseRoutes: DependencyKey {
-  static var liveValue: DatabaseRoutes = .init(todos: .live(database: supabaseClient.schema("public")))
+  static var liveValue: DatabaseRoutes = .init(
+    todos: .init(database: supabaseClient.schema("public"))
+  )
 }
 
 //extension DependencyValues {

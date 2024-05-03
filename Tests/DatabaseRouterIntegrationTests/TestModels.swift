@@ -88,7 +88,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 }
 
 @CasePathable
-enum TodoRoute: RouteController {
+enum TodoRoute: RouteCollection {
   static var table: AnyTable { AnyTable.todos }
 
   case delete(filteredBy: [DatabaseFilter])

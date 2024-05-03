@@ -76,13 +76,13 @@ public struct DatabaseExecutor {
   }
 
   /// Run the route on the database, ignoring any output.
-  public func run<R: RouteController>(_ router: R) async throws {
+  public func run<R: RouteCollection>(_ router: R) async throws {
     try await self.run(router.route())
   }
 
   /// Run the route on the database, decoding the output.
   @discardableResult
-  public func run<A: Decodable, R: RouteController>(
+  public func run<A: Decodable, R: RouteCollection>(
     _ router: R
   ) async throws -> A {
     try await self.run(router.route())
