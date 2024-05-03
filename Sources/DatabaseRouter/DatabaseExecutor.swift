@@ -50,7 +50,7 @@ public struct DatabaseExecutor {
 
   /// Run the route on the database.
   public func run(_ route: DatabaseRoute) async throws {
-    if Self.currentOverrides.firstMatch(of: route) != nil {
+    if await Self.currentOverrides.firstMatch(of: route, decoder: decoder) != nil {
       return
     }
     _ = try await self.execute(
@@ -63,7 +63,7 @@ public struct DatabaseExecutor {
   public func run<A: Decodable>(
     _ route: DatabaseRoute
   ) async throws -> A {
-    if let match = Self.currentOverrides.firstMatch(of: route) {
+    if let match = await Self.currentOverrides.firstMatch(of: route, decoder: decoder) {
       guard let value = match as? A else {
         throw UnmatchedOverrideError()
       }
@@ -116,14 +116,38 @@ extension DatabaseExecutor {
 
 #if DEBUG
 struct OverridesContainer {
-  var overrides: [(route: AnyOverride, value: Any)] = []
+  typealias FetchValue = (DatabaseRoute, JSONDecoder) async throws -> Any
 
-  func firstMatch(of route: DatabaseRoute) -> Any? {
-    overrides.first(where: { $0.route.matches(route) })?.value
+  var overrides: [(route: AnyOverride, value: FetchValue)] = []
+
+  func firstMatch(of route: DatabaseRoute, decoder: JSONDecoder) async -> Any? {
+    for override in overrides {
+      if let match = try? await override.route.matches(route), 
+          match == true
+      {
+        return try? await override.value(route, decoder)
+      }
+    }
+    return nil
   }
 
-  mutating func insert<V>(_ override: AnyOverride, value: V) {
-    overrides.insert((route: override, value: value as Any), at: 0)
+  mutating func insert<V>(_ override: AnyOverride, value: @escaping () async throws -> V) {
+    overrides.insert((route: override, value: { _, _ in try await value() as Any } ), at: 0)
+  }
+
+  mutating func insert<V>(
+    _ override: AnyOverride,
+    value: @escaping (DatabaseRoute, JSONDecoder) async throws -> V
+  ) {
+    overrides.insert(
+      (
+        route: override,
+        value: { route, decoder in
+          try await value(route, decoder) as Any
+        }
+      ),
+      at: 0
+    )
   }
 
   mutating func reset() {
@@ -132,10 +156,10 @@ struct OverridesContainer {
 }
 
 // Used internally to match route overrides.
-enum AnyOverride: Equatable {
+enum AnyOverride {
 
   // Match a full route.
-  case route(DatabaseRoute)
+  case route(() async throws -> DatabaseRoute)
 
   // Match a partial route.
   case partial(table: AnyTable, method: DatabaseRoute.Method)
@@ -143,10 +167,10 @@ enum AnyOverride: Equatable {
   // Match a route by id and table.
   case id(String, table: AnyTable)
 
-  func matches(_ route: DatabaseRoute) -> Bool {
+  func matches(_ route: DatabaseRoute) async throws -> Bool {
     switch self {
-    case let .route(route):
-      return route == route
+    case let .route(build):
+      return try await build() == route
     case let .partial(table: table, method: method):
       return table == route.table && method == route.method
     case let .id(id, table: table):

@@ -25,7 +25,7 @@ import Supabase
 ///   case update(id: Todo.ID, updates: TodoUpdateRequest)
 ///   case upsert(Todo)
 ///
-///   public func route() throws -> DatabaseRoute {
+///   public func route() async throws -> DatabaseRoute {
 ///     switch self {
 ///     case let .delete(filters):
 ///       return .delete(from: Self.table, filters: filters)
@@ -54,7 +54,7 @@ import Supabase
 ///   case todos(TodoRoute)
 ///   ...
 ///
-///   func route() throws -> DatabaseRoute {
+///   func route() async throws -> DatabaseRoute {
 ///     switch self {
 ///     case let .todos(todos):
 ///       return try todos.route()

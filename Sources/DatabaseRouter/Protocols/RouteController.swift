@@ -6,5 +6,5 @@ import PostgREST
 public protocol RouteController {
 
   /// Return the route container for the given route.
-  func route() throws -> DatabaseRoute
+  func route() async throws -> DatabaseRoute
 }

@@ -70,7 +70,7 @@ struct AuthFeature {
     case task
   }
 
-  @Dependency(\.supabaseClient) var supabaseClient
+  @Dependency(\.supabase.auth) var auth
 
   var body: some ReducerOf<Self> {
     BindingReducer()
@@ -100,14 +100,14 @@ struct AuthFeature {
               TaskResult {
                 switch mode {
                 case .signIn:
-                  guard let session = try await supabaseClient.auth.login(credentials: credentials)
+                  guard let session = try? await auth.login(credentials: credentials)
                   else {
                     throw AuthenticationError()
                   }
                   return session
                 case .signUp:
-                  _ = try await supabaseClient.auth.signUp(.credentials(credentials))
-                  guard let session = try await supabaseClient.auth.login(credentials: credentials)
+                  _ = try await auth.signUp(with: .credentials(credentials))
+                  guard let session = try? await auth.login(credentials: credentials)
                   else {
                     throw AuthenticationError()
                   }
@@ -120,7 +120,7 @@ struct AuthFeature {
       case .task:
         return .run { send in
           // Attempts to login with already saved credentials.
-          if let session = try? await supabaseClient.auth.login() {
+          if let session = await auth.login() {
             await send(.receiveSession(.success(session)))
           }
         }
@@ -184,7 +184,7 @@ struct AuthView: View {
         store: .init(initialState: .init()) {
           AuthFeature()
         } withDependencies: {
-          $0.supabaseClient.auth = .mock()
+          $0.supabase.auth = .mock()
         }
       )
     }

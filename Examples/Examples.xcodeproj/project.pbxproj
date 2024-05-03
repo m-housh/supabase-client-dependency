@@ -22,6 +22,7 @@
 		4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1B2A938C8E006A21FC /* TodoModel.swift */; };
 		4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1D2A93BCE7006A21FC /* AuthView.swift */; };
 		4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1F2A93BF46006A21FC /* ErrorText.swift */; };
+		4CC037C62BE50E9A0053B8D0 /* IdentifiedStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */; };
 		4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */; };
 /* End PBXBuildFile section */
 
@@ -70,6 +71,7 @@
 			files = (
 				4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */,
 				4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */,
+				4CC037C62BE50E9A0053B8D0 /* IdentifiedStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,6 +215,7 @@
 			packageProductDependencies = (
 				4C0799B22A92FC4700699C91 /* ComposableArchitecture */,
 				4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */,
+				4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */,
 			);
 			productName = Examples;
 			productReference = 4C0799802A92FBC500699C91 /* Examples.app */;
@@ -289,6 +292,7 @@
 			packageReferences = (
 				4C0799AE2A92FC1300699C91 /* XCLocalSwiftPackageReference ".." */,
 				4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */,
 			);
 			productRefGroup = 4C0799812A92FBC500699C91 /* Products */;
 			projectDirPath = "";
@@ -714,6 +718,14 @@
 				minimumVersion = 1.1.0;
 			};
 		};
+		4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/m-housh/swift-identified-storage.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -721,6 +733,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */;
+			productName = IdentifiedStorage;
 		};
 		4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */ = {
 			isa = XCSwiftPackageProductDependency;

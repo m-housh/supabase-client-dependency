@@ -17,7 +17,7 @@ import PostgREST
 ///   case delete(id: Todo.ID)
 ///   ...
 ///
-///   func routes() throws -> RouteContainer {
+///   func routes() async throws -> DatabaseRoute {
 ///     switch self {
 ///       case .fetch:
 ///         return .fetch(from: Self.table)
@@ -33,7 +33,7 @@ import PostgREST
 ///   case todos(TodosRouter)
 ///   ...
 ///
-///   func routes() throws -> RouteContainer {
+///   func routes() async throws -> DatabaseRoute {
 ///     switch self {
 ///       case let .todos(todos):
 ///         return try todos.route()
@@ -132,7 +132,16 @@ public struct DatabaseRouter<Routes: RouteController>: CasePathable where Routes
 #if DEBUG
 extension DatabaseRouter {
   // MARK: - Overrides
-  private func insertOverride<V>(route: AnyOverride, value: V) {
+  private func insertOverride<V>(
+    route: AnyOverride,
+    value: @escaping () async throws -> V
+  ) {
+    DatabaseExecutor.currentOverrides.insert(route, value: value)
+  }
+  private func insertOverride<V>(
+    route: AnyOverride,
+    value: @autoclosure @escaping () -> V
+  ) {
     DatabaseExecutor.currentOverrides.insert(route, value: value)
   }
   /// Override the given route with the value.
@@ -144,8 +153,18 @@ extension DatabaseRouter {
     _ route: Routes,
     with value: A
   ) {
-    let route = try! route.route()
-    insertOverride(route: .route(route), value: value)
+    insertOverride(route: .route(route.route), value: value)
+  }
+  /// Override the given route with the value.
+  ///
+  /// - Parameters:
+  ///   - route: The route to override.
+  ///   - value: The value to return when the route is called.
+  public func override<A>(
+    _ route: Routes,
+    with value: @escaping () async throws -> A
+  ) {
+    insertOverride(route: .route(route.route), value: value)
   }
   /// Override the given route with a void value.
   ///
@@ -154,8 +173,7 @@ extension DatabaseRouter {
   public func override(
     _ route: Routes
   ) {
-    let route = try! route.route()
-    insertOverride(route: .route(route), value: ())
+    insertOverride(route: .route(route.route), value: ())
   }
   /// Override the given route method with the value.
   ///
@@ -167,6 +185,19 @@ extension DatabaseRouter {
     _ method: DatabaseRoute.Method,
     in table: AnyTable,
     with value: A
+  ) {
+    insertOverride(route: .partial(table: table, method: method), value: value)
+  }
+  /// Override the given route method with the value.
+  ///
+  /// - Parameters:
+  ///   - method: The route method to override.
+  ///   - table: The table to override the method in.
+  ///   - value: The value to return when the route is called.
+  public func override<A>(
+    _ method: DatabaseRoute.Method,
+    in table: AnyTable,
+    with value: @escaping () async throws -> A
   ) {
     insertOverride(route: .partial(table: table, method: method), value: value)
   }
@@ -191,6 +222,19 @@ extension DatabaseRouter {
     id: String,
     in table: AnyTable,
     with value: A
+  ) {
+    insertOverride(route: .id(id, table: table), value: value)
+  }
+  /// Override the given route method with the value.
+  ///
+  /// - Parameters:
+  ///   - id: The route identifier to override.
+  ///   - table: The table to override the method in.
+  ///   - value: The value to return when the route is called.
+  public func override<A>(
+    id: String,
+    in table: AnyTable,
+    with value: @escaping () async throws -> A
   ) {
     insertOverride(route: .id(id, table: table), value: value)
   }

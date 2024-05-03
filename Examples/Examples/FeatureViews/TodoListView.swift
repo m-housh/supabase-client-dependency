@@ -28,7 +28,7 @@ struct TodoListFeature {
     case task
   }
 
-  @Dependency(\.database) var database
+  @Dependency(\.supabase.router.todos) var database
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -41,7 +41,7 @@ struct TodoListFeature {
       case let .delete(id: todoId):
         state.todos?.remove(id: todoId)
         return .run { _ in
-          try await database.todos.delete(todoId)
+          try await database(.delete(id: todoId))
         }
 
       case .destination:
@@ -117,7 +117,7 @@ struct TodoListFeature {
         return .run { send in
           await send(
             .receiveTodos(
-              TaskResult { try await database.todos.fetch() }
+              TaskResult { try await database(.fetch) }
             ))
         }
 
@@ -129,9 +129,9 @@ struct TodoListFeature {
 
   private func saveNewTodo(form: TodoFormFeature.State) async -> TaskResult<TodoModel> {
     await TaskResult {
-      try await database.todos.insert(
+      try await database(.insert(
         .init(description: form.description, complete: form.isComplete)
-      )
+      ))
     }
   }
 
@@ -141,7 +141,7 @@ struct TodoListFeature {
   ) async -> TaskResult<TodoModel>? {
 
     // Create the update request with changes from the original todo.
-    let updateRequest = DatabaseClient.Todos.UpdateRequest(
+    let updateRequest = DatabaseRoutes.Todos.UpdateRequest(
       description: form.description == original.description ? nil : form.description,
       complete: form.isComplete == original.isComplete ? nil : form.isComplete
     )
@@ -151,7 +151,7 @@ struct TodoListFeature {
 
     // Save the updates.
     return await TaskResult {
-      try await database.todos.update(original.id, updateRequest)
+      try await database(.update(id: original.id, updates: updateRequest))
     }
   }
 }

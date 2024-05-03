@@ -15,10 +15,11 @@ final class DatabaseClientTests: XCTestCase {
     }
   }
 
-  func testOverrideMatching() {
+  func testOverrideMatching() async throws {
     let route = DatabaseRoute.delete(id: "foo", from: .todos)
     let override = AnyOverride.partial(table: .todos, method: .delete)
-    XCTAssertTrue(override.matches(route))
+    let match = try await override.matches(route)
+    XCTAssertTrue(match)
   }
 
   func testDeleteOverride() async throws {
