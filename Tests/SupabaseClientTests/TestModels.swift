@@ -3,14 +3,15 @@ import DatabaseRouter
 import Dependencies
 import Foundation
 import SupabaseClientDependencies
+import Supabase
 
-extension AnyTable {
+extension DatabaseTable {
   static var todos: Self { .init("todos") }
 }
 
-enum TodoColumn: String, ColumnRepresentable {
-  case description
-  case isComplete = "complete"
+extension DatabaseColumn {
+  static let description: Self = "description"
+  static let isComplete: Self = "complete"
 }
 
 struct Todo: Codable, Hashable, Identifiable {
@@ -89,7 +90,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 
 @CasePathable
 enum TodoRoute: RouteCollection {
-  static var table: AnyTable { AnyTable.todos }
+  static var table: DatabaseTable { DatabaseTable.todos }
 
   case delete(filteredBy: [DatabaseFilter])
   case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
@@ -151,22 +152,36 @@ enum TodoRoute: RouteCollection {
   }
 }
 
-@CasePathable
-enum DbRoutes: RouteCollection {
+struct DbRoutes {
 
-  case todos(TodoRoute)
-
-  func route() throws -> DatabaseRoute {
-    switch self {
-    case let .todos(todos):
-      return try todos.route()
-    }
+  var todos: DatabaseRouter<TodoRoute>
+  
+  init(database: PostgrestClient) {
+    self.todos = .init(database: database)
   }
+
+}
+
+private let supabaseClient = SupabaseClient.local()
+
+extension DbRoutes: DependencyKey {
+  
+  static var testValue: DbRoutes { .init(database: supabaseClient.schema("public")) }
+  static var liveValue: DbRoutes { .testValue }
 }
 
 extension DependencyValues {
-  var supabaseClient: SupabaseClientDependency<DbRoutes> {
-    get { self[SupabaseClientDependency<DbRoutes>.self] }
-    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+  var router: DbRoutes {
+    get { self[DbRoutes.self] }
+    set { self[DbRoutes.self] = newValue }
   }
 }
+
+
+
+//extension DependencyValues {
+//  var supabaseClient: SupabaseClientDependency<DbRoutes> {
+//    get { self[SupabaseClientDependency<DbRoutes>.self] }
+//    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+//  }
+//}

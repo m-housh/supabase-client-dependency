@@ -1,11 +1,32 @@
 import Foundation
+import PostgREST
+
+extension PostgrestFilterBuilder {
+
+  /// Applies an optional order by clause to a database query.
+  ///
+  ///  - Parameters:
+  ///   - order: The optional order by clause to apply to the query if applicable.
+  public func order(by order: DatabaseOrder?) -> PostgrestTransformBuilder {
+    if let order {
+      return self.order(
+        order.column.name,
+        ascending: order.ascending,
+        nullsFirst: order.nullsFirst,
+        referencedTable: order.foreignTable?.name
+      )
+    }
+    return self
+  }
+}
+
 
 /// Represents an order by clause used for a database query.
 ///
 public struct DatabaseOrder: Equatable, Sendable {
 
   /// The column name to use for the order by clause.
-  public let column: String
+  public let column: DatabaseColumn
 
   /// Whether the values are returned in ascending or descending order.
   public let ascending: Bool
@@ -14,7 +35,7 @@ public struct DatabaseOrder: Equatable, Sendable {
   public let nullsFirst: Bool
 
   /// An foreign table to use if the column is a foreign column.
-  public let foreignTable: String?
+  public let foreignTable: DatabaseTable?
 
   /// Create a new order by clause for the result with the specified `column`.
   ///
@@ -23,16 +44,16 @@ public struct DatabaseOrder: Equatable, Sendable {
   ///   - ascending: If `true`, the result will be in ascending order.
   ///   - nullsFirst: If `true`, `null`s appear first.
   ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
-  public init<C: ColumnRepresentable, T: TableRepresentable>(
-    column: C,
+  public init(
+    column: DatabaseColumn,
     ascending: Bool = true,
     nullsFirst: Bool = false,
-    foreignTable: T? = nil
+    foreignTable: DatabaseTable? = nil
   ) {
-    self.column = column.columnName
+    self.column = column
     self.ascending = ascending
     self.nullsFirst = nullsFirst
-    self.foreignTable = foreignTable?.tableName
+    self.foreignTable = foreignTable
   }
 
   /// Create a new order by clause for the result with the specified `column`.
@@ -41,35 +62,33 @@ public struct DatabaseOrder: Equatable, Sendable {
   ///   - column: The column to order on.
   ///   - ascending: If `true`, the result will be in ascending order.
   ///   - nullsFirst: If `true`, `null`s appear first.
-  public init<C: ColumnRepresentable>(
-    column: C,
+  public init(
+    column: DatabaseColumn,
     ascending: Bool = true,
     nullsFirst: Bool = false
   ) {
-    self.column = column.columnName
+    self.column = column
     self.ascending = ascending
     self.nullsFirst = nullsFirst
     self.foreignTable = nil
   }
 }
 
-extension ColumnRepresentable {
+extension DatabaseColumn {
 
-  public func ascending<T: TableRepresentable>(
-    nullsFirst: Bool = false,
-    foreignTable: T? = nil
-  ) -> DatabaseOrder {
-    .init(
-      column: self,
-      ascending: true,
-      nullsFirst: nullsFirst,
-      foreignTable: foreignTable
-    )
-  }
-
+  /// Allows creating an ascending ``DatabaseOrder`` from a column.
+  ///
+  /// ### Example
+  /// ```swift
+  ///   database.from("mytable").select().order(by: "myColumn".ascending())
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - nullsFirst: If `true`, `null`s appear first.
+  ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
   public func ascending(
     nullsFirst: Bool = false,
-    foreignTable: String? = nil
+    foreignTable: DatabaseTable? = nil
   ) -> DatabaseOrder {
     .init(
       column: self,
@@ -78,22 +97,21 @@ extension ColumnRepresentable {
       foreignTable: foreignTable
     )
   }
-
-  public func descending<T: TableRepresentable>(
-    nullsFirst: Bool = false,
-    foreignTable: T? = nil
-  ) -> DatabaseOrder {
-    .init(
-      column: self,
-      ascending: false,
-      nullsFirst: nullsFirst,
-      foreignTable: foreignTable
-    )
-  }
-
+  
+  /// Allows creating a descending ``DatabaseOrder`` from a column.
+  ///
+  /// ### Example
+  /// ```swift
+  ///   database.from("mytable").select().order(by: "myColumn".descending())
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - nullsFirst: If `true`, `null`s appear first.
+  ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
+ 
   public func descending(
     nullsFirst: Bool = false,
-    foreignTable: String? = nil
+    foreignTable: DatabaseTable? = nil
   ) -> DatabaseOrder {
     .init(
       column: self,
@@ -102,5 +120,4 @@ extension ColumnRepresentable {
       foreignTable: foreignTable
     )
   }
-
 }

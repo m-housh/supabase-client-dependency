@@ -14,7 +14,7 @@ extension DependencyValues {
 
 struct DatabaseRoutes {
 
-  var todos: RouteController<TodoRoute>
+  var todos: DatabaseRouter<TodoRoute>
 
   enum TodoRoute: RouteCollection {
     case delete(id: TodoModel.ID)
@@ -95,13 +95,13 @@ extension DatabaseRoutes: TestDependencyKey {
           // Overrides for preview mode.
           switch route {
           case let .delete(id: id):
-              return .ok { try await todos.delete(id: id) }
+              return await .init { try await todos.delete(id: id) }
           case .fetch:
-            return .ok { try await todos.fetch() }
+            return await .init { try await todos.fetch() }
           case let .insert(todo):
-            return .ok { try await todos.insert(request: todo) }
+            return await .init { try await todos.insert(request: todo) }
           case let .update(id: id, updates: updates):
-            return .ok { try await todos.update(id: id, request: updates) }
+            return await .init { try await todos.update(id: id, request: updates) }
           }
         }
       )

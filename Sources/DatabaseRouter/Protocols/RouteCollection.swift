@@ -1,4 +1,3 @@
-import DatabaseExtensions
 import Dependencies
 import PostgREST
 

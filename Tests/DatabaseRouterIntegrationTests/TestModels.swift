@@ -2,6 +2,8 @@ import CasePaths
 import DatabaseRouter
 import Dependencies
 import Foundation
+import PostgREST
+import Supabase
 import SupabaseClientDependencies
 
 extension AnyTable {
@@ -153,41 +155,35 @@ enum TodoRoute: RouteCollection {
 
 //struct NotFoundError: Error { }
 
-@CasePathable
-enum DbRoutes: RouteController {
-
-  case todos(TodoRoute)
-
-  func route() throws -> DatabaseRoute {
-    switch self {
-    case let .todos(todos):
-      return try todos.route()
-    }
+//@CasePathable
+struct DbRoutes: DatabaseRouter {
+  
+  var todos: DatabaseRouter<TodoRoute>
+  
+  init(database: PostgrestClient) {
+    self.todos = .init(database: database)
   }
+
 }
 
+private let supabaseClient = SupabaseClient.local()
 
-struct RouterKey {
-  var router: DatabaseRouter<DbRoutes> = .init()
-}
-
-
-extension RouterKey: DependencyKey, TestDependencyKey {
-  public static var testValue: Self = .init()
+extension DbRoutes: DependencyKey, TestDependencyKey {
+  public static var testValue: Self = .init(database: supabaseClient.schema("public"))
   public static var liveValue: Self { .testValue }
 }
 
 
 extension DependencyValues {
-  var router: DatabaseRouter<DbRoutes> {
-    get { self[RouterKey.self].router }
-    set { self[RouterKey.self].router = newValue }
+  var router: DbRoutes {
+    get { self[DbRoutes.self] }
+    set { self[DbRoutes.self] = newValue }
   }
 }
 
-extension DependencyValues {
-  var supabaseClient: SupabaseClientDependency<DbRoutes> {
-    get { self[SupabaseClientDependency<DbRoutes>.self] }
-    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
-  }
-}
+//extension DependencyValues {
+//  var supabaseClient: SupabaseClientDependency<DbRoutes> {
+//    get { self[SupabaseClientDependency<DbRoutes>.self] }
+//    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+//  }
+//}

@@ -1,10 +1,11 @@
 import CasePaths
-import XCTest
 import DatabaseExtensions
 import DatabaseRouter
 import Dependencies
 import IdentifiedCollections
+import Supabase
 import SupabaseClientDependencies
+import XCTest
 
 final class DatabaseClientIntegrationTests: XCTestCase {
 
@@ -36,114 +37,43 @@ final class DatabaseClientIntegrationTests: XCTestCase {
       .execute()
   }
 
-  override func invokeTest() {
-    let supabase = SupabaseClientDependency<DbRoutes>.live(client: .local())
-    let database = supabase.client.schema("public")
-    withDependencies {
-      $0.supabaseClient = supabase
-      $0.databaseExecutor = .live(database: database)
-    } operation: {
-      super.invokeTest()
-    }
-  }
+//  override func invokeTest() {
+////    let supabase = SupabaseClientDependency<DbRoutes>.live(client: .local())
+//    let database = supabase.client.schema("public")
+//    withDependencies {
+//      $0.supabaseClient = supabase
+//      $0.databaseExecutor = .live(database: database)
+//    } operation: {
+//      super.invokeTest()
+//    }
+//  }
 
   public func testIntegration() async throws {
-    @Dependency(\.supabaseClient) var database;
+    @Dependency(\.router.todos) var router;
 
-    var todos: IdentifiedArrayOf<Todo> = try await database.from(.todos).fetch().execute().value
+    var todos: IdentifiedArrayOf<Todo> = try await router(.fetch())
     XCTAssertEqual(todos, [])
 
-    let insertedTodo: Todo = try await database.from(.todos).insert(
+    let insertedTodo: Todo = try await router(.insert(
       TodoInsertRequest(description: "Implement integration tests for supabase-client-dependency.")
-    )
-    .execute()
-    .value
+    ))
 
-    todos = try await database.from(.todos).fetch().execute().value
+    todos = try await router(.fetch)
     XCTAssertEqual(todos, [insertedTodo])
 
-    let insertedTodos: [Todo] = try await database.from(.todos).insert(
+    let insertedTodos: [Todo] = try await router(.insert(
       [
         TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
         TodoInsertRequest(description: "Drink some coffee.")
       ]
-    ).execute().value
+    ))
 
-    todos = try await database.from(.todos).fetch().execute().value
+    todos = try await router(.fetch())
     XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
 
-    let orderedTodos: [Todo] = try await database.from(.todos).fetch(
-      orderBy: TodoColumn.description.ascending()
-    ).execute().value
-    XCTAssertEqual(
-      orderedTodos,
-      [
-        insertedTodos[1],
-        insertedTodo,
-        insertedTodos[0]
-      ]
-    )
-
-    let drinkCoffeeTodo = insertedTodos[1]
-    let fetchOneTodo: Todo = try await database.from(.todos).fetchOne(
-      id: drinkCoffeeTodo.id
-    ).execute().value
-    XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
-
-    let updatedTodo: Todo = try await database.from(.todos).update(
-      id: drinkCoffeeTodo.id,
-      with: TodoUpdateRequest(isComplete: true)
-    ).execute().value
-    XCTAssertEqual(updatedTodo.isComplete, true)
-
-    let completedTodos: [Todo] = try await database.from(.todos).fetch(
-      filteredBy: TodoColumn.isComplete.equals(true)
-    ).execute().value
-    XCTAssertEqual(completedTodos, [updatedTodo])
-
-    try await database.from(.todos).delete(
-      filteredBy: TodoColumn.isComplete.equals(true)
-    ).execute().value
-    todos = try await database.from(.todos).fetch().execute().value
-    XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
-
-    let firstTodo = todos.first!
-    try await database.from(.todos).delete(id: firstTodo.id).execute().value
-  }
-
-  public func testDatabaseRouter() async throws {
-    @Dependency(\.supabaseClient.router) var router;
-    @Dependency(\.router.todos) var todosRouter
-
-    var todos: IdentifiedArrayOf<Todo> = try await router(.todos(.fetch))
-    XCTAssertEqual(todos, [])
-    
-    todos = try await todosRouter(.fetch)
-    XCTAssertEqual(todos, [])
-
-    todos = try await router(.todos(.fetch()))
-    XCTAssertEqual(todos, [])
-
-    let insertedTodo: Todo = try await router(.todos(.insert(
-        TodoInsertRequest(
-          description: "Implement integration test for supabase-client-dependencies"
-        )
-    )))
-    todos = try await todosRouter(.fetch)
-    XCTAssertEqual(todos, [insertedTodo])
-    let insertedTodos: [Todo] = try await router(.todos(.insert(
-      [
-        TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
-        TodoInsertRequest(description: "Drink some coffee.")
-      ]
-    )))
-
-    todos = try await todosRouter(.fetch)
-    XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
-
-    let orderedTodos: [Todo] = try await router(.todos(.fetch(
+    let orderedTodos: [Todo] = try await router(.fetch(
       orderedBy: TodoColumn.description.ascending()
-    )))
+    ))
     XCTAssertEqual(
       orderedTodos,
       [
@@ -154,33 +84,102 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     )
 
     let drinkCoffeeTodo = insertedTodos[1]
-    let fetchOneTodo: Todo = try await router(.todos(.fetchOne(
+    let fetchOneTodo: Todo = try await router(.fetchOne(
       id: drinkCoffeeTodo.id
-    )))
+    ))
     XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
-    
-//    let fetchOneKp = \DbRoutes.Cases.todos.fetchOne
-//    let q = fetchOneKp(drinkCoffeeTodo.id)
-    
-    let updatedTodo: Todo = try await todosRouter(.update(
+
+    let updatedTodo: Todo = try await router(.update(
       id: drinkCoffeeTodo.id,
       updates: TodoUpdateRequest(isComplete: true)
     ))
     XCTAssertEqual(updatedTodo.isComplete, true)
 
-    let completedTodos: [Todo] = try await todosRouter(.fetch(
+    let completedTodos: [Todo] = try await router(.fetch(
       filteredBy: TodoColumn.isComplete.equals(true)
     ))
     XCTAssertEqual(completedTodos, [updatedTodo])
 
-    try await router(.todos(.delete(TodoColumn.isComplete.equals(true))))
-    todos = try await router(.todos(.fetch))
+    try await router(.delete(
+      filteredBy: [TodoColumn.isComplete.equals(true)]
+    ))
+    todos = try await router(.fetch())
     XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
 
     let firstTodo = todos.first!
-    try await todosRouter(.delete(id: firstTodo.id))
-//    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
+    try await router(.delete(id: firstTodo.id))
   }
+
+//  public func testDatabaseRouter() async throws {
+//    @Dependency(\.supabaseClient.router) var router;
+//    @Dependency(\.router.todos) var todosRouter
+//
+//    var todos: IdentifiedArrayOf<Todo> = try await router(.todos(.fetch))
+//    XCTAssertEqual(todos, [])
+//    
+//    todos = try await todosRouter(.fetch)
+//    XCTAssertEqual(todos, [])
+//
+//    todos = try await router(.todos(.fetch()))
+//    XCTAssertEqual(todos, [])
+//
+//    let insertedTodo: Todo = try await router(.todos(.insert(
+//        TodoInsertRequest(
+//          description: "Implement integration test for supabase-client-dependencies"
+//        )
+//    )))
+//    todos = try await todosRouter(.fetch)
+//    XCTAssertEqual(todos, [insertedTodo])
+//    let insertedTodos: [Todo] = try await router(.todos(.insert(
+//      [
+//        TodoInsertRequest(description: "Make supabase-client-dependency production ready."),
+//        TodoInsertRequest(description: "Drink some coffee.")
+//      ]
+//    )))
+//
+//    todos = try await todosRouter(.fetch)
+//    XCTAssertEqual(todos, [insertedTodo] + insertedTodos)
+//
+//    let orderedTodos: [Todo] = try await router(.todos(.fetch(
+//      orderedBy: TodoColumn.description.ascending()
+//    )))
+//    XCTAssertEqual(
+//      orderedTodos,
+//      [
+//        insertedTodos[1],
+//        insertedTodo,
+//        insertedTodos[0]
+//      ]
+//    )
+//
+//    let drinkCoffeeTodo = insertedTodos[1]
+//    let fetchOneTodo: Todo = try await router(.todos(.fetchOne(
+//      id: drinkCoffeeTodo.id
+//    )))
+//    XCTAssertEqual(drinkCoffeeTodo, fetchOneTodo)
+//    
+////    let fetchOneKp = \DbRoutes.Cases.todos.fetchOne
+////    let q = fetchOneKp(drinkCoffeeTodo.id)
+//    
+//    let updatedTodo: Todo = try await todosRouter(.update(
+//      id: drinkCoffeeTodo.id,
+//      updates: TodoUpdateRequest(isComplete: true)
+//    ))
+//    XCTAssertEqual(updatedTodo.isComplete, true)
+//
+//    let completedTodos: [Todo] = try await todosRouter(.fetch(
+//      filteredBy: TodoColumn.isComplete.equals(true)
+//    ))
+//    XCTAssertEqual(completedTodos, [updatedTodo])
+//
+//    try await router(.todos(.delete(TodoColumn.isComplete.equals(true))))
+//    todos = try await router(.todos(.fetch))
+//    XCTAssertTrue(completedTodos.allSatisfy { todo in !todos.contains(todo) })
+//
+//    let firstTodo = todos.first!
+//    try await todosRouter(.delete(id: firstTodo.id))
+////    try await database.delete(id: firstTodo.id, from: AnyTable.todos)
+//  }
 
   func testOverrides() async throws {
     let mocks = withDependencies {
@@ -190,10 +189,10 @@ final class DatabaseClientIntegrationTests: XCTestCase {
     }
 
     try await withDependencies {
-      $0.router.override(.todos(.fetch), with: mocks)
+      $0.router.todos.override(.fetch, with: mocks)
     } operation: {
       @Dependency(\.router) var router
-      let sut: [Todo] = try await router(.todos(.fetch))
+      let sut: [Todo] = try await router.todos(.fetch)
       XCTAssertEqual(sut, mocks)
     }
   }

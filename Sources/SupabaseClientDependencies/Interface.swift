@@ -1,6 +1,5 @@
 @_exported import AuthController
 import CasePaths
-@_exported import DatabaseExtensions
 @_exported import DatabaseRouter
 import Dependencies
 import Foundation
@@ -98,24 +97,24 @@ public struct SupabaseClientDependency<Routes: RouteCollection> where Routes: Ca
   /// overriding database routes for previews and tests.  And allows you to model your database routes as
   /// enum's.
   ///
-  public var router: DatabaseRouter<Routes>
+//  public var router: DatabaseRouter<Routes>
 
   public init(
     auth: AuthController? = nil,
-    client: SupabaseClient,
-    router: DatabaseRouter<Routes>? = nil
+    client: SupabaseClient
+//    router: DatabaseRouter<Routes>? = nil
   ) {
     self.auth = auth ?? .live(auth: client.auth)
     self.client = client
-    self.router = router ?? .init()
+//    self.router = router ?? .init()
   }
 
   /// Create a database query for the given table.
   ///
   /// - Parameters:
   ///   - table: The table to create the query on.
-  public func from(_ table: AnyTable) -> PostgrestQueryBuilder {
-    self.client.from(table.tableName)
+  public func from(_ table: DatabaseTable) -> PostgrestQueryBuilder {
+    self.client.from(table.name)
   }
 
   /// Access the properties on the supabase client.
@@ -129,8 +128,8 @@ extension SupabaseClientDependency: TestDependencyKey {
     let client = SupabaseClient.local()
     return .init(
       auth: XCTestDynamicOverlay.unimplemented("\(Self.self).auth", placeholder: .live(auth: client.auth)),
-      client: XCTestDynamicOverlay.unimplemented("\(Self.self).client", placeholder: client),
-      router: XCTestDynamicOverlay.unimplemented("\(Self.self).router", placeholder: .init())
+      client: XCTestDynamicOverlay.unimplemented("\(Self.self).client", placeholder: client)
+//      router: XCTestDynamicOverlay.unimplemented("\(Self.self).router", placeholder: .init())
     )
   }
 }

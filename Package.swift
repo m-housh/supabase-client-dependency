@@ -13,7 +13,6 @@ let package = Package(
   ],
   products: [
     .library(name: "AuthController", targets: ["AuthController"]),
-    .library(name: "DatabaseExtensions", targets: ["DatabaseExtensions"]),
     .library(name: "DatabaseRouter", targets: ["DatabaseRouter"]),
     .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
   ],
@@ -23,7 +22,15 @@ let package = Package(
       from: "1.0.0"
     ),
     .package(
+      url: "https://github.com/pointfreeco/swift-concurrency-extras",
+      from: "1.0.0"
+    ),
+    .package(
       url: "https://github.com/pointfreeco/swift-dependencies.git",
+      from: "1.0.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-identified-collections.git",
       from: "1.0.0"
     ),
     .package(
@@ -51,18 +58,11 @@ let package = Package(
       ]
     ),
     .target(
-      name: "DatabaseExtensions",
-      dependencies: [
-        .product(name: "PostgREST", package: "supabase-swift"),
-      ]
-    ),
-    .target(
       name: "DatabaseRouter",
       dependencies: [
-        "DatabaseExtensions",
         .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
         .product(name: "Dependencies", package: "swift-dependencies"),
-//        .product(name: "DependenciesMacros", package: "swift-dependencies"),
         .product(name: "PostgREST", package: "supabase-swift"),
       ]
     ),
@@ -71,14 +71,14 @@ let package = Package(
       dependencies: [
         "DatabaseRouter",
         "SupabaseClientDependencies",
-        .product(name: "CasePaths", package: "swift-case-paths")
+        .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
       ]
     ),
     .target(
       name: "SupabaseClientDependencies",
       dependencies: [
         "AuthController",
-        "DatabaseExtensions",
         "DatabaseRouter",
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
