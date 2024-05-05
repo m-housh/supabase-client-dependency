@@ -163,15 +163,15 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   public func callAsFunction(
     _ route: Route
   ) async throws {
-    guard await override(for: route) == nil else { return }
-    try await logIfError("Run Route:") { try await execute(route) }
+    try await data(for: route)
   }
 
   // Checks if there's an override for the given route, returning the
   // override data otherwise executes the route returning the data from
   // the database.
+  @discardableResult
   private func data(for route: Route) async throws -> Data {
-    guard let match = await override(for: route) else {
+    guard let match = try await overrides.firstMatch(of: route) else {
       return try await logIfError("Execute Route:") {
         try await execute(route)
       }
@@ -181,12 +181,6 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
     }
   }
   
-  // Checks for an override, returing the overrides result if found.
-  private func override(for route: Route) async -> DatabaseResult? {
-    await overrides.firstMatch(of: route)
-  }
-  
-  @discardableResult
   private func logIfError<T>(
     _ prefix: String? = nil,
     _ call: @escaping () async throws -> T
@@ -205,6 +199,35 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
 
 #if DEBUG
 extension DatabaseRouter {
+  private struct UnexpectedRouteError: Error { }
+  
+  /// Override a route with the database result.
+  ///
+  /// ### Example
+  /// ```swift
+  /// router.override(.method(.delete, in: "todos"), with: .failure(MyError()))
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - override: The override used to match a route.
+  ///   - result: The result to return when the route is called.
+  public mutating func override<T>(
+    case caseKeyPath: CaseKeyPath<Route, T>,
+    with result: @escaping @Sendable (T) async throws -> DatabaseResult
+  ) where Route: CasePathable {
+    overrides.insert(
+      .case(caseKeyPath),
+      result: { route in
+        guard let input = AnyCasePath(caseKeyPath).extract(from: route) else {
+          // This should never happen becase the route is matched prior to
+          // getting here.
+          throw UnexpectedRouteError()
+        }
+        return try await result(input)
+      }
+    )
+  }
+
   /// Override a route with the database result.
   ///
   /// ### Example
@@ -261,16 +284,14 @@ extension DatabaseRouter {
 
   // Represents a collection of overrides managed by the router.
   struct _OverridesContainer {
-    typealias FetchValue = (Route) async -> DatabaseResult
+    typealias FetchValue = (Route) async throws -> DatabaseResult
     
     private var overrides: [(route: Override, result: FetchValue)] = []
     
-    func firstMatch(of route: Route) async -> DatabaseResult? {
+    func firstMatch(of route: Route) async throws -> DatabaseResult? {
       for override in overrides {
-        if let match = try? await override.route.match(route),
-           match == true
-        {
-          return await override.result(route)
+        if try await override.route.match(route) {
+          return try await override.result(route)
         }
       }
       return nil
