@@ -27,7 +27,7 @@ extension DatabaseRoute {
   public struct Order: Equatable, Sendable {
     
     /// The column name to use for the order by clause.
-    public let column: DatabaseColumn
+    public let column: DatabaseRoute.Column
     
     /// Whether the values are returned in ascending or descending order.
     public let ascending: Bool
@@ -36,7 +36,7 @@ extension DatabaseRoute {
     public let nullsFirst: Bool
     
     /// An foreign table to use if the column is a foreign column.
-    public let foreignTable: DatabaseTable?
+    public let foreignTable: DatabaseRoute.Table?
     
     /// Create a new order by clause for the result with the specified `column`.
     ///
@@ -46,10 +46,10 @@ extension DatabaseRoute {
     ///   - nullsFirst: If `true`, `null`s appear first.
     ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
     public init(
-      column: DatabaseColumn,
+      column: DatabaseRoute.Column,
       ascending: Bool = true,
       nullsFirst: Bool = false,
-      foreignTable: DatabaseTable? = nil
+      foreignTable: DatabaseRoute.Table? = nil
     ) {
       self.column = column
       self.ascending = ascending
@@ -64,7 +64,7 @@ extension DatabaseRoute {
     ///   - ascending: If `true`, the result will be in ascending order.
     ///   - nullsFirst: If `true`, `null`s appear first.
     public init(
-      column: DatabaseColumn,
+      column: DatabaseRoute.Column,
       ascending: Bool = true,
       nullsFirst: Bool = false
     ) {
@@ -76,7 +76,60 @@ extension DatabaseRoute {
   }
 }
 
-extension DatabaseColumn {
+extension DatabaseRoute.Order {
+
+  /// Allows creating an ascending ``DatabaseRoute.Order`` from a column.
+  ///
+  /// ### Example
+  /// ```swift
+  ///   database.from("mytable").select().order(by: .ascending(.myColumn))
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - column: The column to order by.
+  ///   - nullsFirst: If `true`, `null`s appear first.
+  ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
+  public static func ascending(
+    _ column: DatabaseRoute.Column,
+    nullsFirst: Bool = false,
+    foreignTable: DatabaseRoute.Table? = nil
+  ) -> DatabaseRoute.Order {
+    .init(
+      column: column,
+      ascending: true,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+  
+  /// Allows creating a descending ``DatabaseRoute.Order`` from a column.
+  ///
+  /// ### Example
+  /// ```swift
+  ///   database.from("mytable").select().order(by: .descending(.myColumn))
+  ///  ```
+  ///
+  /// - Parameters:
+  ///   - column: The column to order by.
+  ///   - nullsFirst: If `true`, `null`s appear first.
+  ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
+ 
+  public static func descending(
+    _ column: DatabaseRoute.Column,
+    nullsFirst: Bool = false,
+    foreignTable: DatabaseRoute.Table? = nil
+  ) -> DatabaseRoute.Order {
+    .init(
+      column: column,
+      ascending: false,
+      nullsFirst: nullsFirst,
+      foreignTable: foreignTable
+    )
+  }
+}
+
+
+extension DatabaseRoute.Column {
 
   /// Allows creating an ascending ``DatabaseRoute.Order`` from a column.
   ///
@@ -90,7 +143,7 @@ extension DatabaseColumn {
   ///   - foreignTable: The foreign table to use (if `column` is a foreign column).
   public func ascending(
     nullsFirst: Bool = false,
-    foreignTable: DatabaseTable? = nil
+    foreignTable: DatabaseRoute.Table? = nil
   ) -> DatabaseRoute.Order {
     .init(
       column: self,
@@ -113,7 +166,7 @@ extension DatabaseColumn {
  
   public func descending(
     nullsFirst: Bool = false,
-    foreignTable: DatabaseTable? = nil
+    foreignTable: DatabaseRoute.Table? = nil
   ) -> DatabaseRoute.Order {
     .init(
       column: self,

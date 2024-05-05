@@ -1,8 +1,48 @@
 import Dependencies
-import SupabaseClientDependencies
+import SupabaseDependencies
 import XCTest
 
 final class AuthControllerTests: XCTestCase {
+  
+  func testCreateUser() async throws {
+    try await withDependencies  {
+      $0.supabase = .live(
+        client: .init(
+          supabaseURL: localSupabaseURL,
+          supabaseKey: localServiceRoleKey
+        )
+      )
+    } operation: {
+      @Dependency(\.supabase) var client;
+
+      let credentials = Credentials(
+        email: "test@example.com",
+        password: "secret-password"
+      )
+      
+      try? await client.auth.client.signOut()
+      
+      do {
+        _ = try? await client.auth.login(credentials: credentials)
+        if let user = await client.auth.currentUser {
+          try await client.auth.client.signOut()
+          try await client.auth.admin.deleteUser(id: user.id.uuidString)
+        }
+      }
+
+      let user = try await client.auth.signUp(with: .credentials(credentials))
+      XCTAssertEqual(user.email, credentials.email)
+      
+      let _ = try await client.auth.login(credentials: credentials)
+
+      let currentUser = await client.auth.currentUser
+      XCTAssertNotNil(currentUser)
+      XCTAssertEqual(currentUser!.email, credentials.email)
+
+      try await client.auth.client.signOut()
+
+    }
+  }
 
   func testMockAuth() async throws {
     let user = User.mock

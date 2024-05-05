@@ -8,7 +8,7 @@ public struct DatabaseRoute: Sendable {
   let id: String?
 
   // The table that the route operates on.
-  let table: DatabaseTable
+  let table: DatabaseRoute.Table
 
   // The route method.
   let method: Method
@@ -32,7 +32,7 @@ public struct DatabaseRoute: Sendable {
   // Internal initialization only.
   init(
     id: String? = nil,
-    table: DatabaseTable,
+    table: DatabaseRoute.Table,
     method: Method,
     data: AnyJSON? = nil,
     filters: [Filter] = [],
@@ -69,7 +69,7 @@ public struct DatabaseRoute: Sendable {
   }
 
   // An internal helper that builds the entire database query to be executed.
-  func build(_ query: (DatabaseTable) throws -> PostgrestQueryBuilder) throws -> PostgrestBuilder {
+  func build(_ query: (DatabaseRoute.Table) throws -> PostgrestQueryBuilder) throws -> PostgrestBuilder {
     switch method {
     case .custom:
       guard let customBuilder else {
@@ -131,7 +131,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   ///   - build: The operation used to buld the final query.
   public static func custom(
-    _ table: DatabaseTable,
+    _ table: DatabaseRoute.Table,
     routeId: String? = nil,
     build: @escaping (PostgrestQueryBuilder) throws -> PostgrestBuilder
   ) -> Self {
@@ -144,7 +144,7 @@ extension DatabaseRoute {
   ///   - filters: The filters for the row to delete.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
@@ -157,7 +157,7 @@ extension DatabaseRoute {
   ///   - filters: The filters for the row to delete.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
@@ -171,7 +171,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete<ID: URLQueryRepresentable>(
     id: ID,
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     routeId: String? = nil
   ) -> Self {
     return .delete(from: table, filteredBy: .id(id), routeId: routeId)
@@ -184,7 +184,7 @@ extension DatabaseRoute {
   ///   - order: An optional order by clause for the return values.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filters: [DatabaseRoute.Filter],
     order: Order? = nil,
     routeId: String? = nil
@@ -206,7 +206,7 @@ extension DatabaseRoute {
   ///   - order: An optional order by clause for the return values.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filteredBy filters: DatabaseRoute.Filter...,
     order: Order? = nil,
     routeId: String? = nil
@@ -220,7 +220,7 @@ extension DatabaseRoute {
   ///   - filters: The filters for the query.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
@@ -233,7 +233,7 @@ extension DatabaseRoute {
   ///   - filters: The filters for the query.
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
-    from table: DatabaseTable,
+    from table: DatabaseRoute.Table,
     filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
@@ -248,7 +248,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func insert<V>(
     _ value: V,
-    into table: DatabaseTable,
+    into table: DatabaseRoute.Table,
     returning: PostgrestReturningOptions = .representation,
     routeId: String? = nil
   ) throws -> Self where V: Codable, V: Sendable {
@@ -264,7 +264,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func update<V>(
     _ value: V,
-    in table: DatabaseTable,
+    in table: DatabaseRoute.Table,
     filteredBy filters: DatabaseRoute.Filter...,
     returning: PostgrestReturningOptions = .representation,
     routeId: String? = nil
@@ -281,7 +281,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func update<ID: URLQueryRepresentable, V>(
     id: ID,
-    in table: DatabaseTable,
+    in table: DatabaseRoute.Table,
     with value: V,
     returning: PostgrestReturningOptions = .representation,
     routeId: String? = nil
@@ -297,12 +297,100 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func upsert<V>(
     _ value: V,
-    in table: DatabaseTable,
+    in table: DatabaseRoute.Table,
     returning: PostgrestReturningOptions = .representation,
     routeId: String? = nil
   ) throws -> Self where V: Codable, V: Sendable {
     return try .init(id: routeId, table: table, method: .upsert, data: .init(value), returning: returning)
   }
+}
+
+
+extension DatabaseRoute {
+  /// Represents a table column name type that can be extended to include your custom tables. This
+  /// allows using dot style syntax when creating filter or order by clauses.
+  ///
+  /// It can also be created by a string literal when constructing database filter or order by clauses, if
+  /// you do not want to extend this type with static constants of your column names.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// extension DatabaseRoute.Column {
+  ///   static let id: Self = "id"
+  /// }
+  /// ```
+  public struct Column: Equatable, Sendable {
+    
+    /// The database column's name.
+    public let name: String
+    
+    /// Create a database column for the given column name.
+    ///
+    /// - Parameters:
+    ///   - name: The column name.
+    public init<S: StringProtocol>(_ name: S) {
+      self.name = String(name)
+    }
+  }
+}
+
+extension DatabaseRoute.Column: ExpressibleByStringLiteral {
+
+  public typealias StringLiteralType = String
+
+  public init(stringLiteral value: String) {
+    self.name = value
+  }
+}
+
+extension DatabaseRoute.Column {
+  
+  /// Represents an id column.
+  public static let id: Self = "id"
+}
+
+extension DatabaseRoute {
+  
+  /// Represents table name type that can be extended to include your custom tables.  This allows
+  /// using dot style syntax for filters, orders, and overrides.
+  ///
+  /// It can also be created by a string literal when constructing database queries or order by clauses, if
+  /// you do not want to extend this type with static constants of your table names.
+  ///
+  /// **Example**
+  /// ```swift
+  /// extension DatabaseRoute.Table {
+  ///   static let todos: Self = "todos"
+  /// }
+  /// ```
+  public struct Table: Equatable, Sendable {
+    
+    /// The database table's name.
+    public let name: String
+    
+    /// Create a database table for the given name.
+    ///
+    /// - Parameters:
+    ///   - name: The table name.
+    public init<T: StringProtocol>(_ name: T) {
+      self.name = String(name)
+    }
+  }
+}
+
+extension DatabaseRoute.Table: ExpressibleByStringLiteral {
+
+  public typealias StringLiteralType = String
+
+  public init(stringLiteral value: String) {
+    self.name = value
+  }
+}
+
+extension RawRepresentable where RawValue == String {
+  public var column: DatabaseRoute.Column { .init(rawValue) }
+  public var table: DatabaseRoute.Table { .init(rawValue) }
 }
 
 struct DataNotSuppliedError: Error { }

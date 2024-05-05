@@ -19,8 +19,8 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "SupabaseClientTests",
-        "name" : "SupabaseClientTests"
+        "identifier" : "SupabaseDependenciesTests",
+        "name" : "SupabaseDependenciesTests"
       }
     }
   ],

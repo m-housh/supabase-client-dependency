@@ -7,6 +7,7 @@ import PostgREST
 
 public typealias DatabaseResult = Result<(any Encodable), (any Error)>
 
+
 /// A database router that gives override hooks for routes for previews and tests.
 ///
 /// Routes are generally modeled as enumurations.  The database router is responsible for holding onto any route
@@ -17,7 +18,7 @@ public typealias DatabaseResult = Result<(any Encodable), (any Error)>
 ///
 /// ```swift
 ///
-/// extension DatabaseTable {
+/// extension DatabaseRoute.Table {
 ///   static var todos: Self = "todos"
 /// }
 ///
@@ -148,7 +149,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   /// - Parameters:
   ///   - route: The route to call on the database.
   @discardableResult
-  public func call<A: Decodable>(
+  public func callAsFunction<A: Decodable>(
     _ route: Route
   ) async throws -> A {
     try await logIfError("Run Route:") {
@@ -159,30 +160,11 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   ///
   /// - Parameters:
   ///   - route: The route to call on the database.
-  public func call(
+  public func callAsFunction(
     _ route: Route
   ) async throws {
     guard await override(for: route) == nil else { return }
     try await logIfError("Run Route:") { try await execute(route) }
-  }
-  /// Call the database route, respecting any overrides and return the decoded result.
-  ///
-  /// - Parameters:
-  ///   - route: The route to call on the database.
-  @discardableResult
-  public func callAsFunction<A: Decodable>(
-    _ route: Route
-  ) async throws -> A {
-    try await self.call(route)
-  }
-  /// Call the database route, respecting any overrides ignoring any output.
-  ///
-  /// - Parameters:
-  ///   - route: The route to call on the database.
-  public func callAsFunction(
-    _ route: Route
-  ) async throws {
-    try await self.call(route)
   }
 
   // Checks if there's an override for the given route, returning the
@@ -217,7 +199,6 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
       throw error
     }
   }
-
 }
 
 // MARK: - Overrides
@@ -344,7 +325,7 @@ extension DatabaseRouter {
     ///   - table: An optional table used to match the override to.
     public static func id(
       _ id: String,
-      in table: DatabaseTable? = nil
+      in table: DatabaseRoute.Table? = nil
     ) -> Self {
       .init { route in
         let route = try await route.route()
@@ -358,7 +339,7 @@ extension DatabaseRouter {
     ///   - table: An optional table used to match the override to.
     public static func method(
       _ method: DatabaseRoute.Method,
-      in table: DatabaseTable? = nil
+      in table: DatabaseRoute.Table? = nil
     ) -> Self {
       .init { route in
         let route = try await route.route()
@@ -407,7 +388,7 @@ extension DatabaseRouter {
       .init { route == $0 }
     }
     
-    private static func checkTable(route: DatabaseRoute, table: DatabaseTable?) -> Bool {
+    private static func checkTable(route: DatabaseRoute, table: DatabaseRoute.Table?) -> Bool {
       guard let table else { return true }
       return route.table == table
     }
@@ -471,23 +452,8 @@ extension DatabaseRouter: CasePathable where Route: CasePathable {
     ///
     /// - Parameters:
     ///   - route: The route to call on the database.
-    public func call(_ route: Value) async throws {
-      try await router.call(casePath.embed(route))
-    }
-    /// Call the database route, respecting any overrides and return the decoded result.
-    ///
-    /// - Parameters:
-    ///   - route: The route to call on the database.
-    @discardableResult
-    public func call<A: Decodable>(_ route: Value) async throws -> A {
-      try await router.call(casePath.embed(route))
-    }
-    /// Call the database route, respecting any overrides ignoring any output.
-    ///
-    /// - Parameters:
-    ///   - route: The route to call on the database.
     public func callAsFunction(_ route: Value) async throws {
-      try await self.call(route)
+      try await router(casePath.embed(route))
     }
     /// Call the database route, respecting any overrides and return the decoded result.
     ///
@@ -495,7 +461,7 @@ extension DatabaseRouter: CasePathable where Route: CasePathable {
     ///   - route: The route to call on the database.
     @discardableResult
     public func callAsFunction<A: Decodable>(_ route: Value) async throws -> A {
-      try await self.call(route)
+      try await router(casePath.embed(route))
     }
   }
   
@@ -556,18 +522,20 @@ extension DatabaseResult {
   public static func success() -> Self {
     .success(EmptyEncodable())
   }
-  
-  public init(catching result: () async throws -> Void) async {
-    await self.init {
+ 
+  public init(_ result: () async throws -> Void) async {
+    do {
       try await result()
-      return EmptyEncodable()
+      self = .success()
+    } catch {
+      self = .failure(error)
     }
   }
 }
 
 extension DatabaseResult {
   fileprivate func data(_ encoder: JSONEncoder) throws -> Data {
-    try encoder.encode(self.get())
+    return try encoder.encode(self.get())
   }
 }
 

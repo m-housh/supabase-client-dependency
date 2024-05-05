@@ -46,7 +46,7 @@ Below is an example for a `Todos` table.
 ```swift
 @CasePathable
 enum TodoRoute: RouteController {
-  static let table: DatabaseTable = "todos"
+  static let table: DatabaseRoute.Table = "todos"
 
   // The delete route, which uses the filters to know which row(s) to delete.
   case delete(filteredBy: [DatabaseRoute.Filter])
@@ -149,26 +149,4 @@ router.override(.todos(.fetch))
 // Override all calls to the delete route in the todos table.
 router.override(.delete, in: "todos")
 
-```
-
-### Database Executor
-
-The database executor is used to execute queries on the database and handles decoding
-responses.  The database executor needs to be extended to conform to `DependencyKey` and
-provide the `liveValue` by calling it's ``DatabaseExecutor/live(database:)`` method.  It
-is provided to give a hook into any of the calls to the database from a ``DatabaseRouter``
-or ``RouteController``.
-
-#### Example override.
-
-```swift
-let todos: [Todo] = try await withDependencies {
-  $0.databaseExecutor.execute = { _  in 
-    // Ignore the postgrest route / query and always return
-    // mock todos.
-    return try JSONEncoder().encode(Todos.mocks)
-  }
-} operation: {
-  return try await router(.todos(.fetch))
-}
 ```

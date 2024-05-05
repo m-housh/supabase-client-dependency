@@ -1,14 +1,14 @@
 import CasePaths
 import Dependencies
 import Foundation
-import SupabaseClientDependencies
+import SupabaseDependencies
 import Supabase
 
-extension DatabaseTable {
+extension DatabaseRoute.Table {
   static var todos: Self { .init("todos") }
 }
 
-extension DatabaseColumn {
+extension DatabaseRoute.Column {
   static let description: Self = "description"
   static let isComplete: Self = "complete"
 }
@@ -59,12 +59,18 @@ extension Todo {
     description: "Drink coffee",
     isComplete: Bool.random()
   )
-
-  static let mocks: [Todo] = [
-    .buyMilk,
-    .finishDocs,
-    .drinkCoffee
-  ]
+  
+  static func mocks(date: Date) -> [Todo] {
+    withDependencies {
+      $0.date = .constant(date)
+    } operation: {
+      [
+        .buyMilk,
+        .finishDocs,
+        .drinkCoffee
+      ]
+    }
+  }
 }
 
 struct TodoInsertRequest: Codable, Hashable {
@@ -89,7 +95,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 
 @CasePathable
 enum TodoRoute: RouteCollection {
-  static var table: DatabaseTable { DatabaseTable.todos }
+  static var table: DatabaseRoute.Table { DatabaseRoute.Table.todos }
 
   case delete(filteredBy: [DatabaseRoute.Filter])
   case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
@@ -162,6 +168,9 @@ struct DbRoutes {
 }
 
 private let supabaseClient = SupabaseClient.local()
+let localServiceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0." +
+  "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
 
 extension DbRoutes: DependencyKey {
   
@@ -176,11 +185,9 @@ extension DependencyValues {
   }
 }
 
-
-
-//extension DependencyValues {
-//  var supabaseClient: SupabaseClientDependency<DbRoutes> {
-//    get { self[SupabaseClientDependency<DbRoutes>.self] }
-//    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
-//  }
-//}
+extension DependencyValues {
+  var supabase: SupabaseDependency<TodoRoute> {
+    get { self[SupabaseDependency<TodoRoute>.self] }
+    set { self[SupabaseDependency<TodoRoute>.self] = newValue }
+  }
+}

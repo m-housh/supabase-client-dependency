@@ -1,4 +1,4 @@
-@_exported import Auth
+import Auth
 import Dependencies
 import Foundation
 
@@ -53,10 +53,12 @@ public struct AuthController: Sendable {
     self.loginHandler = loginHandler
     self.signupHandler = signupHandler
   }
+  
   /// Exposes all the properties on the wrapped `AuthClient`.
   public subscript<T>(dynamicMember keyPath: KeyPath<AuthClient, T>) -> T {
     client[keyPath: keyPath]
   }
+  
   /// Attempt to login with previously stored credentials, returning `nil` if it was un-successful.
   public func login() async -> Session? {
     guard let loginHandler else {
@@ -64,6 +66,7 @@ public struct AuthController: Sendable {
     }
     return try? await loginHandler(nil)
   }
+  
   /// Attempt to login with provided credentials, throwing an error if it was un-successful.
   ///
   /// This method will return the session provided by the ``loginHandler`` if it is set on the controller, if it
@@ -81,6 +84,7 @@ public struct AuthController: Sendable {
     }
     return session
   }
+  
   /// Attempt to login with provided credentials, throwing an error if it was un-successful.
   ///
   /// This method will return the session provided by the ``loginHandler`` if it is set on the controller, if it
@@ -92,6 +96,18 @@ public struct AuthController: Sendable {
   public func login(credentials: Credentials) async throws -> Session {
     return try await self.login(.credentials(credentials))
   }
+  
+  /// Log out the current user.  This mimics the underlying auth client `signOut` method.  It is exposed
+  /// so that you don't need to reach through the ``client`` to sign out.
+  ///
+  /// - Parameters:
+  ///   - scope: The sign out scope, default is to sign out of all sessions.
+  ///
+  /// - SeeAlso: ``Supabase/Auth/signOut``
+  public func logout(scope: SignOutScope = .global) async throws {
+    try await client.signOut(scope: scope)
+  }
+  
   /// Access the currently logged in user, returning `nil` if no login session is found.
   ///
   /// This method will return the user provided by the ``getCurrentUser`` if it is set on the controller, if it
@@ -105,6 +121,7 @@ public struct AuthController: Sendable {
       return await getCurrentUser()
     }
   }
+  
   /// Access the currently logged in user, throwing an error  if no login session is found.
   ///
   /// This method will return the user provided by the ``getCurrentUser`` if it is set on the controller, if it

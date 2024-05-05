@@ -27,13 +27,21 @@ In general you use this package / dependency to build your database clients for 
 
 ### Structures
 
-- ``SupabaseClientDependency``
-- ``SupabaseClientDependency/AuthClient``
-- ``AnyColumn``
-- ``DatabaseTable``
-- ``DatabaseRequest/Filter``
-- ``DatabaseRequest/Order``
+- ``SupabaseDependency``
+- ``AuthController``
+- ``AuthController/LoginRequest``
+- ``AuthController/SharedOptions``
+- ``AuthController/SignUpRequest``
+- ``DatabaseRouter``
+- ``DatabaseRoute/Column``
+- ``DatabaseRoute/Table``
+- ``DatabaseRoute/Filter``
+- ``DatabaseRoute/Order``
 - ``Credentials``
+
+### Enumerations
+
+- ``DatabaseRoute/Method``
 
 ### Errors
 
@@ -42,6 +50,4 @@ In general you use this package / dependency to build your database clients for 
 
 ### Protocols
 
-- ``ColumnRepresentable``
-- ``RpcRepresentable``
-- ``TableRepresentable``
+- ``RouteCollection``

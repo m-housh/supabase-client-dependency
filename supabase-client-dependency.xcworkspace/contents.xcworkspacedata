@@ -20,12 +20,6 @@
       location = "group:Examples/Examples.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Tests/TestPlans/SupabaseClient.xctestplan">
-   </FileRef>
-   <FileRef
-      location = "group:Tests/TestPlans/SupabaseClientDependencies.xctestplan">
-   </FileRef>
-   <FileRef
-      location = "group:Tests/TestPlans/SupabaseClientIntegrationTests.xctestplan">
+      location = "group:Tests/TestPlans/DatabaseRouterIntegrationTests.xctestplan">
    </FileRef>
 </Workspace>

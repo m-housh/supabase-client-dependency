@@ -58,7 +58,7 @@ struct DatabaseRoutes {
             description: request.description,
             ownerId: auth.requireCurrentUser().id
           ),
-          into: DatabaseTable.todos
+          into: DatabaseRoute.Table.todos
         )
 
       case let .update(id: id, updates: updates):
@@ -109,7 +109,7 @@ extension DatabaseRoutes: TestDependencyKey {
   }
 }
 
-extension DatabaseTable {
+extension DatabaseRoute.Table {
   static let todos = Self.init("todos")
 }
 

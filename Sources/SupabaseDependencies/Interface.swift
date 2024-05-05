@@ -2,7 +2,7 @@ import CasePaths
 import Dependencies
 import Foundation
 import OSLog
-import Supabase
+@_exported import Supabase
 
 /// A supabase client dependency, which holds a supabase client and provides an authentication
 /// controller and database router.
@@ -13,7 +13,7 @@ import Supabase
 /// ### Example
 /// ```swift
 ///
-/// extension DatabaseTable {
+/// extension DatabaseRoute.Table {
 ///   static var todos: Self = "todos"
 /// }
 ///
@@ -70,8 +70,10 @@ import Supabase
 /// @Dependency(\.supabase.auth) var auth
 /// @Dependency(\.supabase.router) var router
 ///
-/// // Use the auth controller to login.
-/// try await auth.login(credentials: Credentials(...))
+/// // Use the auth controller to login / sign-up users.
+/// let credentials = Credentials(...)
+/// try await auth.signUp(with: .credentials(credentials))
+/// try await auth.login(credentials: credentials)
 ///
 /// // Use the router to call the todos fetch route.
 /// let todos: [Todo] = try await router(.todos(.fetch()))
@@ -89,7 +91,7 @@ import Supabase
 ///
 ///```
 @dynamicMemberLookup
-public struct SupabaseDependency<Routes: RouteCollection>: Sendable where Routes: CasePathable {
+public struct SupabaseDependency<Routes: RouteCollection>: Sendable {
 
   /// The authentication controller, which gives control over the current user, session, and offers
   /// convenience methods for signing-up and logging in users.
@@ -120,7 +122,7 @@ public struct SupabaseDependency<Routes: RouteCollection>: Sendable where Routes
   ///
   /// - Parameters:
   ///   - table: The table to create the query on.
-  public func from(_ table: DatabaseTable) -> PostgrestQueryBuilder {
+  public func from(_ table: DatabaseRoute.Table) -> PostgrestQueryBuilder {
     self.client.from(table.name)
   }
 
@@ -173,18 +175,15 @@ extension SupabaseClient: TestDependencyKey {
 
 #if DEBUG
 extension SupabaseClient {
-  /// A configuration for a local supabase instance.
-  ///
-  /// In general this may not be the same for different machines and should not be used in production.
   public static func local() -> Self {
     Self.init(
-      supabaseURL: supabaseURL,
+      supabaseURL: localSupabaseURL,
       supabaseKey: localAnonKey
     )
   }
 }
 
-private let supabaseURL = URL(string: "http://localhost:54321")!
+public let localSupabaseURL = URL(string: "http://localhost:54321")!
 private let localAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
   "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9." +

@@ -21,7 +21,7 @@ let package = Package(
     .target(
       name: "<My Target>",
       dependencies: [
-        .product(name: "SupabaseClient", package: "supabase-client-dependency")
+        .product(name: "SupabaseDependencies", package: "supabase-client-dependency")
       ]
     )
   ]
@@ -32,7 +32,7 @@ let package = Package(
 
 This package does not have an official `liveValue` declared on the dependency because it is intended 
 that the live value is setup in the project that depends on it. It does conform to the 
-`TestDependencyKey` and has an `unimplemented` version used in tests.
+`TestDependencyKey` and has an `unimplemented` version that can be used in tests.
 
 ### The Todo model
 
@@ -52,6 +52,7 @@ create table if not exists todos (
 ```swift
 import Dependencies
 import Foundation
+import SupabaseDependencies
 
 struct TodoModel: Codable, Equatable, Identifiable, Sendable {
   var id: UUID
@@ -59,76 +60,44 @@ struct TodoModel: Codable, Equatable, Identifiable, Sendable {
   var description: String
   var isComplete: Bool = false
   
-  init(
-    id: UUID,
-    createdAt: Date? = nil,
-    description: String,
-    isComplete: Bool
-  ) {
-    @Dependency(\.date.now) var now;
-    self.id = id
-    self.createdAt = createdAt ?? now
-    self.description = description
-    self.isComplete = isComplete
-  }
-  
-  private enum CodingKeys: String, CodingKey {
+  enum CodingKeys: String, CodingKey {
     case id
     case createdAt = "created_at"
     case description
     case isComplete = "complete"
   }
 }
-
-// MARK: - Helper types.
-
-struct TodoInsertRequest: Codable, Hashable {
-  let description: String
-  let isComplete: Bool = false
-
-  enum CodingKeys: String, CodingKey {
-    case description
-    case isComplete = "complete"
-  }
-}
-
-struct TodoUpdateRequest: Codable, Hashable {
-  var description: String? = nil
-  var isComplete: Bool? = nil
-
-  enum CodingKeys: String, CodingKey {
-    case description
-    case isComplete = "complete"
-  }
-}
-
 ```
 
-### The `Todo` route controller
+### The `Todo` route collection
 
-A route controller is used to declare a group of routes, generally for a specific table in
+A route collection is used to declare a group of routes, generally for a specific table in
 the database.
 
 ```swift
 @CasePathable
-enum TodoRoute: RouteController {
-  static var table: DatabaseTable { "todos" }
+enum TodoRoute: RouteCollection {
+  static var table: DatabaseRoute.Table { "todos" }
 
-  // The fetch route, which can optionally take filters and an order.
-  case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
-  
-  // The insert route.
-  case insert(TodoInsertRequest)
+  case delete(id: TodoModel.ID)
+  case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order? = nil)
+  case fetchOne(id: TodoModel.ID)
+  case save(TodoModel)
 
   // Provide the database route.
-  public func route() throws -> DatabaseRoute {
+  public func route() async throws -> DatabaseRoute {
     switch self {
+    case let .delete(id: id):
+      return .delete(id: id, from: Self.table)
+
     case let .fetch(filters, order):
-      // Returns a fetch query with the given filters and order.
       return .fetch(from: Self.table, filters: filters, order: order)
-    case let .insert(request):
-      // Returns an insert query with the new todo request.
-      return try .insert(todo, into: Self.table)
+
+    case let .fetchOne(id: id):
+      return .fetchOne(id: id, from: Self.table)
+
+    case let .save(todo):
+      return try .upsert(todo, in: Self.table)
     }
   }
 
@@ -138,21 +107,23 @@ enum TodoRoute: RouteController {
 
 ```
 
-### Create your database router.
+### Create your root database route controller.
 
-A database router holds on to all your route controllers.
+A route collection that holds on to all your individual route collections, which also
+conforms the ``RouteCollection`` protocol.  The route collection conformance is required
+by to create the router later on when setting up the live dependency.
 
 ```swift
 @CasePathable
-enum DbRoutes: DatabaseController {
+enum Routes: RouteCollection {
 
   case todos(TodoRoute)
   ...
 
-  func route() throws -> DatabaseRoute {
+  func route() async throws -> DatabaseRoute {
     switch self {
     case let .todos(todos):
-      return try todos.route()
+      return try await todos.route()
     ...
     }
   }
@@ -165,13 +136,13 @@ The supabase client dependency needs to be extended to provide the live value.
 
 ```swift
 extension DependencyValues {
-  var supabase: SupabaseClientDependency<DbRoutes> {
-    get { self[SupabaseClientDependency<DbRoutes>.self] }
-    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+  var supabase: SupabaseDependency<Routes> {
+    get { self[SupabaseDependency<Routes>.self] }
+    set { self[SupabaseDependency<Routes>.self] = newValue }
   }
 }
 
-extension SupabaseClientDependency<DbRoutes>: DependencyKey {
+extension SupabaseDependency<Routes>: DependencyKey {
   // Use the `.live(client:)` method with your supabase client configuration.
   static let liveValue: Self = .live(client: SupabaseClient(...))
 }
@@ -198,19 +169,23 @@ Use the database router to perform operations on the database.
 ```swift
 func fetchTodos() async throws -> [Todo] {
   @Dependency(\.supabase.router.todos)
-  return try await todos(.fetch)
+  return try await todos(.fetch(orderBy: .descending("complete")))
 }
 
 func insertTodo(description: String, isComplete: Bool = false) -> Todo {
   @Dependency(\.supabase.router.todos)
-  return try await todos(.insert(
-    TodoInsertRequest(description: description, isComplete: isComplete)
-  ))
+  return try await todos(
+    .save(
+      TodoModel(
+        createdAt: Date(),
+        description: description,
+        isComplete: isComplete
+      )
+    )
+  )
 }
 ```
-
-See <doc:DatabaseRouterUsage> for more details about modeling your database routes.
-See <doc:DatabaseOperations> for database operations / convenience methods.
+See <doc:DatabaseRouterUsage> for more details about modeling and overriding your database routes.
 
 See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.

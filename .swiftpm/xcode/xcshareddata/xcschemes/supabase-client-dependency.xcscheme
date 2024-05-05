@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1500"
-   version = "1.7">
+   version = "2.1">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -12,25 +12,49 @@
             buildForProfiling = "YES"
             buildForArchiving = "YES"
             buildForAnalyzing = "YES">
+            <TestPlanReference
+               reference = "container:Tests/TestPlans/supabase-client-dependency.xctestplan">
+            </TestPlanReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SupabaseClientDependency"
-               BuildableName = "SupabaseClientDependency"
-               BlueprintName = "SupabaseClientDependency"
+               BlueprintIdentifier = "SupabaseDependencies"
+               BuildableName = "SupabaseDependencies"
+               BlueprintName = "SupabaseDependencies"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
             buildForRunning = "YES"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SupabaseClientTests"
-               BuildableName = "SupabaseClientTests"
-               BlueprintName = "SupabaseClientTests"
+               BlueprintIdentifier = "DatabaseRouterIntegrationTests"
+               BuildableName = "DatabaseRouterIntegrationTests"
+               BlueprintName = "DatabaseRouterIntegrationTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SupabaseDependenciesTests"
+               BuildableName = "SupabaseDependenciesTests"
+               BlueprintName = "SupabaseDependenciesTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -47,28 +71,6 @@
             default = "YES">
          </TestPlanReference>
       </TestPlans>
-      <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SupabaseClientTests"
-               BuildableName = "SupabaseClientTests"
-               BlueprintName = "SupabaseClientTests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SupabaseClientIntegrationTests"
-               BuildableName = "SupabaseClientIntegrationTests"
-               BlueprintName = "SupabaseClientIntegrationTests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -90,9 +92,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "SupabaseClientDependency"
-            BuildableName = "SupabaseClientDependency"
-            BlueprintName = "SupabaseClientDependency"
+            BlueprintIdentifier = "SupabaseDependenciesTests"
+            BuildableName = "SupabaseDependenciesTests"
+            BlueprintName = "SupabaseDependenciesTests"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

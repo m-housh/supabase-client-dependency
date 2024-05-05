@@ -59,7 +59,7 @@ extension DatabaseRoute {
   public struct Filter: Sendable {
     
     /// The column to filter the results by.
-    public let column: DatabaseColumn
+    public let column: DatabaseRoute.Column
     
     /// The operator to use to filter the results by.
     public let `operator`: PostgrestFilterBuilder.Operator
@@ -74,7 +74,7 @@ extension DatabaseRoute {
     ///   - operator: The operator to use to compare the column value to.
     ///   - value: The value to use for the column filter.
     public init(
-      column: DatabaseColumn,
+      column: DatabaseRoute.Column,
       operator postgrestOperator: PostgrestFilterBuilder.Operator,
       value: URLQueryRepresentable
     ) {
@@ -84,7 +84,7 @@ extension DatabaseRoute {
     }
     
     public static func equals(
-      column: DatabaseColumn,
+      column: DatabaseRoute.Column,
       value: URLQueryRepresentable
     ) -> Self {
       .init(column: column, operator: .eq, value: value)
@@ -104,7 +104,7 @@ extension DatabaseRoute.Filter: Equatable {
   }
 }
 
-extension DatabaseColumn {
+extension DatabaseRoute.Column {
 
   public func equals(_ value: URLQueryRepresentable) -> DatabaseRoute.Filter {
     .equals(column: self, value: value)

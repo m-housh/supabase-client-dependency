@@ -1,19 +1,23 @@
 import CasePaths
-import DatabaseRouter
 import Dependencies
 import Foundation
 import PostgREST
 import Supabase
-import SupabaseClientDependencies
+import SupabaseDependencies
 
-extension DatabaseTable {
+extension DatabaseRoute.Table {
   static var todos: Self { .init("todos") }
 }
 
-enum TodoColumn: String, ColumnRepresentable {
-  case description
-  case isComplete = "complete"
+extension DatabaseRoute.Column {
+  static let description: Self = "description"
+  static let isComplete: Self = "complete"
 }
+
+//enum TodoColumn: String {
+//  case description
+//  case isComplete = "complete"
+//}
 
 struct Todo: Codable, Hashable, Identifiable {
   let id: UUID
@@ -71,7 +75,12 @@ extension Todo {
 
 struct TodoInsertRequest: Codable, Hashable {
   let description: String
-  let isComplete: Bool = false
+  let isComplete: Bool
+  
+  init(description: String, isComplete: Bool = false) {
+    self.description = description
+    self.isComplete = isComplete
+  }
 
   enum CodingKeys: String, CodingKey {
     case description
@@ -91,7 +100,7 @@ struct TodoUpdateRequest: Codable, Hashable {
 
 @CasePathable
 enum TodoRoute: RouteCollection {
-  static var table: DatabaseTable { DatabaseTable.todos }
+  static var table: DatabaseRoute.Table { DatabaseRoute.Table.todos }
 
   case delete(filteredBy: [DatabaseRoute.Filter])
   case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
@@ -156,7 +165,7 @@ enum TodoRoute: RouteCollection {
 //struct NotFoundError: Error { }
 
 //@CasePathable
-struct DbRoutes: DatabaseRouter {
+struct DbRoutes {
   
   var todos: DatabaseRouter<TodoRoute>
   

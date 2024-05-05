@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "53C37382-ACAB-4AF2-9E1B-25083820B724",
+      "id" : "FEA58D1D-BC46-47FF-9888-BBB09C2AD20F",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -20,8 +20,15 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "SupabaseClientIntegrationTests",
-        "name" : "SupabaseClientIntegrationTests"
+        "identifier" : "DatabaseRouterIntegrationTests",
+        "name" : "DatabaseRouterIntegrationTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SupabaseDependenciesTests",
+        "name" : "SupabaseDependenciesTests"
       }
     }
   ],

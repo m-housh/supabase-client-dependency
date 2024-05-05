@@ -1,33 +1,14 @@
 import XCTest
 import CasePaths
 import Dependencies
-@testable import SupabaseClientDependencies
+@testable import SupabaseDependencies
 
 final class DatabaseClientTests: XCTestCase {
-
-//  override func invokeTest() {
-//    let supabase = SupabaseClientDependency<DbRoutes>.live(client: .local())
-//    withDependencies {
-//      $0.supabaseClient = supabase
-////      $0.databaseExecutor = .live(database: supabase.client.schema("public"))
-//    } operation: {
-//      super.invokeTest()
-//    }
-//  }
-
-//  func testOverrideMatching() async throws {
-//    let route = DatabaseRoute.delete(id: "foo", from: .todos)
-//    let override = AnyOverride.partial(table: .todos, method: .delete)
-//    let match = try await override.matches(route)
-//    XCTAssertTrue(match)
-//  }
+  
+  let date = Date(timeIntervalSince1970: 1234567890)
 
   func testDeleteOverride() async throws {
-    let mock = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.finishDocs
-    }
+    let mock = Todo.mocks(date: date)[0]
 
     await withDependencies {
       $0.router.todos.override(.method(.delete))
@@ -43,11 +24,7 @@ final class DatabaseClientTests: XCTestCase {
   }
 
   func testFetchOverride() async throws {
-    let mocks = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.mocks
-    }
+    let mocks = Todo.mocks(date: date)
 
     try await withDependencies {
       $0.router.todos.override(
@@ -58,7 +35,7 @@ final class DatabaseClientTests: XCTestCase {
       @Dependency(\.router.todos) var router;
 
       var todos: [Todo] = try await router(.fetch)
-      XCTAssertEqual(todos, Todo.mocks)
+      XCTAssertEqual(todos, mocks)
 
       todos = []
       XCTAssertEqual(todos, [])
@@ -66,11 +43,7 @@ final class DatabaseClientTests: XCTestCase {
   }
   
   func testFetchOneOverride() async throws {
-    let mock = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.finishDocs
-    }
+    let mock = Todo.mocks(date: date)[1]
 
     try await withDependencies {
       $0.router.todos.override(.method(.fetchOne), with: mock)
@@ -79,17 +52,13 @@ final class DatabaseClientTests: XCTestCase {
       let todo: Todo = try await router(.fetchOne(
         id: UUID(0)
       ))
-      XCTAssertEqual(todo, Todo.finishDocs)
+      XCTAssertEqual(todo, mock)
       XCTAssertNotEqual(todo.id, UUID(0))
     }
   }
   
   func testInsertOverride() async throws {
-    let mock = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.finishDocs
-    }
+    let mock = Todo.mocks(date: date)[0]
 
     try await withDependencies {
       $0.router.todos.override(.method(.insert), with: mock)
@@ -99,17 +68,13 @@ final class DatabaseClientTests: XCTestCase {
       let todo: Todo = try await router(.insert(
         TodoInsertRequest(description: "Insert new todo")
       ))
-      XCTAssertEqual(todo, Todo.finishDocs)
+      XCTAssertEqual(todo, mock)
       XCTAssertNotEqual(todo.description, "Insert new todo")
     }
   }
   
   func testInsertManyOverride() async throws {
-    let mocks = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.mocks
-    }
+    let mocks = Todo.mocks(date: date)
 
     try await withDependencies {
       $0.router.todos.override(
@@ -125,16 +90,12 @@ final class DatabaseClientTests: XCTestCase {
           TodoInsertRequest(description: "Another new todo"),
         ]
       ))
-      XCTAssertEqual(todos, Todo.mocks)
+      XCTAssertEqual(todos, mocks)
     }
   }
   
   func testUpdateOverride() async throws {
-    let mock = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.finishDocs
-    }
+    let mock = Todo.mocks(date: date)[1]
 
     try await withDependencies {
       $0.router.todos.override(
@@ -143,22 +104,16 @@ final class DatabaseClientTests: XCTestCase {
       )
     } operation: {
       @Dependency(\.router.todos) var router;
-
       let todo: Todo = try await router(.update(
         id: UUID(0),
         updates: TodoUpdateRequest(description: "Buy milk & eggs")
       ))
-      XCTAssertEqual(todo, Todo.finishDocs)
-
+      XCTAssertEqual(todo, mock)
     }
   }
   
   func testUpsertOverride() async throws {
-    let mock = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.finishDocs
-    }
+    let mock = Todo.mocks(date: date)[0]
 
     try await withDependencies {
       $0.date.now = Date(timeIntervalSince1970: 1234567890)
@@ -201,11 +156,7 @@ final class DatabaseClientTests: XCTestCase {
   
   func testCaseOverride() async throws {
     
-    let todoMocks = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.mocks
-    }
+    let todoMocks = Todo.mocks(date: date)
     
     var router = DatabaseRouter<MultiRouter>.init(
       decoder: .init(),
@@ -226,26 +177,10 @@ final class DatabaseClientTests: XCTestCase {
     
     match = try await override.match(.alsoTodos(.delete(id: .init())))
     XCTAssertFalse(match)
-    
-//    var todosRouter = router[dynamicMember: \.todos]
-//    
-//    let cp = \MultiRouter.Cases.todos
-//    
-//    var fetchedThroughCasePathProxy: [Todo] = try await todosRouter(.fetch)
-//    XCTAssertEqual(fetchedThroughCasePathProxy, [])
-//    
-//    todosRouter.router.override(.case(\.todos.fetch), with: todoMocks)
-//    fetchedThroughCasePathProxy = try await todosRouter(.fetch)
-//    XCTAssertEqual(fetchedThroughCasePathProxy, todoMocks)
-// 
   }
   
-  func testMultiRouter() async throws {
-    let todoMocks = withDependencies {
-      $0.date.now = Date(timeIntervalSince1970: 1234567890)
-    } operation: {
-      Todo.mocks
-    }
+  func testCasePathableRouter() async throws {
+    let todoMocks = Todo.mocks(date: Date(timeIntervalSince1970: 1234567890))
     
     try await withDependencies {
       $0.multiRouter.override(
@@ -266,7 +201,7 @@ final class DatabaseClientTests: XCTestCase {
       XCTAssertEqual(todos, todoMocks)
       
       @Dependency(\.multiRouter.todos) var todosRouter
-      let todos2: [Todo] = try await todosRouter.call(.fetch)
+      let todos2: [Todo] = try await todosRouter(.fetch)
       XCTAssertEqual(todos2, todoMocks)
       
       @Dependency(\.multiRouter.alsoTodos) var alsoTodos
@@ -278,8 +213,6 @@ final class DatabaseClientTests: XCTestCase {
       XCTAssertEqual(todos4, todoMocks)
 
     }
-
-
   }
 }
 

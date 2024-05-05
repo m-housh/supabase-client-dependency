@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
+    .library(name: "SupabaseDependencies", targets: ["SupabaseDependencies"]),
   ],
   dependencies: [
     .package(
@@ -20,7 +20,11 @@ let package = Package(
       from: "1.0.0"
     ),
     .package(
-      url: "https://github.com/pointfreeco/swift-concurrency-extras",
+      url: "https://github.com/pointfreeco/swift-concurrency-extras.git",
+      from: "1.0.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-custom-dump.git",
       from: "1.0.0"
     ),
     .package(
@@ -42,7 +46,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SupabaseClientDependencies",
+      name: "SupabaseDependencies",
       dependencies: [
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
@@ -51,16 +55,17 @@ let package = Package(
       ]
     ),
     .testTarget(
-      name: "SupabaseClientTests",
+      name: "SupabaseDependenciesTests",
       dependencies: [
-        "SupabaseClientDependencies"
+        "SupabaseDependencies"
       ]
     ),
     .testTarget(
       name: "DatabaseRouterIntegrationTests",
       dependencies: [
-        "SupabaseClientDependencies",
+        "SupabaseDependencies",
         .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "CustomDump", package: "swift-custom-dump"),
         .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
       ]
     ),
