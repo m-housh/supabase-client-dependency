@@ -227,21 +227,100 @@ final class DatabaseClientTests: XCTestCase {
     
     match = try await override.match(.alsoTodos(.delete(id: .init())))
     XCTAssertFalse(match)
+    
+//    var todosRouter = router[dynamicMember: \.todos]
+//    
+//    let cp = \MultiRouter.Cases.todos
+//    
+//    var fetchedThroughCasePathProxy: [Todo] = try await todosRouter(.fetch)
+//    XCTAssertEqual(fetchedThroughCasePathProxy, [])
+//    
+//    todosRouter.router.override(.case(\.todos.fetch), with: todoMocks)
+//    fetchedThroughCasePathProxy = try await todosRouter(.fetch)
+//    XCTAssertEqual(fetchedThroughCasePathProxy, todoMocks)
+// 
+  }
+  
+  func testMultiRouter() async throws {
+    let todoMocks = withDependencies {
+      $0.date.now = Date(timeIntervalSince1970: 1234567890)
+    } operation: {
+      Todo.mocks
+    }
+    
+    try await withDependencies {
+      $0.multiRouter.override(
+        .case(\.todos.fetch), 
+        with: todoMocks
+      )
+      $0.multiRouter.override(
+        .case(\.alsoTodos.fetch),
+        with: [Todo]()
+      )
+      $0.multiRouter.override(
+        .case(\.nested.todos.fetch),
+        with: todoMocks
+      )
+    } operation: {
+      @Dependency(\.multiRouter[case: \.todos]) var router
+      let todos: [Todo] = try await router(.fetch)
+      XCTAssertEqual(todos, todoMocks)
+      
+      @Dependency(\.multiRouter.todos) var todosRouter
+      let todos2: [Todo] = try await todosRouter.call(.fetch)
+      XCTAssertEqual(todos2, todoMocks)
+      
+      @Dependency(\.multiRouter.alsoTodos) var alsoTodos
+      let todos3: [Todo] = try await alsoTodos(.fetch)
+      XCTAssertEqual(todos3, [])
+      
+      @Dependency(\.multiRouter.nested.todos) var nestedTodos
+      let todos4: [Todo] = try await nestedTodos(.fetch)
+      XCTAssertEqual(todos4, todoMocks)
+
+    }
+
 
   }
+}
+
+@CasePathable
+enum Nested {
+  case todos(TodoRoute)
 }
 
 @CasePathable
 enum MultiRouter: RouteCollection {
   case todos(TodoRoute)
   case alsoTodos(TodoRoute)
+  case nested(Nested)
   
-  func route() throws -> DatabaseRoute {
+  func route() async throws -> DatabaseRoute {
     switch self {
     case let .todos(todos):
       return try todos.route()
     case let .alsoTodos(todos):
       return try todos.route()
+    case let .nested(.todos(todos)):
+      return try todos.route()
     }
   }
+}
+
+struct MultiRouterKey: TestDependencyKey {
+  
+  var router: DatabaseRouter<MultiRouter>
+  
+  static var testValue: MultiRouterKey = .init(router: .init(
+    decoder: .init(),
+    encoder: .init(),
+    execute: { _ in .success([Todo]()) }
+  ))
+}
+
+extension DependencyValues {
+  var multiRouter: DatabaseRouter<MultiRouter> {
+    get { self[MultiRouterKey.self].router }
+    set { self[MultiRouterKey.self].router = newValue }
   }
+}

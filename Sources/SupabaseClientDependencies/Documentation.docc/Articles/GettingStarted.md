@@ -112,10 +112,10 @@ the database.
 ```swift
 @CasePathable
 enum TodoRoute: RouteController {
-  static var table: AnyTable { "todos" }
+  static var table: DatabaseTable { "todos" }
 
   // The fetch route, which can optionally take filters and an order.
-  case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
+  case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
   
   // The insert route.
   case insert(TodoInsertRequest)

@@ -8,7 +8,7 @@ import Foundation
 ///
 /// **Example**
 /// ```swift
-/// extension AnyTable {
+/// extension DatabaseTable {
 ///   static let todos: Self = "todos"
 /// }
 /// ```

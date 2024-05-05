@@ -58,7 +58,7 @@ struct DatabaseRoutes {
             description: request.description,
             ownerId: auth.requireCurrentUser().id
           ),
-          into: AnyTable.todos
+          into: DatabaseTable.todos
         )
 
       case let .update(id: id, updates: updates):
@@ -109,7 +109,7 @@ extension DatabaseRoutes: TestDependencyKey {
   }
 }
 
-extension AnyTable {
+extension DatabaseTable {
   static let todos = Self.init("todos")
 }
 
@@ -118,13 +118,13 @@ fileprivate enum TodoColumn: String, ColumnRepresentable {
   case ownerId = "owner_id"
 }
 
-extension DatabaseFilter {
+extension DatabaseRoute.Filter {
   static func ownerId(equals value: User.ID) -> Self {
     .equals(column: TodoColumn.ownerId, value: value)
   }
 }
 
-extension DatabaseOrder {
+extension DatabaseRoute.Order {
   static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
 }
 

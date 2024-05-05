@@ -2,7 +2,7 @@ import Auth
 import Foundation
 
 /// Represents request parameters for loggiing users in.
-public enum LoginRequest: Equatable {
+public enum LoginRequest: Equatable, Sendable {
 
   /// Login with an email and password.
   case email(String, password: String)
@@ -24,7 +24,7 @@ public enum LoginRequest: Equatable {
   }
 
   /// Represents a one-time-password login request.
-  public enum OTPRequest: Equatable {
+  public enum OTPRequest: Equatable, Sendable {
 
     /// The email address for the request.
     case email(String)

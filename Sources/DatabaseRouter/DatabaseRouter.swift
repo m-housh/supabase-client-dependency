@@ -2,11 +2,12 @@ import CasePaths
 import ConcurrencyExtras
 import Dependencies
 import Foundation
+import OSLog
 import PostgREST
-import Foundation
 
 public typealias DatabaseResult = Result<(any Encodable), (any Error)>
 
+@dynamicMemberLookup
 public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   
   private var _overrides = LockIsolated<_OverridesContainer>(.init())
@@ -23,8 +24,10 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   private let decoder: JSONDecoder
   private let encoder: JSONEncoder
   private let execute: @Sendable (Route) async throws -> Data
+  @UncheckedSendable
+  private var logger: Logger?
   
-  public init(database: PostgrestClient) {
+  public init(database: PostgrestClient, logger: Logger? = nil) {
     self.init(
       decoder: database.configuration.decoder,
       encoder: database.configuration.encoder,
@@ -33,82 +36,124 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
         .build({ database.from($0.name) })
         .execute()
         .data
-      }
+      },
+      logger: logger
     )
   }
 
   public init(
     decoder: JSONDecoder,
     encoder: JSONEncoder,
+    logger: Logger? = nil,
     execute: @escaping @Sendable (Route) async throws -> DatabaseResult
   ) {
     self.init(
       decoder: decoder,
       encoder: encoder,
-      execute: { try await execute($0).data(encoder) }
+      execute: { try await execute($0).data(encoder) },
+      logger: logger
     )
   }
 
   internal init(
     decoder: JSONDecoder,
     encoder: JSONEncoder,
-    execute: @escaping @Sendable (Route) async throws -> Data
+    execute: @escaping @Sendable (Route) async throws -> Data,
+    logger: Logger? = nil
   ) {
     self.decoder = decoder
     self.encoder = encoder
     self.execute = execute
+    self.logger = logger
   }
 
+  /// Call the database route, respecting any overrides and return the decoded result.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
   @discardableResult
-  public func run<A: Decodable>(
+  public func call<A: Decodable>(
     _ route: Route
   ) async throws -> A {
-    return try await decoder.decode(A.self, from: data(for: route))
+    try await logIfError("Run Route:") {
+      try await decoder.decode(A.self, from: data(for: route))
+    }
   }
-
-  public func run(
+  /// Call the database route, respecting any overrides ignoring any output.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
+  public func call(
     _ route: Route
   ) async throws {
     guard await override(for: route) == nil else { return }
-    _ = try await execute(route)
+    try await logIfError("Run Route:") { try await execute(route) }
   }
-
+  /// Call the database route, respecting any overrides and return the decoded result.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
   @discardableResult
   public func callAsFunction<A: Decodable>(
     _ route: Route
   ) async throws -> A {
-    try await self.run(route)
+    try await self.call(route)
   }
-
+  /// Call the database route, respecting any overrides ignoring any output.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
   public func callAsFunction(
     _ route: Route
   ) async throws {
-    try await self.run(route)
+    try await self.call(route)
   }
 
+  // Checks if there's an override for the given route, returning the
+  // override data otherwise executes the route returning the data from
+  // the database.
   private func data(for route: Route) async throws -> Data {
     guard let match = await override(for: route) else {
-      return try await execute(route)
+      return try await logIfError("Execute Route:") {
+        try await execute(route)
+      }
     }
-    return try match.data(encoder)
+    return try await logIfError("Decode Override Data:") {
+      try match.data(encoder)
+    }
   }
   
+  // Checks for an override, returing the overrides result if found.
   private func override(for route: Route) async -> DatabaseResult? {
     await overrides.firstMatch(of: route)
   }
+  
+  @discardableResult
+  private func logIfError<T>(
+    _ prefix: String? = nil,
+    _ call: @escaping () async throws -> T
+  ) async throws -> T {
+    do {
+      return try await call()
+    } catch {
+      let message = prefix != nil ? "\(prefix!) \(error)" : "\(error)"
+      logger?.error("\(message)")
+      throw error
+    }
+  }
 
-}
-
-extension DatabaseRouter: CasePathable where Route: CasePathable {
-  public typealias AllCasePaths = Route.AllCasePaths
-  public static var allCasePaths: Route.AllCasePaths { Route.allCasePaths }
 }
 
 // MARK: - Overrides
 
 #if DEBUG
 extension DatabaseRouter {
-  /// Override the given route with the value.
+  /// Override a route with the database result.
+  ///
+  /// ### Example
+  /// ```swift
+  /// router.override(.method(.delete, in: "todos"), with: .failure(MyError()))
+  /// ```
   ///
   /// - Parameters:
   ///   - override: The override used to match a route.
@@ -121,6 +166,12 @@ extension DatabaseRouter {
   }
   /// Override the given route with the value.
   ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// router.override(.case(\.todos.fetch), with: Todo.mocks)
+  /// ```
+  ///
   /// - Parameters:
   ///   - override: The override used to match a route.
   ///   - value: The value to return when the route is called.
@@ -130,7 +181,13 @@ extension DatabaseRouter {
   ) {
     overrides.insert(override, result: { _ in .success(value) })
   }
-  /// Override the given route with a void value
+  /// Override the given route that returns void values.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// router.override(.method(.delete, in "todos"))
+  /// ```
   ///
   /// - Parameters:
   ///   - override: The override used to match a route.
@@ -138,6 +195,11 @@ extension DatabaseRouter {
     _ override: Override
   ) {
     overrides.insert(override, result: { _ in .success() })
+  }
+  
+  /// Removes all overrides currently set on the router.
+  public mutating func resetOverrides() {
+    overrides.reset()
   }
 
   // Represents a collection of overrides managed by the router.
@@ -157,6 +219,8 @@ extension DatabaseRouter {
       return nil
     }
     
+    // Insert new overrides at the begining of the list, the
+    // first override found for a given route will be used.
     mutating func insert(
       _ override: Override,
       result: @escaping FetchValue
@@ -181,7 +245,7 @@ extension DatabaseRouter {
     
     public static func `case`<T>(
       _ caseKeyPath: CaseKeyPath<Route, T>
-    ) -> Self {
+    ) -> Self where Route: CasePathable {
       .init { route in
         AnyCasePath(caseKeyPath).extract(from: route) != nil
       }
@@ -234,6 +298,129 @@ extension DatabaseRouter {
   }
 }
 #endif
+
+extension DatabaseRouter: CasePathable where Route: CasePathable {
+  public typealias AllCasePaths = Route.AllCasePaths
+  public static var allCasePaths: Route.AllCasePaths { Route.allCasePaths }
+  
+  /// Used with case key path's and dynamic member lookups when the `Route` is modeled as
+  /// a `CasePathable` enum.  This type respects the overrides in the router and allows access
+  /// to a router-like object that is able to call a route, returning it's value if applicable.
+  ///
+  /// > Note: Any overrides need to be made to the database router. You will not be able to add overrides
+  /// > to the database router proxy.
+  ///
+  /// ### Example
+  ///
+  /// ```swift
+  /// @CasePathable
+  /// enum DatabaseRoutes: RouteController {
+  ///   case todos(TodoRoute)
+  ///   ... // Other routes.
+  ///
+  ///   func route() async throws -> DatabaseRoute {
+  ///     switch self {
+  ///       case let .todos(todos):
+  ///         return try await todos.route()
+  ///        ... // Handle other routes.
+  ///     }
+  ///   }
+  /// }
+  ///
+  /// // Redacted registering the routes with the supabase client / dependencies mechanism.
+  /// // The router is an instance of DatabaseRouter<DatabaseRoutes> in this example.
+  ///
+  /// @Dependency(\.supabase.router.todos) var todos
+  /// let todos: [Todo] = try await todos(.fetch())
+  ///
+  /// // Override needs done on the router.
+  /// supabase.router.override(.case(\.todos.fetch), with: Todo.mocks)
+  /// let mockTodos: [Todo] = try await todos(.fetch())
+  ///
+  /// ```
+  ///
+  @dynamicMemberLookup
+  public struct DatabaseRouterProxy<Value>: Sendable {
+    private let casePath: AnyCasePath<Route, Value>
+    private let router: DatabaseRouter<Route>
+    
+    init(
+      casePath: AnyCasePath<Route, Value>,
+      router: DatabaseRouter<Route>
+    ) {
+      self.casePath = casePath
+      self.router = router
+    }
+    /// Call the database route, respecting any overrides ignoring any output.
+    ///
+    /// - Parameters:
+    ///   - route: The route to call on the database.
+    public func call(_ route: Value) async throws {
+      try await router.call(casePath.embed(route))
+    }
+    /// Call the database route, respecting any overrides and return the decoded result.
+    ///
+    /// - Parameters:
+    ///   - route: The route to call on the database.
+    @discardableResult
+    public func call<A: Decodable>(_ route: Value) async throws -> A {
+      try await router.call(casePath.embed(route))
+    }
+    /// Call the database route, respecting any overrides ignoring any output.
+    ///
+    /// - Parameters:
+    ///   - route: The route to call on the database.
+    public func callAsFunction(_ route: Value) async throws {
+      try await self.call(route)
+    }
+    /// Call the database route, respecting any overrides and return the decoded result.
+    ///
+    /// - Parameters:
+    ///   - route: The route to call on the database.
+    @discardableResult
+    public func callAsFunction<A: Decodable>(_ route: Value) async throws -> A {
+      try await self.call(route)
+    }
+  }
+  
+  public subscript<T>(case caseKeyPath: CaseKeyPath<Route, T>) -> DatabaseRouterProxy<T> {
+    .init(casePath: AnyCasePath(caseKeyPath), router: self)
+  }
+  
+  public subscript<T>(
+    dynamicMember keyPath: KeyPath<Self.AllCasePaths, AnyCasePath<Route, T>>
+  ) -> DatabaseRouterProxy<T> {
+    .init(
+      casePath: Self.allCasePaths[keyPath: keyPath],
+      router: self
+    )
+  }
+  
+}
+
+extension DatabaseRouter.DatabaseRouterProxy: CasePathable where Value: CasePathable {
+  public typealias AllCasePaths = Value.AllCasePaths
+  public static var allCasePaths: Value.AllCasePaths { Value.allCasePaths }
+  
+  public subscript<T>(case caseKeyPath: CaseKeyPath<Value, T>) -> DatabaseRouter.DatabaseRouterProxy<T> {
+    self.appending(path: AnyCasePath(caseKeyPath))
+  }
+  
+  public subscript<T>(
+    dynamicMember keyPath: KeyPath<Self.AllCasePaths, AnyCasePath<Value, T>>
+  ) -> DatabaseRouter.DatabaseRouterProxy<T> {
+    self.appending(path: Self.allCasePaths[keyPath: keyPath])
+  }
+  
+  private func appending<T>(
+    path: AnyCasePath<Value, T>
+  ) -> DatabaseRouter.DatabaseRouterProxy<T> {
+    .init(
+      casePath: self.casePath.appending(path: path),
+      router: self.router
+    )
+  }
+}
 
 extension DatabaseRouter: TestDependencyKey {
 

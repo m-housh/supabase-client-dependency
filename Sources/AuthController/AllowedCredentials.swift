@@ -4,10 +4,13 @@ import Foundation
 /// Represents credentials that are allowed to be used in the mock  implementation.
 ///
 ///
-public enum AllowedCredentials {
+public enum AllowedCredentials: Sendable {
 
   /// Allow's any credentials to authenticate.
   case any
+  
+  /// Dont' allow any credentials to authenticate.
+  case none
 
   /// Allow's only the supplied credentials to authenticate.
   ///
@@ -35,6 +38,8 @@ public enum AllowedCredentials {
     switch self {
     case .any:
       return true
+    case .none:
+      return false
     case let .only(allowedCredentials):
       switch request {
       case let .login(optionalLogin):

@@ -92,8 +92,8 @@ struct TodoUpdateRequest: Codable, Hashable {
 enum TodoRoute: RouteCollection {
   static var table: DatabaseTable { DatabaseTable.todos }
 
-  case delete(filteredBy: [DatabaseFilter])
-  case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
+  case delete(filteredBy: [DatabaseRoute.Filter])
+  case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
   case fetchOne(id: Todo.ID)
   case insert(InsertRequest)
   case update(id: Todo.ID, updates: TodoUpdateRequest)
@@ -126,7 +126,7 @@ enum TodoRoute: RouteCollection {
     case many([TodoInsertRequest])
   }
 
-  static func delete(_ filters: DatabaseFilter...) -> Self {
+  static func delete(_ filters: DatabaseRoute.Filter...) -> Self {
     .delete(filteredBy: filters)
   }
 
@@ -145,8 +145,8 @@ enum TodoRoute: RouteCollection {
   static var fetch: Self { .fetch(filteredBy: [], orderedBy: nil) }
 
   static func fetch(
-    filteredBy filters: DatabaseFilter...,
-    orderedBy order: DatabaseOrder? = nil
+    filteredBy filters: DatabaseRoute.Filter...,
+    orderedBy order: DatabaseRoute.Order? = nil
   ) -> Self {
     .fetch(filteredBy: filters, orderedBy: order)
   }

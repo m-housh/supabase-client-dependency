@@ -46,13 +46,13 @@ Below is an example for a `Todos` table.
 ```swift
 @CasePathable
 enum TodoRoute: RouteController {
-  static let table: AnyTable = "todos"
+  static let table: DatabaseTable = "todos"
 
   // The delete route, which uses the filters to know which row(s) to delete.
-  case delete(filteredBy: [DatabaseFilter])
+  case delete(filteredBy: [DatabaseRoute.Filter])
 
   // The fetch route, which can optionally take filters and an order.
-  case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
+  case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order?)
   
   // The fetch by id route.
   case fetchOne(id: Todo.ID)

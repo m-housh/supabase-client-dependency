@@ -5,7 +5,7 @@ import Foundation
 ///
 /// > Note: Not all options are required for all signup request types, refer to the underlying `GoTrue` request.
 ///
-public struct SharedOptions: Equatable {
+public struct SharedOptions: Equatable, Sendable {
 
   /// An optional captcha token.
   public let captchaToken: String?

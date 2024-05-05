@@ -7,7 +7,7 @@ import Foundation
 /// You will generally want to expose this as a `Dependency` in your application and create it with the ``live(auth:)`` method.
 ///
 @dynamicMemberLookup
-public struct AuthController {
+public struct AuthController: Sendable {
   
   /// The supabase auth client used on the controller.
   public let client: AuthClient
@@ -16,21 +16,21 @@ public struct AuthController {
   ///
   /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
   ///
-  public var getCurrentUser: (() async -> User?)?
+  public var getCurrentUser: (@Sendable () async -> User?)?
 
   /// Exposes an override hook for the login methods on the current controller instance.
   ///
   /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
   /// > For Example, calling down to the `client.signIn` method is not overriden you need to call one of the `login` methods.
   ///
-  public var loginHandler: ((LoginRequest?) async throws -> Session?)?
+  public var loginHandler: (@Sendable (LoginRequest?) async throws -> Session?)?
 
   /// Exposes an override hook for the login methods on the current controller instance.
   ///
   /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
   /// > For Example, calling down to the `client.signUp` method is not overriden you need to call the ``signUp(with:)`` method.
   ///
-  public var signupHandler: ((SignUpRequest) async throws -> User)?
+  public var signupHandler: (@Sendable (SignUpRequest) async throws -> User)?
   
   /// Create a new ``AuthController`` instance, optionally providing override hooks.
   ///
@@ -43,21 +43,19 @@ public struct AuthController {
   ///   - signupHandler: Optional override hook for methods that sign-up a new user.
   public init(
     client: AuthClient,
-    currentUser getCurrentUser: (() async -> User?)? = nil,
-    loginHandler: ((LoginRequest?) async throws -> Session?)? = nil,
-    signupHandler: ((SignUpRequest) async throws -> User)? = nil
+    currentUser getCurrentUser: (@Sendable () async -> User?)? = nil,
+    loginHandler: (@Sendable (LoginRequest?) async throws -> Session?)? = nil,
+    signupHandler: (@Sendable (SignUpRequest) async throws -> User)? = nil
   ) {
     self.client = client
     self.getCurrentUser = getCurrentUser
     self.loginHandler = loginHandler
     self.signupHandler = signupHandler
   }
-  
   /// Exposes all the properties on the wrapped `AuthClient`.
   public subscript<T>(dynamicMember keyPath: KeyPath<AuthClient, T>) -> T {
     client[keyPath: keyPath]
   }
-  
   /// Attempt to login with previously stored credentials, returning `nil` if it was un-successful.
   public func login() async -> Session? {
     guard let loginHandler else {
@@ -65,7 +63,6 @@ public struct AuthController {
     }
     return try? await loginHandler(nil)
   }
-  
   /// Attempt to login with provided credentials, throwing an error if it was un-successful.
   ///
   /// This method will return the session provided by the ``loginHandler`` if it is set on the controller, if it
@@ -83,7 +80,6 @@ public struct AuthController {
     }
     return session
   }
-
   /// Attempt to login with provided credentials, throwing an error if it was un-successful.
   ///
   /// This method will return the session provided by the ``loginHandler`` if it is set on the controller, if it
@@ -95,7 +91,6 @@ public struct AuthController {
   public func login(credentials: Credentials) async throws -> Session {
     return try await self.login(.credentials(credentials))
   }
-
   /// Access the currently logged in user, returning `nil` if no login session is found.
   ///
   /// This method will return the user provided by the ``getCurrentUser`` if it is set on the controller, if it
@@ -109,7 +104,6 @@ public struct AuthController {
       return await getCurrentUser()
     }
   }
-
   /// Access the currently logged in user, throwing an error  if no login session is found.
   ///
   /// This method will return the user provided by the ``getCurrentUser`` if it is set on the controller, if it
@@ -122,7 +116,6 @@ public struct AuthController {
     }
     return user
   }
-
   /// Sign-up a new user.
   ///
   /// This method will return the user provided by the ``signupHandler`` if it is set on the controller, if it
@@ -137,7 +130,7 @@ public struct AuthController {
   }
 }
 
-extension AuthController {
+extension AuthController: TestDependencyKey {
 
   /// Create the live ``AuthController`` with no override hooks.
   ///
@@ -145,6 +138,23 @@ extension AuthController {
   ///   - auth: The `AuthClient` to use for the controller.
   public static func live(auth: AuthClient) -> Self {
     self.init(client: auth)
+  }
+  
+  public static var testValue: AuthController {
+    .init(client: .init(
+      configuration: .init(
+        url: XCTestDynamicOverlay.unimplemented(
+          "\(Self.self).url",
+          placeholder: URL(string: "/")!
+        ),
+        localStorage: XCTestDynamicOverlay.unimplemented(
+          "\(Self.self).localStorage",
+          placeholder: AuthClient.Configuration.defaultLocalStorage
+        ),
+        logger: nil
+      )
+    )
+    )
   }
 
   #if DEBUG

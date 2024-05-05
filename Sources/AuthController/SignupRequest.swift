@@ -1,6 +1,6 @@
 /// Represents parameters for signing users up.
 ///
-public enum SignUpRequest: Equatable {
+public enum SignUpRequest: Equatable, Sendable {
 
   /// Signup with an email and a password.
   case email(

@@ -1,7 +1,8 @@
+import ConcurrencyExtras
 import Foundation
 import PostgREST
 
-public struct DatabaseRoute: @unchecked Sendable {
+public struct DatabaseRoute: Sendable {
   
   // A unique identifier if applicable, that can be set to differentiate routes.
   let id: String?
@@ -16,16 +17,17 @@ public struct DatabaseRoute: @unchecked Sendable {
   let data: AnyJSON?
 
   // Any associated database filters.
-  let filters: [DatabaseFilter]
+  let filters: [DatabaseRoute.Filter]
 
   // Any associated database order.
-  let order: DatabaseOrder?
+  let order: Order?
 
   // The returning options used for many of the query types.
   let returning: PostgrestReturningOptions
 
   // A handler for building a custom route, only used if the method type is `.custom`
-  let customBuilder: ((PostgrestQueryBuilder) throws -> PostgrestBuilder)?
+  @UncheckedSendable
+  var customBuilder: ((PostgrestQueryBuilder) throws -> PostgrestBuilder)?
 
   // Internal initialization only.
   init(
@@ -33,8 +35,8 @@ public struct DatabaseRoute: @unchecked Sendable {
     table: DatabaseTable,
     method: Method,
     data: AnyJSON? = nil,
-    filters: [DatabaseFilter] = [],
-    order: DatabaseOrder? = nil,
+    filters: [DatabaseRoute.Filter] = [],
+    order: Order? = nil,
     returning: PostgrestReturningOptions,
     customBuilder: ((PostgrestQueryBuilder) throws -> PostgrestBuilder)? = nil
   ) {
@@ -143,7 +145,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
     from table: DatabaseTable,
-    filters: [DatabaseFilter],
+    filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
     return .init(id: routeId, table: table, method: .delete, filters: filters, returning: .minimal)
@@ -156,7 +158,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
     from table: DatabaseTable,
-    filteredBy filters: DatabaseFilter...,
+    filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
     return .delete(from: table, filters: filters, routeId: routeId)
@@ -183,8 +185,8 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: DatabaseTable,
-    filters: [DatabaseFilter],
-    order: DatabaseOrder? = nil,
+    filters: [DatabaseRoute.Filter],
+    order: Order? = nil,
     routeId: String? = nil
   ) -> Self {
     return .init(
@@ -205,8 +207,8 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: DatabaseTable,
-    filteredBy filters: DatabaseFilter...,
-    order: DatabaseOrder? = nil,
+    filteredBy filters: DatabaseRoute.Filter...,
+    order: Order? = nil,
     routeId: String? = nil
   ) -> Self {
     return .fetch(from: table, filters: filters, order: order, routeId: routeId)
@@ -219,7 +221,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: DatabaseTable,
-    filters: [DatabaseFilter],
+    filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
     return .init(id: routeId, table: table, method: .fetchOne, filters: filters, returning: .representation)
@@ -232,7 +234,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: DatabaseTable,
-    filteredBy filters: DatabaseFilter...,
+    filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
     return .fetchOne(from: table, filters: filters, routeId: routeId)
@@ -263,7 +265,7 @@ extension DatabaseRoute {
   public static func update<V>(
     _ value: V,
     in table: DatabaseTable,
-    filteredBy filters: DatabaseFilter...,
+    filteredBy filters: DatabaseRoute.Filter...,
     returning: PostgrestReturningOptions = .representation,
     routeId: String? = nil
   ) throws -> Self where V: Codable, V: Sendable {

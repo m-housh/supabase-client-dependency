@@ -3,86 +3,96 @@ import CasePaths
 @_exported import DatabaseRouter
 import Dependencies
 import Foundation
+import OSLog
 import Supabase
 
 /// A supabase client dependency, which holds a supabase client and provides an authentication
 /// controller and database router.
 ///
 /// You need to extend this type to provide the live dependency in your application, generally using
-/// the ``live(client:)`` helper.
+/// the ``live(client:schema:logger:)`` helper.
 ///
 /// ### Example
 /// ```swift
+///
+/// extension DatabaseTable {
+///   static var todos: Self = "todos"
+/// }
+///
 /// @CasePathable
-/// enum TodoRoute: RouteController {
-///   static var table: AnyTable { AnyTable.todos }
-///
-///   case delete(filteredBy: [DatabaseFilter])
-///   case fetch(filteredBy: [DatabaseFilter] = [], orderedBy: DatabaseOrder?)
+/// enum TodoRoute: RouteCollection {
+///   case delete(id: Todo.ID)
+///   case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order? = nil)
 ///   case fetchOne(id: Todo.ID)
-///   case insert(InsertRequest)
-///   case update(id: Todo.ID, updates: TodoUpdateRequest)
-///   case upsert(Todo)
+///   case save(Todo)
 ///
-///   public func route() async throws -> DatabaseRoute {
+///   func route() async throws -> DatabaseRoute {
 ///     switch self {
-///     case let .delete(filters):
-///       return .delete(from: Self.table, filters: filters)
+///     case let .delete(id):
+///       return .delete(id: id, from: .todos)
 ///     case let .fetch(filters, order):
-///       return .fetch(from: Self.table, filters: filters, order: order)
+///       return .fetch(from: .todos, filters: filters, order: order)
 ///     case .fetchOne(id: let id):
-///       return .fetchOne(from: Self.table, filteredBy: .id(id))
-///     case let .insert(request):
-///       switch request {
-///       case let .single(todo):
-///         return try .insert(todo, into: Self.table)
-///       case let .many(todos):
-///         return try .insert(todos, into: Self.table)
-///       }
-///     case .update(id: let id, updates: let updates):
-///       return try .update(id: id, in: Self.table, with: updates)
-///     case let .upsert(todo):
-///       return try .upsert(todo, in: Self.table)
+///       return .fetchOne(from: .todos, filteredBy: .id(id))
+///     case let .save(todo):
+///       return try .upsert(todo, into: .todos)
 ///     }
 ///   }
 /// }
 ///
 /// @CasePathable
-/// enum DbRoutes: DatabaseController {
+/// enum DatabaseRoute: RouteCollection {
 ///
 ///   case todos(TodoRoute)
-///   ...
+///    ... // Other database routes.
 ///
 ///   func route() async throws -> DatabaseRoute {
 ///     switch self {
 ///     case let .todos(todos):
-///       return try todos.route()
-///      ...
+///       return try await todos.route()
+///
+///     ... // Handle other routes.
 ///     }
 ///   }
 /// }
 ///
 /// // Setup the live dependencies.
-///
 /// extension DependencyValues {
-///   var supabase: SupabaseClientDependency<DbRoutes> {
-///     get { self[SupabaseClientDependency<DbRoutes>.self] }
-///     set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
+///   var supabase: SupabaseDependency<DatabaseRoute> {
+///     get { self[SupabaseDependency<DatabaseRoute>.self] }
+///     set { self[SupabaseDependency<DatabaseRoute>.self] = newValue }
 ///   }
 /// }
 ///
-/// private let client = SupabaseClient(...)
-///
-/// extension SupabaseClientDependency<DbRoutes>: DependencyKey {
-///   static let liveValue: Self = .live(client: client)
+/// extension SupabaseDependency<DatabaseRoute>: DependencyKey {
+///   static let liveValue: Self = .live(client: SupabaseClient(...), schema: "public")
 /// }
 ///
-/// extension DatabaseExecutor: DependencyKey {
-///   static let liveValue: Self = .live(database: client.schema("public"))
+/// // Basic usage.
+/// @Dependency(\.supabase.auth) var auth
+/// @Dependency(\.supabase.router) var router
+///
+/// // Use the auth controller to login.
+/// try await auth.login(credentials: Credentials(...))
+///
+/// // Use the router to call the todos fetch route.
+/// let todos: [Todo] = try await router(.todos(.fetch()))
+///
+/// // Override route in a view preview.
+/// #Preview {
+///   TodoListView(
+///     store: Store(initialState: .init()) {
+///       TodoListFeature()
+///     } withDependencies: {
+///       $0.router.override(.case(\.todos.fetch), with: Todo.mocks)
+///     }
+///   )
 /// }
+///
+///
 ///```
 @dynamicMemberLookup
-public struct SupabaseClientDependency<Routes: RouteCollection> where Routes: CasePathable {
+public struct SupabaseDependency<Routes: RouteCollection>: Sendable where Routes: CasePathable {
 
   /// The authentication controller, which gives control over the current user, session, and offers
   /// convenience methods for signing-up and logging in users.
@@ -97,18 +107,18 @@ public struct SupabaseClientDependency<Routes: RouteCollection> where Routes: Ca
   /// overriding database routes for previews and tests.  And allows you to model your database routes as
   /// enum's.
   ///
-//  public var router: DatabaseRouter<Routes>
+  public var router: DatabaseRouter<Routes>
 
   public init(
     auth: AuthController? = nil,
-    client: SupabaseClient
-//    router: DatabaseRouter<Routes>? = nil
+    client: SupabaseClient,
+    router: DatabaseRouter<Routes>
   ) {
     self.auth = auth ?? .live(auth: client.auth)
     self.client = client
-//    self.router = router ?? .init()
+    self.router = router
   }
-
+  
   /// Create a database query for the given table.
   ///
   /// - Parameters:
@@ -123,40 +133,59 @@ public struct SupabaseClientDependency<Routes: RouteCollection> where Routes: Ca
   }
 }
 
-extension SupabaseClientDependency: TestDependencyKey {
-  static public var testValue: SupabaseClientDependency<Routes> {
-    let client = SupabaseClient.local()
+extension SupabaseDependency: TestDependencyKey {
+  static public var testValue: SupabaseDependency<Routes> {
     return .init(
-      auth: XCTestDynamicOverlay.unimplemented("\(Self.self).auth", placeholder: .live(auth: client.auth)),
-      client: XCTestDynamicOverlay.unimplemented("\(Self.self).client", placeholder: client)
-//      router: XCTestDynamicOverlay.unimplemented("\(Self.self).router", placeholder: .init())
+      auth: XCTestDynamicOverlay.unimplemented("\(Self.self).auth", placeholder: .testValue),
+      client: XCTestDynamicOverlay.unimplemented("\(Self.self).client", placeholder: .testValue),
+      router: XCTestDynamicOverlay.unimplemented("\(Self.self).router", placeholder: .testValue)
     )
   }
 }
 
-extension SupabaseClientDependency {
-
-  /// A helper to generate a live ``SupabaseClientDependency``.
+extension SupabaseDependency {
+  /// A helper to generate a live ``SupabaseDependency``.
   ///
   /// This is generally used to conform the supabase client dependency to `DependencyKey` and
   /// provide it's `liveValue` in your project.
   ///
   /// - Parameters:
   ///   - client: The supabase client to use.
-  public static func live(client: SupabaseClient) -> Self {
-    .init(client: client)
+  ///   - schema: The database schema to use to create the database router with.
+  ///   - logger: An optional logger to use..
+  public static func live(
+    client: SupabaseClient,
+    schema: String = "public",
+    logger: Logger? = nil
+  ) -> Self {
+    .init(
+      client: client,
+      router: .init(database: client.schema(schema), logger: logger)
+    )
   }
 }
 
-extension SupabaseClient {
 
+extension SupabaseClient: TestDependencyKey {
+  public static var testValue: SupabaseClient {
+    .init(
+      supabaseURL: XCTestDynamicOverlay.unimplemented("\(Self.self).supabaseUrl", placeholder: URL(string: "/")!),
+      supabaseKey: XCTestDynamicOverlay.unimplemented("\(Self.self).supabaseKey", placeholder: "")
+    )
+  }
+}
+
+#if DEBUG
+extension SupabaseClient {
   /// A configuration for a local supabase instance.
   ///
   /// In general this may not be the same for different machines and should not be used in production.
   public static func local() -> Self {
-    Self.init(supabaseURL: supabaseURL, supabaseKey: localAnonKey)
+    Self.init(
+      supabaseURL: supabaseURL,
+      supabaseKey: localAnonKey
+    )
   }
-
 }
 
 private let supabaseURL = URL(string: "http://localhost:54321")!
@@ -164,3 +193,4 @@ private let localAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
   "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9." +
   "CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+#endif
