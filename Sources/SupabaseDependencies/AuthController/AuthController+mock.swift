@@ -25,34 +25,7 @@ extension AuthController {
     date: @escaping () -> Date = Date.init
   ) -> Self {
     
-    struct AuthStorage: AuthLocalStorage, Sendable {
-      private let storage = LockIsolated<Storage>(Storage())
-      
-      final class Storage {
-        var storage: [String: Data] = [:]
-        
-        init() {
-          self.storage = [:]
-        }
-      }
-      
-      func store(key: String, value: Data) throws {
-        storage.withValue { storage in
-          storage.storage[key] = value
-        }
-      }
-      
-      func retrieve(key: String) throws -> Data? {
-        storage.value.storage[key]
-      }
-      
-      func remove(key: String) throws {
-        _ = storage.withValue { storage in
-          storage.storage.removeValue(forKey: key)
-        }
-      }
-    }
-    
+
     final class Storage {
       var currentUser: User
       var currentSession: Session? = nil
@@ -68,7 +41,7 @@ extension AuthController {
     return self.init(
       client: .init(configuration: .init(
         url: URL(string: "/")!,
-        localStorage: AuthStorage(),
+        localStorage: LocalAuthStorage(),
         logger: nil
       )),
       currentUser: { storage.value.currentUser },
@@ -96,6 +69,30 @@ extension AuthController {
     )
   }
 }
+
+#if DEBUG
+public struct LocalAuthStorage: AuthLocalStorage, Sendable {
+  private let storage = LockIsolated([String:Data]())
+  
+  public init() { }
+ 
+  public func store(key: String, value: Data) throws {
+    storage.withValue { storage in
+      storage[key] = value
+    }
+  }
+  
+  public func retrieve(key: String) throws -> Data? {
+    storage.value[key]
+  }
+  
+  public func remove(key: String) throws {
+    _ = storage.withValue { storage in
+      storage.removeValue(forKey: key)
+    }
+  }
+}
+#endif
 
 /// Represents credentials that are allowed to be used in the mock  implementation.
 ///

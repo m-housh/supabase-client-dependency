@@ -214,6 +214,74 @@ final class DatabaseClientTests: XCTestCase {
 
     }
   }
+  
+  func testCasePathableRouterWholeCaseOverride() async throws {
+    let todoMocks = Todo.mocks(date: Date(timeIntervalSince1970: 1234567890))
+    struct TestError: Error { }
+    
+    try await withDependencies {
+      $0.multiRouter.override(
+        case: \.todos
+      ) { route in
+        switch route {
+        case .delete(filteredBy: _):
+            return .success()
+        case .fetch(filteredBy: _, orderedBy: _):
+          return .success(todoMocks)
+        case .fetchOne(id: _):
+          return .success(todoMocks[0])
+        case .insert(_):
+          return .failure(TestError())
+        case .update(id: _, updates: _):
+          return .failure(TestError())
+        case .upsert(_):
+          return .failure(TestError())
+        }
+      }
+    } operation: {
+      
+      @Dependency(\.multiRouter.todos) var router
+      let todos: [Todo] = try await router(.fetch)
+      XCTAssertEqual(todos, todoMocks)
+      
+      let one: Todo = try await router(.fetchOne(id: todoMocks[2].id))
+      XCTAssertEqual(one.id, todoMocks[0].id)
+      
+      do {
+        try await router(.delete(.id(todoMocks[0].id)))
+        XCTAssert(true)
+      } catch {
+        XCTFail("Unexpected failure.")
+      }
+      
+      do {
+        try await router(.insert(
+          .single(.init(description: "foo"))
+        ))
+        XCTFail("Expected failure.")
+      } catch {
+        XCTAssert(true)
+      }
+      
+      do {
+        try await router(.update(
+          id: todoMocks[0].id, updates: .init(description: "foo")
+        ))
+        XCTFail("Expected failure.")
+      } catch {
+        XCTAssert(true)
+      }
+       
+      do {
+        try await router(.upsert(
+          todoMocks[0]
+        ))
+        XCTFail("Expected failure.")
+      } catch {
+        XCTAssert(true)
+      }    
+    }
+  }
 }
 
 @CasePathable

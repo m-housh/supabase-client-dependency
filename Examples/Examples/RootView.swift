@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import SupabaseClientDependencies
+import SupabaseDependencies
 import Supabase
 import SwiftUI
 
@@ -30,7 +30,7 @@ struct RootFeature: Reducer {
     case loggedOut(AuthFeature)
   }
 
-  @Dependency(\.auth) var auth;
+  @Dependency(\.supabase.auth) var auth;
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in

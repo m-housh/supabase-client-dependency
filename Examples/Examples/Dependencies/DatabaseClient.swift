@@ -1,21 +1,23 @@
-import CasePaths
+import ComposableArchitecture
 import Dependencies
 import Foundation
 import IdentifiedStorage
-import SupabaseClientDependencies
+import SupabaseDependencies
 import XCTestDynamicOverlay
 
-extension DependencyValues {
-  var database: DatabaseRoutes {
-    get { self[DatabaseRoutes.self] }
-    set { self[DatabaseRoutes.self] = newValue }
+@CasePathable
+enum DatabaseRoutes: RouteCollection {
+
+  case todos(TodoRoute)
+  
+  func route() async throws -> DatabaseRoute {
+    switch self {
+    case let .todos(todos):
+      return try await todos.route()
+    }
   }
-}
-
-struct DatabaseRoutes {
-
-  var todos: DatabaseRouter<TodoRoute>
-
+  
+  @CasePathable
   enum TodoRoute: RouteCollection {
     case delete(id: TodoModel.ID)
     case fetch
@@ -24,7 +26,7 @@ struct DatabaseRoutes {
 
 
     func route() async throws -> DatabaseRoute {
-      @Dependency(\.auth) var auth
+      @Dependency(\.supabase.auth) var auth
 
       switch self {
       case let .delete(id: id):
@@ -66,46 +68,20 @@ struct DatabaseRoutes {
       }
     }
 
-    struct InsertRequest {
-      var description: String
-      var complete: Bool
-    }
-    
-    struct UpdateRequest: Codable {
-      var description: String?
-      var complete: Bool?
-      
-      var hasChanges: Bool {
-        description != nil || complete != nil
-      }
-    }
   }
 }
 
-extension DatabaseRoutes: TestDependencyKey {
-  static var testValue: DatabaseRoutes { .init(todos: .testValue) }
-  static var previewValue: DatabaseRoutes {
-    let todos = IdentifiedStorageOf<TodoModel>(initialValues: TodoModel.mocks)
+struct InsertRequest {
+  var description: String
+  var complete: Bool
+}
 
-    return .init(
-      todos: .init(
-        decoder: JSONDecoder(),
-        encoder: JSONEncoder(),
-        execute: { route in
-          // Overrides for preview mode.
-          switch route {
-          case let .delete(id: id):
-              return await .init { try await todos.delete(id: id) }
-          case .fetch:
-            return await .init { try await todos.fetch() }
-          case let .insert(todo):
-            return await .init { try await todos.insert(request: todo) }
-          case let .update(id: id, updates: updates):
-            return await .init { try await todos.update(id: id, request: updates) }
-          }
-        }
-      )
-    )
+struct UpdateRequest: Codable {
+  var description: String?
+  var complete: Bool?
+  
+  var hasChanges: Bool {
+    description != nil || complete != nil
   }
 }
 
@@ -113,22 +89,22 @@ extension DatabaseRoute.Table {
   static let todos = Self.init("todos")
 }
 
-fileprivate enum TodoColumn: String, ColumnRepresentable {
+fileprivate enum TodoColumn: String {
   case complete
   case ownerId = "owner_id"
 }
 
 extension DatabaseRoute.Filter {
   static func ownerId(equals value: User.ID) -> Self {
-    .equals(column: TodoColumn.ownerId, value: value)
+    .equals(column: TodoColumn.ownerId.column, value: value)
   }
 }
 
 extension DatabaseRoute.Order {
-  static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
+  static var complete: Self { .ascending(TodoColumn.complete.column) }
 }
 
-extension DatabaseRoutes.TodoRoute.InsertRequest: InsertRequestConvertible {
+extension InsertRequest: InsertRequestConvertible {
   typealias ID = TodoModel.ID
   
   func transform() -> TodoModel {
@@ -137,7 +113,7 @@ extension DatabaseRoutes.TodoRoute.InsertRequest: InsertRequestConvertible {
   }
 }
 
-extension DatabaseRoutes.TodoRoute.UpdateRequest: UpdateRequestConvertible {
+extension UpdateRequest: UpdateRequestConvertible {
   typealias ID = TodoModel.ID
   
   func apply(to state: inout TodoModel) {

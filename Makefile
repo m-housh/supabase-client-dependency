@@ -9,14 +9,14 @@ PLATFORM_TVOS = tvOS Simulator,name=Apple TV
 PLATFORM_WATCHOS = watchOS Simulator,name=Apple Watch Series 8 (45mm)
 
 SCHEME = supabase-client-dependency
-DOCC_TARGET = SupabaseClientDependencies
+DOCC_TARGET = SupabaseDependencies
 
 CONFIG := debug
 
 clean:
 	rm -rf .build
 
-test-macos: clean
+test-macos: clean reset-db
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -24,7 +24,7 @@ test-macos: clean
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MACOS)"
 
-test-ios: clean
+test-ios: clean reset-db
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -32,7 +32,7 @@ test-ios: clean
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_IOS)"
 
-test-mac-catalyst: clean
+test-mac-catalyst: clean reset-db
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -40,7 +40,7 @@ test-mac-catalyst: clean
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MAC_CATALYST)"
 
-test-tvos: clean
+test-tvos: clean reset-db
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -48,7 +48,7 @@ test-tvos: clean
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_TVOS)"
 
-test-watchos: clean
+test-watchos: clean reset-db
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -56,16 +56,16 @@ test-watchos: clean
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_WATCHOS)"
 
-test-swift:
+test-swift: reset-db
 	swift test --enable-code-coverage
 
 test-library: test-macos test-ios test-mac-catalyst test-tvos test-watchos
 
-test-integration:
+test-integration: reset-db
 	set -o pipefail && \
 	xcodebuild test \
 		-skipMacroValidation \
-		-scheme SupabaseClientDependencies \
+		-scheme "$(SCHEME)" \
 		-configuration "$(CONFIG)" \
 		-destination="$(PLATFORM_MACOS)"
 
@@ -105,3 +105,6 @@ preview-documentation:
 		--disable-sandbox \
 		preview-documentation \
 		--target "$(DOCC_TARGET)"
+
+reset-db:
+	@supabase db reset

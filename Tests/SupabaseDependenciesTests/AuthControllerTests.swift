@@ -5,30 +5,20 @@ import XCTest
 final class AuthControllerTests: XCTestCase {
   
   func testCreateUser() async throws {
+    let supabaseClient = SupabaseClient(
+      supabaseURL: localSupabaseURL,
+      supabaseKey: localServiceRoleKey,
+      options: .init(auth: .init(storage: LocalAuthStorage()))
+    )
     try await withDependencies  {
-      $0.supabase = .live(
-        client: .init(
-          supabaseURL: localSupabaseURL,
-          supabaseKey: localServiceRoleKey
-        )
-      )
+      $0.supabase = .live(client: supabaseClient)
     } operation: {
       @Dependency(\.supabase) var client;
-
+      
       let credentials = Credentials(
         email: "test@example.com",
         password: "secret-password"
       )
-      
-      try? await client.auth.client.signOut()
-      
-      do {
-        _ = try? await client.auth.login(credentials: credentials)
-        if let user = await client.auth.currentUser {
-          try await client.auth.client.signOut()
-          try await client.auth.admin.deleteUser(id: user.id.uuidString)
-        }
-      }
 
       let user = try await client.auth.signUp(with: .credentials(credentials))
       XCTAssertEqual(user.email, credentials.email)
@@ -38,9 +28,8 @@ final class AuthControllerTests: XCTestCase {
       let currentUser = await client.auth.currentUser
       XCTAssertNotNil(currentUser)
       XCTAssertEqual(currentUser!.email, credentials.email)
-
-      try await client.auth.client.signOut()
-
+      
+      try await resetAuth(client.auth)
     }
   }
 
@@ -197,5 +186,12 @@ final class AuthControllerTests: XCTestCase {
     } catch {
       XCTFail()
     }
+  }
+}
+
+fileprivate func resetAuth(_ auth: AuthController) async throws {
+  if let user = await auth.currentUser {
+    try await auth.client.signOut()
+    try await auth.admin.deleteUser(id: user.id.uuidString)
   }
 }
