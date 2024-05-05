@@ -4,7 +4,8 @@ import Foundation
 
 /// Wraps an `Supabase.Auth.AuthClient` to provide override capabilities for login and signup flows.
 ///
-/// You will generally want to expose this as a `Dependency` in your application and create it with the ``live(auth:)`` method.
+/// You will generally want to expose this as a `Dependency` in your application and create it with the 
+/// ``AuthController/live(auth:)`` method.
 ///
 @dynamicMemberLookup
 public struct AuthController: Sendable {
@@ -14,27 +15,27 @@ public struct AuthController: Sendable {
 
   /// Exposes an override hook for methods that return a `User` on the current controller instance.
   ///
-  /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
+  /// > Note: This only provides overrides for methods declared on the controller, not the auth client as a whole.
   ///
   public var getCurrentUser: (@Sendable () async -> User?)?
 
   /// Exposes an override hook for the login methods on the current controller instance.
   ///
-  /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
+  /// > Note: This only provides overrides for methods declared on the controller, not the auth client as a whole.
   /// > For Example, calling down to the `client.signIn` method is not overriden you need to call one of the `login` methods.
   ///
   public var loginHandler: (@Sendable (LoginRequest?) async throws -> Session?)?
 
   /// Exposes an override hook for the login methods on the current controller instance.
   ///
-  /// > Note: This does only provides overrides for methods declared on the controller, not the auth client as a whole.
+  /// > Note: This only provides overrides for methods declared on the controller, not the auth client as a whole.
   /// > For Example, calling down to the `client.signUp` method is not overriden you need to call the ``signUp(with:)`` method.
   ///
   public var signupHandler: (@Sendable (SignUpRequest) async throws -> User)?
   
   /// Create a new ``AuthController`` instance, optionally providing override hooks.
   ///
-  /// If not override hooks are provided, then it uses the wrapped `AuthClient` instance.
+  /// If no override hooks are provided, then it uses the wrapped `AuthClient` instance.
   ///
   /// - Parameters:
   ///   - client: The `AuthClient` instance.
@@ -128,6 +129,112 @@ public struct AuthController: Sendable {
     }
     return try await signupHandler(request)
   }
+  
+  
+  /// Represents request parameters for loggiing users in.
+  public enum LoginRequest: Equatable, Sendable {
+    
+    /// Login with an email and password.
+    case email(String, password: String)
+
+    /// Login with a phone number and a password.
+    case phone(String, password: String)
+    
+    /// Login with a one-time-password.
+    case otp(
+      OTPRequest,
+      shouldCreateUser: Bool? = nil,
+      options: SharedOptions = .init()
+    )
+    /// Login with a credentials instance.
+    public static func credentials(_ credentials: Credentials) -> Self {
+      .email(credentials.email, password: credentials.password)
+    }
+
+    /// Represents a one-time-password login request.
+    public enum OTPRequest: Equatable, Sendable {
+      
+      /// The email address for the request.
+      case email(String)
+      
+      /// The phone number for the request.
+      case phone(String)
+      
+      /// The underlying string value for either the email or the phone number.
+      public var value: String {
+        switch self {
+        case let .email(email):
+          return email
+        case let .phone(phone):
+          return phone
+        }
+      }
+    }
+  }
+  
+  /// Represents options used in several of the signup or login request types.
+  ///
+  /// > Note: Not all options are required for all signup request types, refer to the underlying `GoTrue` request.
+  ///
+  public struct SharedOptions: Equatable, Sendable {
+
+    /// An optional captcha token.
+    public let captchaToken: String?
+
+    /// Optional data for the request.
+    public let data: [String: AnyJSON]?
+
+    /// An optional redirect-to URL for the request.
+    public let redirectURL: URL?
+
+    /// Create a new signup option.
+    ///
+    /// - Parameters:
+    ///   - captchaToken: An optional captcha token.
+    ///   - data: Optional data for the request.
+    ///   - redirectURL: An optional redirect-to URL for the request.
+    public init(
+      captchaToken: String? = nil,
+      data: [String: AnyJSON]? = nil,
+      redirectURL: URL? = nil
+    ) {
+      self.captchaToken = captchaToken
+      self.data = data
+      self.redirectURL = redirectURL
+    }
+  }
+
+  /// Represents parameters for signing users up.
+  ///
+  public enum SignUpRequest: Equatable, Sendable {
+
+    /// Signup with an email and a password.
+    case email(
+      String,
+      password: String,
+      options: SharedOptions = .init()
+    )
+
+    /// Signup with a credentials instance.
+    public static func credentials(
+      _ credentials: Credentials,
+      options: SharedOptions = .init()
+    ) -> Self {
+      .email(
+        credentials.email,
+        password: credentials.password,
+        options: options
+      )
+    }
+
+    /// Signup with a phone number and a password.
+    case phone(
+      String,
+      password: String,
+      options: SharedOptions = .init()
+    )
+  }
+
 }
 
 extension AuthController: TestDependencyKey {
@@ -153,97 +260,11 @@ extension AuthController: TestDependencyKey {
         ),
         logger: nil
       )
-    )
-    )
+    ))
   }
+}
 
-  #if DEBUG
-  /// Create a mock ``AuthController`` with override hooks based on the passed in values.
-  ///
-  /// Uses the ``AllowedCredentials`` type to determine successful calls to the `login` and `signUp` methods.
-  ///
-  /// > Note: Any calls to the underlying `AuthClient` will fail because this generates a client with an invalid url.
-  ///
-  ///
-  /// - Parameters:
-  ///   - allowedCredentials: The credentials that are allowed to login or sign-up.
-  ///   - user: The inital user, this does get replaced if login or sign-up methods are called.
-  ///   - session: An optional initial session, this does get replaced if login or sign-up methods are called.
-  ///   - uuid: The uuid generator for creating mock users.
-  ///   - date: The date generator for creating mock users.
-  public static func mock(
-    allowedCredentials: AllowedCredentials = .any,
-    user: User = .mock,
-    session: Session? = nil,
-    uuid: @escaping () -> UUID = UUID.init,
-    date: @escaping () -> Date = Date.init
-  ) -> Self {
-
-    struct AuthStorage: AuthLocalStorage, Sendable {
-      private let storage = LockIsolated<Storage>(Storage())
-
-      final class Storage {
-        var storage: [String: Data] = [:]
-
-        init() {
-          self.storage = [:]
-        }
-      }
-
-      func store(key: String, value: Data) throws {
-        storage.withValue { storage in
-          storage.storage[key] = value
-        }
-      }
-
-      func retrieve(key: String) throws -> Data? {
-        storage.value.storage[key]
-      }
-
-      func remove(key: String) throws {
-        _ = storage.withValue { storage in
-          storage.storage.removeValue(forKey: key)
-        }
-      }
-    }
-
-    final class Storage {
-      var currentUser: User
-      var currentSession: Session? = nil
-
-      init(currentUser: User, currentSession: Session? = nil) {
-        self.currentUser = currentUser
-        self.currentSession = currentSession
-      }
-    }
-
-    let storage = Storage(currentUser: user)
-
-    return self.init(
-      client: .init(configuration: .init(
-        url: URL(string: "/")!,
-        localStorage: AuthStorage(),
-        logger: nil
-      )),
-      currentUser: { storage.currentUser },
-      loginHandler: { loginRequest in
-        guard allowedCredentials.isAllowedToAuthenticate(.login(loginRequest)) else {
-          throw AuthenticationError.notAuthenticated
-        }
-        if storage.currentSession == nil {
-          storage.currentSession = .mock(user: storage.currentUser)
-        }
-        return storage.currentSession!
-      },
-      signupHandler: { signUp in
-        guard allowedCredentials.isAllowedToAuthenticate(.signUp(signUp)) else {
-          throw AuthenticationError.notAuthenticated
-        }
-        storage.currentUser = signUp.mockUser(date: date(), uuid: uuid)
-        storage.currentSession = .mock(user: storage.currentUser)
-        return storage.currentUser
-      }
-    )
-  }
-  #endif
+public enum AuthenticationError: Error {
+  case notAuthenticated
+  case failedToAuthenticate
 }

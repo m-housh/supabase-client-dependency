@@ -17,7 +17,7 @@ public struct DatabaseRoute: Sendable {
   let data: AnyJSON?
 
   // Any associated database filters.
-  let filters: [DatabaseRoute.Filter]
+  let filters: [Filter]
 
   // Any associated database order.
   let order: Order?
@@ -35,7 +35,7 @@ public struct DatabaseRoute: Sendable {
     table: DatabaseTable,
     method: Method,
     data: AnyJSON? = nil,
-    filters: [DatabaseRoute.Filter] = [],
+    filters: [Filter] = [],
     order: Order? = nil,
     returning: PostgrestReturningOptions,
     customBuilder: ((PostgrestQueryBuilder) throws -> PostgrestBuilder)? = nil

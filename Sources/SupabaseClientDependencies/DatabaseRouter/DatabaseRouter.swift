@@ -7,11 +7,71 @@ import PostgREST
 
 public typealias DatabaseResult = Result<(any Encodable), (any Error)>
 
+/// A database router that gives override hooks for routes for previews and tests.
+///
+/// Routes are generally modeled as enumurations.  The database router is responsible for holding onto any route
+/// overrides.  If an override is not found for the given route it will call the database with the route and decode the
+/// results.
+///
+/// ### Example
+///
+/// ```swift
+///
+/// extension DatabaseTable {
+///   static var todos: Self = "todos"
+/// }
+///
+/// @CasePathable
+/// enum TodoRoute: RouteCollection {
+///   case delete(id: Todo.ID)
+///   case fetch(filteredBy: [DatabaseRoute.Filter] = [], orderedBy: DatabaseRoute.Order? = nil)
+///   case fetchOne(id: Todo.ID)
+///   case save(Todo)
+///
+///   func route() async throws -> DatabaseRoute {
+///     switch self {
+///     case let .delete(id):
+///       return .delete(id: id, from: .todos)
+///     case let .fetch(filters, order):
+///       return .fetch(from: .todos, filters: filters, order: order)
+///     case .fetchOne(id: let id):
+///       return .fetchOne(from: .todos, filteredBy: .id(id))
+///     case let .save(todo):
+///       return try .upsert(todo, into: .todos)
+///     }
+///   }
+/// }
+///
+/// @CasePathable
+/// enum DatabaseRoutes: RouteCollection {
+///   case todos(TodoRoute)
+///   ... // Other routes.
+///
+///   func route() async throws -> DatabaseRoute {
+///     switch self {
+///       case let .todos(todos):
+///         return try await todos.route()
+///        ... // Handle other routes.
+///     }
+///   }
+/// }
+///
+/// // Redacted registering the routes with the supabase client / dependencies mechanism.
+/// // The router is an instance of DatabaseRouter<DatabaseRoutes> in this example.
+///
+/// @Dependency(\.supabase.router.todos) var todos
+/// let todos: [Todo] = try await todos(.fetch())
+///
+/// // Override needs done on the router.
+/// supabase.router.override(.case(\.todos.fetch), with: Todo.mocks)
+/// let mockTodos: [Todo] = try await todos(.fetch())
+///
+/// ```
+///
 @dynamicMemberLookup
 public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   
   private var _overrides = LockIsolated<_OverridesContainer>(.init())
-  
   private var overrides: _OverridesContainer {
     get { _overrides.value }
     set {
@@ -20,17 +80,27 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
       }
     }
   }
-  
   private let decoder: JSONDecoder
   private let encoder: JSONEncoder
   private let execute: @Sendable (Route) async throws -> Data
-  @UncheckedSendable
-  private var logger: Logger?
+  @UncheckedSendable private var logger: Logger?
   
-  public init(database: PostgrestClient, logger: Logger? = nil) {
+  /// Create a new database router.  This is generally the initializer to use when creating your live router.
+  ///
+  /// - Parameters:
+  ///   - database: The postgres client to use.
+  ///   - decoder: A custom decoder used to decode database response, will use the one registered with the database if not supplied.
+  ///   - encoder: A custom encoder used to encode override data, will use the one registered with the database if not supplied.
+  ///   - logger: An optional logger to used to log any errors when performing database calls.
+  public init(
+    database: PostgrestClient,
+    decoder: JSONDecoder? = nil,
+    encoder: JSONEncoder? = nil,
+    logger: Logger? = nil
+  ) {
     self.init(
-      decoder: database.configuration.decoder,
-      encoder: database.configuration.encoder,
+      decoder: decoder ?? database.configuration.decoder,
+      encoder: encoder ?? database.configuration.encoder,
       execute: { route in
        try await route.route()
         .build({ database.from($0.name) })
@@ -40,7 +110,13 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
       logger: logger
     )
   }
-
+  /// Create a new database router.
+  ///
+  /// - Parameters:
+  ///   - decoder: A custom decoder used to decode database response, will use the one registered with the database if not supplied.
+  ///   - encoder: A custom encoder used to encode override data, will use the one registered with the database if not supplied.
+  ///   - logger: An optional logger to used to log any errors when performing database calls.
+  ///   - execute: The function used to return a response for the given route.
   public init(
     decoder: JSONDecoder,
     encoder: JSONEncoder,
@@ -179,7 +255,7 @@ extension DatabaseRouter {
     _ override: Override,
     with value: A
   ) {
-    overrides.insert(override, result: { _ in .success(value) })
+    self.override(override, with: .success(value))
   }
   /// Override the given route that returns void values.
   ///
@@ -194,7 +270,7 @@ extension DatabaseRouter {
   public mutating func override(
     _ override: Override
   ) {
-    overrides.insert(override, result: { _ in .success() })
+    self.override(override, with: .success())
   }
   
   /// Removes all overrides currently set on the router.
@@ -236,13 +312,24 @@ extension DatabaseRouter {
     }
   }
   
+  /// Used to match a route for an override.
   public struct Override {
     let match: (Route) async throws -> Bool
     
-    public init(matching match: @escaping (Route) async throws -> Bool) {
+    /// Create a new override with the logic used to match a route.  Should return `true` if
+    /// the route matches and `false` if not.
+    ///
+    /// - Parameters:
+    ///   - match: The predicate used to match the given route.
+    public init(
+      matching match: @escaping (Route) async throws -> Bool
+    ) {
       self.match = match
     }
-    
+    /// Create an override matching on the case key path to the route.
+    ///
+    /// - Parameters:
+    ///   - caseKeyPath: The case key path to the route to override.
     public static func `case`<T>(
       _ caseKeyPath: CaseKeyPath<Route, T>
     ) -> Self where Route: CasePathable {
@@ -250,7 +337,11 @@ extension DatabaseRouter {
         AnyCasePath(caseKeyPath).extract(from: route) != nil
       }
     }
-    
+    /// Create an override matching on the route id and an optional table.
+    ///
+    /// - Parameters:
+    ///   - id: The id used to match the route to override.
+    ///   - table: An optional table used to match the override to.
     public static func id(
       _ id: String,
       in table: DatabaseTable? = nil
@@ -260,7 +351,11 @@ extension DatabaseRouter {
         return route.id == id && checkTable(route: route, table: table)
       }
     }
-    
+    /// Create an override matching on the ``DatabaseRoute/Method`` and an optional table.
+    ///
+    /// - Parameters:
+    ///   - method: The database route method used to match the route to override.
+    ///   - table: An optional table used to match the override to.
     public static func method(
       _ method: DatabaseRoute.Method,
       in table: DatabaseTable? = nil
@@ -270,7 +365,14 @@ extension DatabaseRouter {
         return route.method == method && checkTable(route: route, table: table)
       }
     }
-    
+    /// Create an override matching on the entire route.
+    ///
+    /// > Note: This matches all the properties of a route, so it if there are any filter or order by clauses
+    /// > they will be used in the match of the route.  You can match on a case path or method if you want
+    /// > override all calls to a given route with a less restrictive match.
+    ///
+    /// - Parameters:
+    ///   - route: The route to override.
     public static func route(
       _ route: @escaping () async throws -> DatabaseRoute
     ) -> Self {
@@ -278,13 +380,27 @@ extension DatabaseRouter {
         try await inputRoute.route() == route()
       }
     }
-    
+    /// Create an override matching on the entire route.
+    ///
+    /// > Note: This matches all the properties of a route, so it if there are any filter or order by clauses
+    /// > they will be used in the match of the route.  You can match on a case path or method if you want
+    /// > override all calls to a given route with a less restrictive match.
+    ///
+    /// - Parameters:
+    ///   - route: The route to override.
     public static func route(
       _ route: @escaping @autoclosure () -> DatabaseRoute
     ) -> Self {
       .route(route)
     }
-    
+    /// Create an override matching on the entire route.
+    ///
+    /// > Note: This matches all the properties of a route, so it if there are any filter or order by clauses
+    /// > they will be used in the match of the route.  You can match on a case path or method if you want
+    /// > override all calls to a given route with a less restrictive match.
+    ///
+    /// - Parameters:
+    ///   - route: The route to override.
     public static func route(
       _ route: Route
     ) -> Self where Route: Equatable {
@@ -450,7 +566,7 @@ extension DatabaseResult {
 }
 
 extension DatabaseResult {
-  func data(_ encoder: JSONEncoder) throws -> Data {
+  fileprivate func data(_ encoder: JSONEncoder) throws -> Data {
     try encoder.encode(self.get())
   }
 }

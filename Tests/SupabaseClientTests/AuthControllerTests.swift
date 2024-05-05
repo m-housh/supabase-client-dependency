@@ -1,5 +1,5 @@
-import AuthController
 import Dependencies
+import SupabaseClientDependencies
 import XCTest
 
 final class AuthControllerTests: XCTestCase {

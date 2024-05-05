@@ -21,7 +21,7 @@ extension AuthClient {
     try? await session
   }
   
-  func login(_ request: LoginRequest) async throws -> Session {
+  func login(_ request: AuthController.LoginRequest) async throws -> Session {
     switch request {
     case let .email(email, password):
       return try await self.signIn(email: email, password: password)
@@ -50,7 +50,7 @@ extension AuthClient {
     }
   }
   
-  func signUp(_ request: SignUpRequest) async throws -> User {
+  func signUp(_ request: AuthController.SignUpRequest) async throws -> User {
     switch request {
 
     case let .email(email, password: password, options: options):

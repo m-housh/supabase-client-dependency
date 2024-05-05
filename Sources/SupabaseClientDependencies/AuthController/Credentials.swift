@@ -85,7 +85,18 @@ public struct Credentials: Codable, Equatable, Sendable {
       )
     }
   }
-
+  /// Validates the credentials.
+  ///
+  /// ### Default Logic
+  /// The email, must be one or more characters followed by an '@' symbol, then one or more characters
+  /// followed by a '.' and finishing with one or more characters.
+  ///
+  /// The password must be at least 8 characters, at least one capital letter, at least one lowercase letter,
+  /// and at least one special character '!$%&?._-'
+  ///
+  ///  - Parameters:
+  ///   - validateEmail: Override the default email validation logic.
+  ///   - validatePassword: Override the default password validation logic.
   @discardableResult
   public func validate(
     validateEmail: ((String) throws -> Void)? = nil,

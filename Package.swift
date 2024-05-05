@@ -12,8 +12,6 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "AuthController", targets: ["AuthController"]),
-    .library(name: "DatabaseRouter", targets: ["DatabaseRouter"]),
     .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"]),
   ],
   dependencies: [
@@ -44,49 +42,27 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "AuthController",
-      dependencies: [
-        .product(name: "Auth", package: "supabase-swift"),
-        .product(name: "Dependencies", package: "swift-dependencies"),
-      ]
-    ),
-    .testTarget(
-      name: "AuthControllerTests",
-      dependencies: [
-        "AuthController",
-        .product(name: "Dependencies", package: "swift-dependencies"),
-      ]
-    ),
-    .target(
-      name: "DatabaseRouter",
+      name: "SupabaseClientDependencies",
       dependencies: [
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
-        .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "PostgREST", package: "supabase-swift"),
-      ]
-    ),
-    .testTarget(
-      name: "DatabaseRouterIntegrationTests",
-      dependencies: [
-        "DatabaseRouter",
-        "SupabaseClientDependencies",
-        .product(name: "CasePaths", package: "swift-case-paths"),
-        .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
-      ]
-    ),
-    .target(
-      name: "SupabaseClientDependencies",
-      dependencies: [
-        "AuthController",
-        "DatabaseRouter",
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
       ]
     ),
     .testTarget(
       name: "SupabaseClientTests",
-      dependencies: ["SupabaseClientDependencies"]
+      dependencies: [
+        "SupabaseClientDependencies"
+      ]
+    ),
+    .testTarget(
+      name: "DatabaseRouterIntegrationTests",
+      dependencies: [
+        "SupabaseClientDependencies",
+        .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
+      ]
     ),
   ]
 )

@@ -1,6 +1,4 @@
-@_exported import AuthController
 import CasePaths
-@_exported import DatabaseRouter
 import Dependencies
 import Foundation
 import OSLog
@@ -10,7 +8,7 @@ import Supabase
 /// controller and database router.
 ///
 /// You need to extend this type to provide the live dependency in your application, generally using
-/// the ``live(client:schema:logger:)`` helper.
+/// the ``SupabaseDependency/live(client:schema:logger:)`` helper.
 ///
 /// ### Example
 /// ```swift
@@ -89,7 +87,6 @@ import Supabase
 ///   )
 /// }
 ///
-///
 ///```
 @dynamicMemberLookup
 public struct SupabaseDependency<Routes: RouteCollection>: Sendable where Routes: CasePathable {
@@ -164,7 +161,6 @@ extension SupabaseDependency {
     )
   }
 }
-
 
 extension SupabaseClient: TestDependencyKey {
   public static var testValue: SupabaseClient {

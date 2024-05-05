@@ -1,7 +1,6 @@
 import XCTest
 import CasePaths
 import Dependencies
-@testable import DatabaseRouter
 @testable import SupabaseClientDependencies
 
 final class DatabaseClientTests: XCTestCase {
