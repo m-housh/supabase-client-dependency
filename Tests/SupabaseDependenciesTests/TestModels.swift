@@ -1,6 +1,7 @@
 import CasePaths
 import Dependencies
 import Foundation
+import OSLog
 import SupabaseDependencies
 import Supabase
 
@@ -158,20 +159,11 @@ enum TodoRoute: RouteCollection {
 }
 
 struct DbRoutes {
-
   var todos: DatabaseRouter<TodoRoute>
-  
-  init(database: PostgrestClient) {
-    self.todos = .init(database: database)
-  }
-
 }
 
-private let supabaseClient = SupabaseClient.testValue
-
 extension DbRoutes: DependencyKey {
-  
-  static var testValue: DbRoutes { .init(database: supabaseClient.schema("public")) }
+  static var testValue: DbRoutes { .init(todos: .testValue) }
   static var liveValue: DbRoutes { .testValue }
 }
 

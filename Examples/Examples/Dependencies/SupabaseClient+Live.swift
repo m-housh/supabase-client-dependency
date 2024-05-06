@@ -22,7 +22,7 @@ struct SapabaseKey: DependencyKey {
       client: .testValue,
       router: .previewValue
     ))
-    preview.supabase.router.override(case: \.todos) { route in
+    preview.supabase.router.override(\.todos) { route in
       // Overrides for preview mode.
       switch route {
       case let .delete(id: id):
@@ -39,5 +39,10 @@ struct SapabaseKey: DependencyKey {
     return preview
   }
   
-  static var liveValue: SapabaseKey { .init(supabase: .live(client: .local())) }
+  static var liveValue: SapabaseKey {
+    .init(supabase: .live(client: .init(
+      supabaseURL: Secrets.supabaseUrl,
+      supabaseKey: Secrets.supabaseAnonKey
+    )))
+  }
 }

@@ -11,7 +11,7 @@ final class DatabaseClientTests: XCTestCase {
     let mock = Todo.mocks(date: date)[0]
 
     await withDependencies {
-      $0.router.todos.override(.method(.delete, with: .success()))
+      $0.router.todos.override(\.delete)
     } operation: {
       @Dependency(\.router.todos) var router;
       do {
@@ -125,24 +125,39 @@ final class DatabaseClientTests: XCTestCase {
 
     }
   }
-//  
-//  func testTableOverride() async throws {
-//    var overrideNoTable = DatabaseRouter<TodoRoute>.Override.id("foo")
-//    var match = try await overrideNoTable.match(.update(id: 1, in: "bar", with: Data(), routeId: "foo"))
-//    XCTAssertTrue(match)
-//    
-//    overrideNoTable = .method(.update, nil)
-//    match = try await overrideNoTable.match(.update(id: 1, in: "bar", with: Data(), routeId: "foo"))
-//    XCTAssertTrue(match)
-//    
-//    var overrideWithTable = DatabaseRouter<TodoRoute>.Override.id("foo", "baz")
-//    match = try await overrideWithTable.match(.update(id: 1, in: "bar", with: Data(), routeId: "foo"))
-//    XCTAssertFalse(match)
-//    
-//    overrideWithTable = .method(.update, "baz")
-//    match = try await overrideWithTable.match(.update(id: 1, in: "bar", with: Data(), routeId: "foo"))
-//    XCTAssertFalse(match)
-//  }
+  
+  func testTableOverride() async throws {
+    var overrideNoTable = DatabaseRouter<TodoRoute>.Override.id("foo")
+    var match = try await overrideNoTable.match(
+      .update(id: .init(), updates: .init())
+    )
+    XCTAssertFalse(match)
+
+    overrideNoTable = .method(.delete)
+    match = try await overrideNoTable.match(.delete(.id(Todo.ID.init())))
+    XCTAssertTrue(match)
+
+    overrideNoTable = .case(\.delete)
+    match = try await overrideNoTable.match(.delete(.id(Todo.ID.init())))
+    XCTAssertTrue(match)
+
+    overrideNoTable = .route(.fetch(from: "todos", filters: []))
+    match = try await overrideNoTable.match(.fetch)
+    XCTAssertTrue(match)
+
+    var overrideWithTable = DatabaseRouter<TodoRoute>.Override.id("foo", in: "baz")
+    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
+    XCTAssertFalse(match)
+    
+    overrideWithTable = .method(.update, in: "baz")
+    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
+    XCTAssertFalse(match)
+
+    overrideWithTable = .method(.update, in: "todos")
+    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
+    XCTAssertTrue(match)
+
+  }
   
   func testCaseOverride() async throws {
     

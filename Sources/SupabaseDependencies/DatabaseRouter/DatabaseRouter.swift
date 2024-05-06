@@ -156,6 +156,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
       try await decoder.decode(A.self, from: data(for: route))
     }
   }
+
   /// Call the database route, respecting any overrides ignoring any output.
   ///
   /// - Parameters:
@@ -163,7 +164,9 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   public func callAsFunction(
     _ route: Route
   ) async throws {
-    try await data(for: route)
+    try await logIfError("Run Route:") {
+      try await data(for: route)
+    }
   }
   
   /// Removes all overrides currently set on the router.
@@ -177,15 +180,18 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   @discardableResult
   private func data(for route: Route) async throws -> Data {
     guard let match = try await overrides.firstMatch(of: route) else {
+      logger?.debug("No match found for route.")
       return try await logIfError("Execute Route:") {
         try await execute(route)
       }
     }
     return try await logIfError("Decode Override Data:") {
-      try match.data(encoder)
+      logger?.debug("Match found for route.")
+      return try match.data(encoder)
     }
   }
   
+  @discardableResult
   private func logIfError<T>(
     _ prefix: String? = nil,
     _ call: @escaping () async throws -> T
@@ -199,9 +205,6 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
     }
   }
 }
-
-// MARK: - Overrides
-
 
 extension DatabaseRouter: CasePathable where Route: CasePathable {
   public typealias AllCasePaths = Route.AllCasePaths
@@ -315,8 +318,8 @@ extension DatabaseRouter: TestDependencyKey {
 
   public static var testValue: DatabaseRouter<Route> {
     .init(
-      decoder: XCTestDynamicOverlay.unimplemented("\(Self.self).decoder", placeholder: JSONDecoder()),
-      encoder: XCTestDynamicOverlay.unimplemented("\(Self.self).encoder", placeholder: JSONEncoder()),
+      decoder: JSONDecoder(),
+      encoder: JSONEncoder(),
       execute: XCTestDynamicOverlay.unimplemented("\(Self.self).execute", placeholder: Data())
     )
   }

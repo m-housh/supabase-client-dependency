@@ -100,8 +100,8 @@ public struct SupabaseDependency<Routes: RouteCollection>: Sendable {
   public var auth: AuthController
   
   /// The supabase client to use.
-  public let client: SupabaseClient
-  
+  public var client: SupabaseClient
+
   /// The database router used for database routing, which offers some convienence methods for
   /// overriding database routes for previews and tests.  And allows you to model your database routes as
   /// enum's.
@@ -165,6 +165,8 @@ extension SupabaseDependency {
 }
 
 extension SupabaseClient: TestDependencyKey {
+
+  /// An unimplemented supabase client.
   public static var testValue: SupabaseClient {
     .init(
       supabaseURL: XCTestDynamicOverlay.unimplemented("\(Self.self).supabaseUrl", placeholder: URL(string: "/")!),

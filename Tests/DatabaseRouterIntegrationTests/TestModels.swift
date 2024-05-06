@@ -14,11 +14,6 @@ extension DatabaseRoute.Column {
   static let isComplete: Self = "complete"
 }
 
-//enum TodoColumn: String {
-//  case description
-//  case isComplete = "complete"
-//}
-
 struct Todo: Codable, Hashable, Identifiable {
   let id: UUID
   var description: String
