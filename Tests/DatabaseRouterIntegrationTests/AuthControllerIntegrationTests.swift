@@ -16,8 +16,8 @@ final class AuthControllerIntegrationTests: XCTestCase {
   // This needs moved to integration tests.
   func testCreateUser() async throws {
     let supabaseClient = SupabaseClient(
-      supabaseURL: localSupabaseURL,
-      supabaseKey: localServiceRoleKey,
+      supabaseURL: URL(string: Secrets.SUPABASE_URL)!,
+      supabaseKey: Secrets.SUPABASE_SERVICE_ROLE_KEY,
       options: .init(auth: .init(storage: LocalAuthStorage()))
     )
     try await withDependencies  {

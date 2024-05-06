@@ -94,7 +94,7 @@ extension DatabaseRouter {
     
     public init(
       matching match: @escaping @Sendable (Route) async throws -> Bool,
-      result: @escaping @Sendable (Route) async throws -> DatabaseResult
+      with result: @escaping @Sendable (Route) async throws -> DatabaseResult
     ) {
       self.match = match
       self.result = result
@@ -102,7 +102,7 @@ extension DatabaseRouter {
     
     public init(
       matching match: @escaping @Sendable (Route) async throws -> Bool,
-      result: DatabaseResult
+      with result: DatabaseResult
     ) {
       self.match = match
       self.result = { _ in result }
@@ -110,7 +110,7 @@ extension DatabaseRouter {
     
     public init<A: Codable>(
       matching match: @escaping @Sendable (Route) async throws -> Bool,
-      result: A
+      with result: A
     ) {
       self.match = match
       self.result = { _ in .success(result) }
@@ -127,7 +127,7 @@ extension DatabaseRouter {
     ) -> Self where Route: CasePathable {
       .init(
         matching: { AnyCasePath(caseKeyPath).extract(from: $0) != nil },
-        result: { route in
+        with: { route in
           guard let input = AnyCasePath(caseKeyPath).extract(from: route) else {
             throw UnexpectedRouteError()
           }
@@ -176,7 +176,7 @@ extension DatabaseRouter {
           let route = try await route.route()
           return route.id == id && checkTable(route: route, table: table)
         },
-        result: result
+        with: result
       )
     }
     
@@ -224,7 +224,7 @@ extension DatabaseRouter {
           let route = try await route.route()
           return route.method == method && checkTable(route: route, table: table)
         },
-        result: result
+        with: result
       )
     }
     
@@ -268,7 +268,7 @@ extension DatabaseRouter {
     ) -> Self {
       self.init(
         matching: { try await $0.route() == route },
-        result: result
+        with: result
       )
     }
     

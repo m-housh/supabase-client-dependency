@@ -162,9 +162,6 @@ enum TodoRoute: RouteCollection {
   }
 }
 
-//struct NotFoundError: Error { }
-
-//@CasePathable
 struct DbRoutes {
   
   var todos: DatabaseRouter<TodoRoute>
@@ -175,11 +172,10 @@ struct DbRoutes {
 
 }
 
-
-private let supabaseClient = SupabaseClient.local()
-let localServiceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0." +
-  "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+let supabaseClient = SupabaseClient(
+  supabaseURL: URL(string: Secrets.SUPABASE_URL)!,
+  supabaseKey: Secrets.SUPABASE_ANON_KEY
+)
 
 extension DbRoutes: DependencyKey, TestDependencyKey {
   public static var testValue: Self = .init(database: supabaseClient.schema("public"))

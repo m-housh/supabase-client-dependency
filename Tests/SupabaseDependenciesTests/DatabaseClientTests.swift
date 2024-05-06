@@ -11,7 +11,7 @@ final class DatabaseClientTests: XCTestCase {
     let mock = Todo.mocks(date: date)[0]
 
     await withDependencies {
-      $0.router.todos.override(.method(.delete))
+      $0.router.todos.override(.method(.delete, with: .success()))
     } operation: {
       @Dependency(\.router.todos) var router;
       do {
@@ -302,4 +302,11 @@ extension DependencyValues {
     get { self[MultiRouterKey.self].router }
     set { self[MultiRouterKey.self].router = newValue }
   }
+}
+
+struct TodoRouteStruct {
+  var delete: (Todo.ID) async throws -> Void
+  var fetch: () async throws -> [Todo]
+  var fetchId: (Todo.ID) async throws -> Todo?
+  var save: (Todo) async throws -> Todo
 }

@@ -173,6 +173,7 @@ extension SupabaseClient: TestDependencyKey {
   }
 }
 
+#warning("Remove me.")
 #if DEBUG
 extension SupabaseClient {
   public static func local() -> Self {

@@ -13,10 +13,33 @@ DOCC_TARGET = SupabaseDependencies
 
 CONFIG := debug
 
+export SECRETS
+define SECRETS
+enum Secrets {
+	static let SUPABASE_URL = "$(SUPABASE_URL)"
+	static let SUPABASE_ANON_KEY = "$(SUPABASE_ANON_KEY)"
+	static let SUPABASE_SERVICE_ROLE_KEY = "$(SUPABASE_SERVICE_ROLE_KEY)"
+}
+endef
+
+load-env:
+	@. ./scripts/load_env.sh
+
+dot-env:
+	@echo "$$SECRETS" > Tests/DatabaseRouterIntegrationTests/Secrets.swift
+
 clean:
 	rm -rf .build
 
-test-macos: clean reset-db
+test-integration: clean dot-env reset-db
+		set -o pipefail && \
+		xcodebuild test \
+				-skipMacroValidation \
+				-scheme "DatabaseRouterIntegrationTests" \
+				-configuration "$(CONFIG)" \
+				-destination platform="$(PLATFORM_MACOS)"
+
+test-macos: clean
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -24,7 +47,7 @@ test-macos: clean reset-db
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MACOS)"
 
-test-ios: clean reset-db
+test-ios: clean
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -32,7 +55,7 @@ test-ios: clean reset-db
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_IOS)"
 
-test-mac-catalyst: clean reset-db
+test-mac-catalyst: clean
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -40,7 +63,7 @@ test-mac-catalyst: clean reset-db
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_MAC_CATALYST)"
 
-test-tvos: clean reset-db
+test-tvos: clean
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -48,7 +71,7 @@ test-tvos: clean reset-db
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_TVOS)"
 
-test-watchos: clean reset-db
+test-watchos: clean
 		set -o pipefail && \
 		xcodebuild test \
 				-skipMacroValidation \
@@ -56,18 +79,10 @@ test-watchos: clean reset-db
 				-configuration "$(CONFIG)" \
 				-destination platform="$(PLATFORM_WATCHOS)"
 
-test-swift: reset-db
+test-swift:
 	swift test --enable-code-coverage
 
 test-library: test-macos test-ios test-mac-catalyst test-tvos test-watchos
-
-test-integration: reset-db
-	set -o pipefail && \
-	xcodebuild test \
-		-skipMacroValidation \
-		-scheme "$(SCHEME)" \
-		-configuration "$(CONFIG)" \
-		-destination="$(PLATFORM_MACOS)"
 
 code-cov-report:
 		@xcrun llvm-cov report \

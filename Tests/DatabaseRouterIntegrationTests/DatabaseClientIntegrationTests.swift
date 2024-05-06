@@ -8,7 +8,7 @@ import XCTest
 
 final class DatabaseClientIntegrationTests: XCTestCase {
 
-  let postgrestClient = SupabaseClient.local().schema("public")
+  let postgrestClient = supabaseClient.schema("public")
 
   override func setUp() async throws {
     try await super.setUp()
