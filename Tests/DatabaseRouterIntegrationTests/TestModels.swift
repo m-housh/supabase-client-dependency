@@ -175,13 +175,16 @@ struct DbRoutes {
 
 }
 
+
 private let supabaseClient = SupabaseClient.local()
+let localServiceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0." +
+  "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
 
 extension DbRoutes: DependencyKey, TestDependencyKey {
   public static var testValue: Self = .init(database: supabaseClient.schema("public"))
   public static var liveValue: Self { .testValue }
 }
-
 
 extension DependencyValues {
   var router: DbRoutes {
@@ -190,9 +193,9 @@ extension DependencyValues {
   }
 }
 
-//extension DependencyValues {
-//  var supabaseClient: SupabaseClientDependency<DbRoutes> {
-//    get { self[SupabaseClientDependency<DbRoutes>.self] }
-//    set { self[SupabaseClientDependency<DbRoutes>.self] = newValue }
-//  }
-//}
+extension DependencyValues {
+  var supabase: SupabaseDependency<TodoRoute> {
+    get { self[SupabaseDependency<TodoRoute>.self] }
+    set { self[SupabaseDependency<TodoRoute>.self] = newValue }
+  }
+}

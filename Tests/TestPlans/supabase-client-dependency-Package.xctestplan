@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "E6B10354-825B-4F0B-A453-F674A0EE9E9F",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "INTEGRATION_TESTS",
+        "value" : "1"
+      }
+    ]
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DatabaseRouterIntegrationTests",
+        "name" : "DatabaseRouterIntegrationTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SupabaseDependenciesTests",
+        "name" : "SupabaseDependenciesTests"
+      }
+    }
+  ],
+  "version" : 1
+}

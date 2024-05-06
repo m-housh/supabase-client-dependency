@@ -28,8 +28,7 @@ final class DatabaseClientTests: XCTestCase {
 
     try await withDependencies {
       $0.router.todos.override(
-        .method(.fetch),
-        with: mocks
+        .method(.fetch, with: mocks)
       )
     } operation: {
       @Dependency(\.router.todos) var router;
@@ -46,7 +45,7 @@ final class DatabaseClientTests: XCTestCase {
     let mock = Todo.mocks(date: date)[1]
 
     try await withDependencies {
-      $0.router.todos.override(.method(.fetchOne), with: mock)
+      $0.router.todos.override(.method(.fetchOne, with: mock))
     } operation: {
       @Dependency(\.router.todos) var router;
       let todo: Todo = try await router(.fetchOne(
@@ -61,7 +60,7 @@ final class DatabaseClientTests: XCTestCase {
     let mock = Todo.mocks(date: date)[0]
 
     try await withDependencies {
-      $0.router.todos.override(.method(.insert), with: mock)
+      $0.router.todos.override(.method(.insert, with: mock))
     } operation: {
       @Dependency(\.router.todos) var router;
 
@@ -77,10 +76,7 @@ final class DatabaseClientTests: XCTestCase {
     let mocks = Todo.mocks(date: date)
 
     try await withDependencies {
-      $0.router.todos.override(
-        .method(.insert),
-        with: mocks
-      )
+      $0.router.todos.override(.method(.insert, with: mocks))
     } operation: {
       @Dependency(\.router.todos) var router;
 
@@ -98,10 +94,7 @@ final class DatabaseClientTests: XCTestCase {
     let mock = Todo.mocks(date: date)[1]
 
     try await withDependencies {
-      $0.router.todos.override(
-        .method(.update),
-        with: mock
-      )
+      $0.router.todos.override(.method(.update, with: mock))
     } operation: {
       @Dependency(\.router.todos) var router;
       let todo: Todo = try await router(.update(
@@ -117,10 +110,7 @@ final class DatabaseClientTests: XCTestCase {
 
     try await withDependencies {
       $0.date.now = Date(timeIntervalSince1970: 1234567890)
-      $0.router.todos.override(
-        .method(.upsert),
-        with: mock
-      )
+      $0.router.todos.override(.method(.upsert, with: mock))
     } operation: {
       @Dependency(\.router.todos) var router;
 
@@ -163,7 +153,7 @@ final class DatabaseClientTests: XCTestCase {
       encoder: .init(),
       execute: { _ in try JSONEncoder().encode(todoMocks) }
     )
-    router.override(.case(\.todos.fetch), with: .success([Todo]()))
+    router.override(.case(\.todos.fetch, with: .success([Todo]())))
     
     var todos: [Todo] = try await router(.todos(.fetch))
     XCTAssertEqual(todos, [])
@@ -183,18 +173,9 @@ final class DatabaseClientTests: XCTestCase {
     let todoMocks = Todo.mocks(date: Date(timeIntervalSince1970: 1234567890))
     
     try await withDependencies {
-      $0.multiRouter.override(
-        .case(\.todos.fetch), 
-        with: todoMocks
-      )
-      $0.multiRouter.override(
-        .case(\.alsoTodos.fetch),
-        with: [Todo]()
-      )
-      $0.multiRouter.override(
-        .case(\.nested.todos.fetch),
-        with: todoMocks
-      )
+      $0.multiRouter.override(\.todos.fetch, with: todoMocks)
+      $0.multiRouter.override(.case(\.alsoTodos.fetch, with: [Todo]()))
+      $0.multiRouter.override(\.nested.todos.fetch, with: todoMocks)
     } operation: {
       @Dependency(\.multiRouter[case: \.todos]) var router
       let todos: [Todo] = try await router(.fetch)
@@ -220,9 +201,7 @@ final class DatabaseClientTests: XCTestCase {
     struct TestError: Error { }
     
     try await withDependencies {
-      $0.multiRouter.override(
-        case: \.todos
-      ) { route in
+      $0.multiRouter.override(\.todos) { route in
         switch route {
         case .delete(filteredBy: _):
             return .success()
