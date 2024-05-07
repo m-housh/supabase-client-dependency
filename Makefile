@@ -25,7 +25,7 @@ enum Secrets {
 endef
 
 load-env:
-	@. ./scripts/load_env.sh
+	@. ./scripts/load_env.sh .env
 
 dot-env:
 	@echo "$$SECRETS" > Tests/DatabaseRouterIntegrationTests/Secrets.swift

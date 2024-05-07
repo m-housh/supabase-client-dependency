@@ -71,6 +71,8 @@ public typealias DatabaseResult = Result<(any Codable), (any Error)>
 @dynamicMemberLookup
 public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   
+  // TODO: Explore removing RouteCollection conformance for struct based routes??
+  
   private var _overrides = LockIsolated([Override]())
   var overrides: [Override] {
     get { _overrides.value }
@@ -82,6 +84,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   }
   private let decoder: JSONDecoder
   private let encoder: JSONEncoder
+  // TODO: Make this take a DatabaseRoute??
   private let execute: @Sendable (Route) async throws -> Data
   @UncheckedSendable private var logger: Logger?
   
