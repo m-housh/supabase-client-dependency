@@ -22,5 +22,6 @@ jobs:
           swift-version: "5.9"
       - name: Swift Version
         run: swift --version
+      - run: make dot-env
       - name: Run ${{ matrix.xcode }} Tests
         run: make CONFIG=${{ matrix.config }} test-library

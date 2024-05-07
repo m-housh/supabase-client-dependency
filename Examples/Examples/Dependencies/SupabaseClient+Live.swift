@@ -41,8 +41,8 @@ struct SapabaseKey: DependencyKey {
   
   static var liveValue: SapabaseKey {
     .init(supabase: .live(client: .init(
-      supabaseURL: Secrets.supabaseUrl,
-      supabaseKey: Secrets.supabaseAnonKey
+      supabaseURL: Constants.supabaseUrl,
+      supabaseKey: Constants.supabaseAnonKey
     )))
   }
 }

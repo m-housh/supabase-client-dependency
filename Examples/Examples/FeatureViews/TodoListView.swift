@@ -229,8 +229,8 @@ struct TodoListView: View {
     } withDependencies: {
       $0.uuid = .init { UUID() }
       $0.supabase.router.override(
-        .case(\.todos.fetch),
-        with: [TodoModel.mocks[0]]
+        \.todos.fetch,
+        with: TodoModel.mocks
       )
     }
   )
