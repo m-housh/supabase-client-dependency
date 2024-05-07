@@ -141,7 +141,7 @@ final class DatabaseClientTests: XCTestCase {
     match = try await overrideNoTable.match(.delete(.id(Todo.ID.init())))
     XCTAssertTrue(match)
 
-    overrideNoTable = .route(.fetch(from: "todos", filters: []))
+    overrideNoTable = .route(.fetch(from: "todos"))
     match = try await overrideNoTable.match(.fetch)
     XCTAssertTrue(match)
 
@@ -155,6 +155,16 @@ final class DatabaseClientTests: XCTestCase {
 
     overrideWithTable = .method(.update, in: "todos")
     match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
+    XCTAssertTrue(match)
+
+    let multiRouterOverride = DatabaseRouter<MultiRouter>.Override.method(.fetch, in: "todos", with: [Todo]())
+    match = try await multiRouterOverride.match(.todos(.fetch))
+    XCTAssertTrue(match)
+
+    match = try await multiRouterOverride.match(.alsoTodos(.fetch))
+    XCTAssertTrue(match)
+
+    match = try await multiRouterOverride.match(.nested(.todos(.fetch)))
     XCTAssertTrue(match)
 
   }
@@ -276,6 +286,12 @@ final class DatabaseClientTests: XCTestCase {
       }    
     }
   }
+
+  func testStructRouter() {
+    let router = TodoRouteStructRouter()
+    let r = router.route(for: \.delete)
+    let m = r(.init())
+  }
 }
 
 @CasePathable
@@ -320,8 +336,18 @@ extension DependencyValues {
 }
 
 struct TodoRouteStruct {
-  var delete: (Todo.ID) async throws -> Void
-  var fetch: () async throws -> [Todo]
-  var fetchId: (Todo.ID) async throws -> Todo?
-  var save: (Todo) async throws -> Todo
+  var delete: (Todo.ID) -> DatabaseRoute = { .delete(id: $0, from: "todos") }
+  var fetch: () -> DatabaseRoute = { .fetch(from: "todos") }
+  var fetchId: (Todo.ID) throws -> DatabaseRoute = { .fetchOne(from: "todos", filteredBy: .id($0)) }
+  var save: (Todo) throws -> DatabaseRoute = { try .upsert($0, in: "todos") }
+}
+
+struct TodoRouteStructRouter {
+  private var route: TodoRouteStruct = .init()
+
+  func route<T>(
+    for keyPath: KeyPath<TodoRouteStruct, (T) -> DatabaseRoute>
+  ) -> (T) -> DatabaseRoute {
+    route[keyPath: keyPath]
+  }
 }

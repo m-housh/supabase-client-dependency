@@ -145,7 +145,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func delete(
     from table: DatabaseRoute.Table,
-    filters: [DatabaseRoute.Filter],
+    filteredBy filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
     return .init(id: routeId, table: table, method: .delete, filters: filters, returning: .minimal)
@@ -161,7 +161,7 @@ extension DatabaseRoute {
     filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
-    return .delete(from: table, filters: filters, routeId: routeId)
+    return .delete(from: table, filteredBy: filters, routeId: routeId)
   }
   /// Create a route container that generates a delete query.
   ///
@@ -185,7 +185,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: DatabaseRoute.Table,
-    filters: [DatabaseRoute.Filter],
+    filteredBy filters: [DatabaseRoute.Filter],
     order: Order? = nil,
     routeId: String? = nil
   ) -> Self {
@@ -211,7 +211,7 @@ extension DatabaseRoute {
     order: Order? = nil,
     routeId: String? = nil
   ) -> Self {
-    return .fetch(from: table, filters: filters, order: order, routeId: routeId)
+    return .fetch(from: table, filteredBy: filters, order: order, routeId: routeId)
   }
   /// Create a route container that generates a fetch query for a single row.
   ///
@@ -221,7 +221,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: DatabaseRoute.Table,
-    filters: [DatabaseRoute.Filter],
+    filteredBy filters: [DatabaseRoute.Filter],
     routeId: String? = nil
   ) -> Self {
     return .init(id: routeId, table: table, method: .fetchOne, filters: filters, returning: .representation)
@@ -237,7 +237,20 @@ extension DatabaseRoute {
     filteredBy filters: DatabaseRoute.Filter...,
     routeId: String? = nil
   ) -> Self {
-    return .fetchOne(from: table, filters: filters, routeId: routeId)
+    return .fetchOne(from: table, filteredBy: filters, routeId: routeId)
+  }
+  /// Create a route container that generates a fetch query for a single row.
+  ///
+  /// - Parameters:
+  ///   - id: The id to filter the query by.
+  ///   - table: The table to build the initial query for that gets passed into the build argument.
+  ///   - routeId: An optional id that can be used to differentiate queries in overrides.
+  public static func fetchOne<ID: URLQueryRepresentable>(
+    id: ID,
+    from table: DatabaseRoute.Table,
+    routeId: String? = nil
+  ) -> Self {
+    return .fetchOne(from: table, filteredBy: .id(id), routeId: routeId)
   }
   /// Create a route container that generates an insert query.
   ///

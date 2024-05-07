@@ -108,9 +108,9 @@ enum TodoRoute: RouteCollection {
   public func route() throws -> DatabaseRoute {
     switch self {
     case let .delete(filters):
-      return .delete(from: Self.table, filters: filters)
+      return .delete(from: Self.table, filteredBy: filters)
     case let .fetch(filters, order):
-      return .fetch(from: Self.table, filters: filters, order: order)
+      return .fetch(from: Self.table, filteredBy: filters, order: order)
     case .fetchOne(id: let id):
       return .fetchOne(from: Self.table, filteredBy: .id(id))
     case let .insert(request):

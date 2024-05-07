@@ -85,7 +85,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   private let decoder: JSONDecoder
   private let encoder: JSONEncoder
   // TODO: Make this take a DatabaseRoute??
-  private let execute: @Sendable (Route) async throws -> Data
+  private let execute: @Sendable (DatabaseRoute) async throws -> Data
   @UncheckedSendable private var logger: Logger?
   
   /// Create a new database router.  This is generally the initializer to use when creating your live router.
@@ -105,10 +105,10 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
       decoder: decoder ?? database.configuration.decoder,
       encoder: encoder ?? database.configuration.encoder,
       execute: { route in
-       try await route.route()
-        .build({ database.from($0.name) })
-        .execute()
-        .data
+        try await route
+          .build({ database.from($0.name) })
+          .execute()
+          .data
       },
       logger: logger
     )
@@ -125,7 +125,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
     decoder: JSONDecoder,
     encoder: JSONEncoder,
     logger: Logger? = nil,
-    execute: @escaping @Sendable (Route) async throws -> DatabaseResult
+    execute: @escaping @Sendable (DatabaseRoute) async throws -> DatabaseResult
   ) {
     self.init(
       decoder: decoder,
@@ -138,7 +138,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   internal init(
     decoder: JSONDecoder,
     encoder: JSONEncoder,
-    execute: @escaping @Sendable (Route) async throws -> Data,
+    execute: @escaping @Sendable (DatabaseRoute) async throws -> Data,
     logger: Logger? = nil
   ) {
     self.decoder = decoder
@@ -185,7 +185,7 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
     guard let match = try await overrides.firstMatch(of: route) else {
       logger?.debug("No match found for route.")
       return try await logIfError("Execute Route:") {
-        try await execute(route)
+        try await execute(route.route())
       }
     }
     return try await logIfError("Decode Override Data:") {
