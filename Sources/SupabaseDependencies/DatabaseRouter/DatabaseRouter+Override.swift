@@ -89,6 +89,54 @@ extension DatabaseRouter {
   // TODO: Make this match on DatabaseRoute or perhaps make it not be nested in
   // in the router and make it's route be generic.
 
+  public struct Override2 {
+
+    private let container: Container
+
+    private enum Container {
+      case databaseRoute(
+        match: (DatabaseRoute) async throws -> Bool,
+        result: (DatabaseRoute) async throws -> DatabaseResult
+      )
+
+      case collectionRoute(
+        match: (Route) async throws -> Bool,
+        result: (Route) async throws -> DatabaseResult
+      )
+    }
+
+    func callAsFunction(
+      _ route: Route
+    ) async throws -> DatabaseResult? {
+      switch container {
+
+      case let .databaseRoute(match: match, result: result):
+        guard let routeCollection = route as? RouteCollection else { return nil }
+        let route = try await routeCollection.route()
+        guard try await match(route) else { return nil }
+        return try await result(route)
+
+      case let .collectionRoute(match: match, result: result):
+        guard try await match(route) else { return nil }
+        return try await result(route)
+      }
+    }
+
+    func callAsFunction(
+      _ route: DatabaseRoute
+    ) async throws -> DatabaseResult? {
+      switch container {
+
+      case let .databaseRoute(match: match, result: result):
+        guard try await match(route) else { return nil }
+        return try await result(route)
+
+      case .collectionRoute(match: _, result: _):
+        return nil
+      }
+    }
+  }
+
   /// Used to match a route for an override.
   public struct Override: Sendable {
 

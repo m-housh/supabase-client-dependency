@@ -147,7 +147,6 @@ public struct DatabaseRouter<Route>: Sendable {
     self.logger = logger
   }
 
-
   /// Removes all overrides currently set on the router.
   public mutating func resetOverrides() {
     overrides = []
