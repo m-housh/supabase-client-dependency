@@ -154,7 +154,7 @@ The supabase dependency contains an authentication controller that has some conv
 methods for interacting with the supabase authentication client. Providing hooks that can allow
 you to override the current user, session, and convenience methods for logging in users.
 
-See <doc:AuthControllerUsage> for more authentication methods.
+See <doc:01_AuthControllerUsage> for more authentication methods.
 
 ```swift
 
@@ -185,7 +185,7 @@ func insertTodo(description: String, isComplete: Bool = false) -> Todo {
   )
 }
 ```
-See <doc:DatabaseRouterUsage> for more details about modeling and overriding your database routes.
+See <doc:02_DatabaseRouterUsage> for more details about modeling and overriding your database routes.
 
 See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.

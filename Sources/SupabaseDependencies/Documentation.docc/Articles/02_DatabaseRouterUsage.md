@@ -8,7 +8,7 @@ routes.
 The database router module is used to model your database and table routes as enumurations.
 It also offers the ability to override routes for preview and testing purposes in your application.
 
-The ``SupabaseClientDependency`` contains a router for your database routes, however this module can
+The ``SupabaseDependency`` contains a router for your database routes, however this module can
 be used as a standalone package as well.  This article is focused on explaining the module as a 
 standalone package.
 

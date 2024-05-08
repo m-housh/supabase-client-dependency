@@ -10,7 +10,7 @@ services provided.  It also includes some convenience methods and types.
 It gives you the ability to override the current user and session.  It also provides some
 validations for credentials if you need them for your application.
 
-The ``SupabaseClientDependency`` sets up an auth controller automatically, however it can 
+The ``SupabaseDependency`` sets up an auth controller automatically, however it can 
 also be used / managed independently.
 
 ### Usage

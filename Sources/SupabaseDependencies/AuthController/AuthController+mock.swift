@@ -71,6 +71,7 @@ extension AuthController {
 }
 
 #if DEBUG
+/// An in memory auth storage type that is used in mocks and tests.
 public struct LocalAuthStorage: AuthLocalStorage, Sendable {
   private let storage = LockIsolated([String:Data]())
   
