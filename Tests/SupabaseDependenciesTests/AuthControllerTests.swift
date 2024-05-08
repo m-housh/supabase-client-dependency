@@ -1,3 +1,4 @@
+import CustomDump
 import Dependencies
 import SupabaseDependencies
 import XCTest

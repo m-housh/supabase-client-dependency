@@ -58,6 +58,9 @@ let package = Package(
       name: "SupabaseDependenciesTests",
       dependencies: [
         "SupabaseDependencies"
+      ],
+      swiftSettings: [
+        .enableExperimentalFeature("StrictConcurrency")
       ]
     ),
     .testTarget(

@@ -1,7 +1,8 @@
-# ``SupabaseClientDependencies``
+# ``SupabaseDependencies``
 
 
-A dependency that adds some niceties around the `Supabase` database and includes an `auth` client.
+A dependency that adds some niceties around the `Supabase` database and includes an `auth` client and
+database router.
 
 ## Overview
 
@@ -19,8 +20,8 @@ In general you use this package / dependency to build your database clients for 
 ## Articles
 
 - <doc:GettingStarted>
-- <doc:DatabaseOperations>
-- <doc:AdvancedDatabaseOperations>
+- <doc:AuthControllerUsage>
+- <doc:DatabaseRouterUsage>
 
 
 ## Topics
@@ -29,9 +30,7 @@ In general you use this package / dependency to build your database clients for 
 
 - ``SupabaseDependency``
 - ``AuthController``
-- ``AuthController/LoginRequest``
 - ``AuthController/SharedOptions``
-- ``AuthController/SignUpRequest``
 - ``DatabaseRouter``
 - ``DatabaseRoute/Column``
 - ``DatabaseRoute/Table``
@@ -41,6 +40,8 @@ In general you use this package / dependency to build your database clients for 
 
 ### Enumerations
 
+- ``AuthController/LoginRequest``
+- ``AuthController/SignUpRequest``
 - ``DatabaseRoute/Method``
 
 ### Errors

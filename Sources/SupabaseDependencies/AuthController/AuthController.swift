@@ -2,7 +2,7 @@ import Auth
 import Dependencies
 import Foundation
 
-/// Wraps an `Supabase.Auth.AuthClient` to provide override capabilities for login and signup flows.
+/// Wraps a `Supabase.Auth.AuthClient` to provide override capabilities for login and signup flows.
 ///
 /// You will generally want to expose this as a `Dependency` in your application and create it with the 
 /// ``AuthController/live(auth:)`` method.
@@ -102,8 +102,6 @@ public struct AuthController: Sendable {
   ///
   /// - Parameters:
   ///   - scope: The sign out scope, default is to sign out of all sessions.
-  ///
-  /// - SeeAlso: ``Supabase/Auth/signOut``
   public func logout(scope: SignOutScope = .global) async throws {
     try await client.signOut(scope: scope)
   }

@@ -21,12 +21,12 @@ extension AuthController {
     allowedCredentials: AllowedCredentials = .any,
     user: User = .mock,
     session: Session? = nil,
-    uuid: @escaping () -> UUID = UUID.init,
-    date: @escaping () -> Date = Date.init
+    uuid: @escaping @Sendable () -> UUID = { UUID() },
+    date: @escaping @Sendable () -> Date = { Date() }
   ) -> Self {
     
 
-    final class Storage {
+    final class Storage: @unchecked Sendable {
       var currentUser: User
       var currentSession: Session? = nil
       

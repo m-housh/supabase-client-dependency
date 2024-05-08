@@ -194,9 +194,9 @@ final class DatabaseClientTests: XCTestCase {
     XCTAssertEqual(todos, todoMocks)
     
     let override = DatabaseRouter<MultiRouter>.Override.case(\.todos.delete)
-    var result = try await override(.todos(.delete(id: .init())))!
+    let result = try await override(.todos(.delete(id: .init())))!
     XCTAssertNoThrow(try result.get())
-    var result2 = try await override(.alsoTodos(.delete(id: .init())))
+    let result2 = try await override(.alsoTodos(.delete(id: .init())))
     XCTAssertNil(result2)
 
   }
@@ -209,9 +209,6 @@ final class DatabaseClientTests: XCTestCase {
       $0.multiRouter.override(.case(\.alsoTodos.fetch, with: [Todo]()))
       $0.multiRouter.override(\.nested.todos.fetch, with: todoMocks)
     } operation: {
-      @Dependency(\.multiRouter[case: \.todos]) var router
-      let todos: [Todo] = try await router(.fetch)
-      XCTAssertEqual(todos, todoMocks)
       
       @Dependency(\.multiRouter.todos) var todosRouter
       let todos2: [Todo] = try await todosRouter(.fetch)
@@ -319,6 +316,9 @@ final class DatabaseClientTests: XCTestCase {
     ).get()
 
     XCTAssertEqual(todos, mocks)
+
+    let todos2: [Todo] = try await router(.fetch(from: "todos"))
+    XCTAssertEqual(todos2, mocks)
   }
 
   func execute<R>(

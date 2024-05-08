@@ -78,7 +78,7 @@ extension DatabaseRoute {
 
 extension DatabaseRoute.Order {
 
-  /// Allows creating an ascending ``DatabaseRoute.Order`` from a column.
+  /// Allows creating an ascending ``DatabaseRoute/Order`` from a column.
   ///
   /// ### Example
   /// ```swift
@@ -102,7 +102,7 @@ extension DatabaseRoute.Order {
     )
   }
   
-  /// Allows creating a descending ``DatabaseRoute.Order`` from a column.
+  /// Allows creating a descending ``DatabaseRoute/Order`` from a column.
   ///
   /// ### Example
   /// ```swift
@@ -131,7 +131,7 @@ extension DatabaseRoute.Order {
 
 extension DatabaseRoute.Column {
 
-  /// Allows creating an ascending ``DatabaseRoute.Order`` from a column.
+  /// Allows creating an ascending ``DatabaseRoute/Order`` from a column.
   ///
   /// ### Example
   /// ```swift
@@ -153,7 +153,7 @@ extension DatabaseRoute.Column {
     )
   }
   
-  /// Allows creating a descending ``DatabaseRoute.Order`` from a column.
+  /// Allows creating a descending ``DatabaseRoute/Order`` from a column.
   ///
   /// ### Example
   /// ```swift
