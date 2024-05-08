@@ -91,10 +91,10 @@ extension DatabaseRouter {
 
   /// Used to match a route for an override.
   public struct Override: Sendable {
-    
+
     let match: @Sendable (Route) async throws -> Bool
     let result: @Sendable (Route) async throws -> DatabaseResult
-    
+
     public init(
       matching match: @escaping @Sendable (Route) async throws -> Bool,
       with result: @escaping @Sendable (Route) async throws -> DatabaseResult
@@ -173,7 +173,7 @@ extension DatabaseRouter {
       _ id: String,
       in table: DatabaseRoute.Table? = nil,
       with result: @escaping @Sendable (Route) async throws -> DatabaseResult
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.init(
         matching: { route in
           let route = try await route.route()
@@ -193,7 +193,7 @@ extension DatabaseRouter {
       _ id: String,
       in table: DatabaseRoute.Table? = nil,
       with result: DatabaseResult = .success()
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.id(id, in: table, with: { _ in result })
     }
     
@@ -207,7 +207,7 @@ extension DatabaseRouter {
       _ id: String,
       in table: DatabaseRoute.Table? = nil,
       with result: A
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.id(id, in: table, with: { _ in .success(result) })
     }
     
@@ -221,7 +221,7 @@ extension DatabaseRouter {
       _ method: DatabaseRoute.Method,
       in table: DatabaseRoute.Table? = nil,
       with result: @escaping @Sendable (Route) async throws -> DatabaseResult
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.init(
         matching: { route in
           let route = try await route.route()
@@ -240,7 +240,7 @@ extension DatabaseRouter {
       _ method: DatabaseRoute.Method,
       in table: DatabaseRoute.Table? = nil,
       with result: DatabaseResult = .success()
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.method(method, in: table, with: { _ in result })
     }
     
@@ -253,7 +253,7 @@ extension DatabaseRouter {
       _ method: DatabaseRoute.Method,
       in table: DatabaseRoute.Table? = nil,
       with result: A
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.method(method, in: table, with: { _ in .success(result) })
     }
     
@@ -268,7 +268,7 @@ extension DatabaseRouter {
     public static func route(
       _ route: DatabaseRoute,
       with result: @escaping @Sendable (Route) async throws -> DatabaseResult
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.init(
         matching: { try await $0.route() == route },
         with: result
@@ -286,7 +286,7 @@ extension DatabaseRouter {
     public static func route(
       _ route: DatabaseRoute,
       with result: DatabaseResult = .success()
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.route(route, with: { _ in result })
     }
     
@@ -301,7 +301,7 @@ extension DatabaseRouter {
     public static func route<A: Codable>(
       _ route: DatabaseRoute,
       with result: A
-    ) -> Self {
+    ) -> Self where Route: RouteCollection {
       self.route(route, with: { _ in .success(result) })
     }
     

@@ -69,7 +69,7 @@ public typealias DatabaseResult = Result<(any Codable), (any Error)>
 /// ```
 ///
 @dynamicMemberLookup
-public struct DatabaseRouter<Route: RouteCollection>: Sendable {
+public struct DatabaseRouter<Route>: Sendable {
   
   // TODO: Explore removing RouteCollection conformance for struct based routes??
   
@@ -147,53 +147,12 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
     self.logger = logger
   }
 
-  /// Call the database route, respecting any overrides and return the decoded result.
-  ///
-  /// - Parameters:
-  ///   - route: The route to call on the database.
-  @discardableResult
-  public func callAsFunction<A: Decodable>(
-    _ route: Route
-  ) async throws -> A {
-    try await logIfError("Run Route:") {
-      try await decoder.decode(A.self, from: data(for: route))
-    }
-  }
 
-  /// Call the database route, respecting any overrides ignoring any output.
-  ///
-  /// - Parameters:
-  ///   - route: The route to call on the database.
-  public func callAsFunction(
-    _ route: Route
-  ) async throws {
-    try await logIfError("Run Route:") {
-      try await data(for: route)
-    }
-  }
-  
   /// Removes all overrides currently set on the router.
   public mutating func resetOverrides() {
     overrides = []
   }
 
-  // Checks if there's an override for the given route, returning the
-  // override data otherwise executes the route returning the data from
-  // the database.
-  @discardableResult
-  private func data(for route: Route) async throws -> Data {
-    guard let match = try await overrides.firstMatch(of: route) else {
-      logger?.debug("No match found for route.")
-      return try await logIfError("Execute Route:") {
-        try await execute(route.route())
-      }
-    }
-    return try await logIfError("Decode Override Data:") {
-      logger?.debug("Match found for route.")
-      return try match.data(encoder)
-    }
-  }
-  
   @discardableResult
   private func logIfError<T>(
     _ prefix: String? = nil,
@@ -209,7 +168,51 @@ public struct DatabaseRouter<Route: RouteCollection>: Sendable {
   }
 }
 
-extension DatabaseRouter: CasePathable where Route: CasePathable {
+extension DatabaseRouter where Route: RouteCollection {
+  /// Call the database route, respecting any overrides and return the decoded result.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
+  @discardableResult
+  public func callAsFunction<A: Decodable>(
+    _ route: Route
+  ) async throws -> A where Route: RouteCollection {
+    try await logIfError("Run Route:") {
+      try await decoder.decode(A.self, from: data(for: route))
+    }
+  }
+
+  /// Call the database route, respecting any overrides ignoring any output.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
+  public func callAsFunction(
+    _ route: Route
+  ) async throws where Route: RouteCollection {
+    try await logIfError("Run Route:") {
+      try await data(for: route)
+    }
+  }
+
+  // Checks if there's an override for the given route, returning the
+  // override data otherwise executes the route returning the data from
+  // the database.
+  @discardableResult
+  private func data(for route: Route) async throws -> Data where Route: RouteCollection {
+    guard let match = try await overrides.firstMatch(of: route) else {
+      logger?.debug("No match found for route.")
+      return try await logIfError("Execute Route:") {
+        try await execute(route.route())
+      }
+    }
+    return try await logIfError("Decode Override Data:") {
+      logger?.debug("Match found for route.")
+      return try match.data(encoder)
+    }
+  }
+}
+
+extension DatabaseRouter: CasePathable where Route: RouteCollection, Route: CasePathable {
   public typealias AllCasePaths = Route.AllCasePaths
   public static var allCasePaths: Route.AllCasePaths { Route.allCasePaths }
   
