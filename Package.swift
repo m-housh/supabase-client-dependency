@@ -52,15 +52,15 @@ let package = Package(
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "Supabase", package: "supabase-swift"),
+      ],
+      swiftSettings: [
+        .enableExperimentalFeature("StrictConcurrency")
       ]
     ),
     .testTarget(
       name: "SupabaseDependenciesTests",
       dependencies: [
         "SupabaseDependencies"
-      ],
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
       ]
     ),
     .testTarget(

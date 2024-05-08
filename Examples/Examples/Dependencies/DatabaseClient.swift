@@ -71,6 +71,7 @@ enum DatabaseRoutes: RouteCollection {
   }
 }
 
+<<<<<<< HEAD
 struct InsertRequest {
   var description: String
   var complete: Bool
