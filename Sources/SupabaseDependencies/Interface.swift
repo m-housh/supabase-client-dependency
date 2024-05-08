@@ -91,7 +91,7 @@ import OSLog
 ///
 ///```
 @dynamicMemberLookup
-public struct SupabaseDependency<Routes: RouteCollection>: Sendable {
+public struct SupabaseDependency<Routes>: Sendable {
 
   /// The authentication controller, which gives control over the current user, session, and offers
   /// convenience methods for signing-up and logging in users.
@@ -174,21 +174,3 @@ extension SupabaseClient: TestDependencyKey {
     )
   }
 }
-
-#warning("Remove me.")
-#if DEBUG
-extension SupabaseClient {
-  public static func local() -> Self {
-    Self.init(
-      supabaseURL: localSupabaseURL,
-      supabaseKey: localAnonKey
-    )
-  }
-}
-
-public let localSupabaseURL = URL(string: "http://localhost:54321")!
-private let localAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-  "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9." +
-  "CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-#endif

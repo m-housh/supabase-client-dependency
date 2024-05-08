@@ -128,44 +128,51 @@ final class DatabaseClientTests: XCTestCase {
   
   func testTableOverride() async throws {
     var overrideNoTable = DatabaseRouter<TodoRoute>.Override.id("foo")
-    var match = try await overrideNoTable.match(
+    var match = try await overrideNoTable(
       .update(id: .init(), updates: .init())
     )
-    XCTAssertFalse(match)
+    XCTAssertNil(match)
 
     overrideNoTable = .method(.delete)
-    match = try await overrideNoTable.match(.delete(.id(Todo.ID.init())))
-    XCTAssertTrue(match)
+    match = try await overrideNoTable(.delete(.id(Todo.ID.init())))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
     overrideNoTable = .case(\.delete)
-    match = try await overrideNoTable.match(.delete(.id(Todo.ID.init())))
-    XCTAssertTrue(match)
+    match = try await overrideNoTable(.delete(.id(Todo.ID.init())))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
     overrideNoTable = .route(.fetch(from: "todos"))
-    match = try await overrideNoTable.match(.fetch)
-    XCTAssertTrue(match)
+    match = try await overrideNoTable(.fetch)
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
     var overrideWithTable = DatabaseRouter<TodoRoute>.Override.id("foo", in: "baz")
-    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
-    XCTAssertFalse(match)
-    
+    match = try await overrideWithTable(.update(id: .init(), updates: .init()))
+    XCTAssertNil(match)
+
     overrideWithTable = .method(.update, in: "baz")
-    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
-    XCTAssertFalse(match)
+    match = try await overrideWithTable(.update(id: .init(), updates: .init()))
+    XCTAssertNil(match)
 
     overrideWithTable = .method(.update, in: "todos")
-    match = try await overrideWithTable.match(.update(id: .init(), updates: .init()))
-    XCTAssertTrue(match)
+    match = try await overrideWithTable(.update(id: .init(), updates: .init()))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
     let multiRouterOverride = DatabaseRouter<MultiRouter>.Override.method(.fetch, in: "todos", with: [Todo]())
-    match = try await multiRouterOverride.match(.todos(.fetch))
-    XCTAssertTrue(match)
+    match = try await multiRouterOverride(.todos(.fetch))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
-    match = try await multiRouterOverride.match(.alsoTodos(.fetch))
-    XCTAssertTrue(match)
+    match = try await multiRouterOverride(.alsoTodos(.fetch))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
-    match = try await multiRouterOverride.match(.nested(.todos(.fetch)))
-    XCTAssertTrue(match)
+    match = try await multiRouterOverride(.nested(.todos(.fetch)))
+    XCTAssertNotNil(match)
+    XCTAssertNoThrow(try match!.get())
 
   }
   
@@ -176,7 +183,7 @@ final class DatabaseClientTests: XCTestCase {
     var router = DatabaseRouter<MultiRouter>.init(
       decoder: .init(),
       encoder: .init(),
-      execute: { _ in try JSONEncoder().encode(todoMocks) }
+      execute: { _ in .success(todoMocks) }
     )
     router.override(.case(\.todos.fetch, with: .success([Todo]())))
     
@@ -187,11 +194,11 @@ final class DatabaseClientTests: XCTestCase {
     XCTAssertEqual(todos, todoMocks)
     
     let override = DatabaseRouter<MultiRouter>.Override.case(\.todos.delete)
-    var match = try await override.match(.todos(.delete(id: .init())))
-    XCTAssertTrue(match)
-    
-    match = try await override.match(.alsoTodos(.delete(id: .init())))
-    XCTAssertFalse(match)
+    var result = try await override(.todos(.delete(id: .init())))!
+    XCTAssertNoThrow(try result.get())
+    var result2 = try await override(.alsoTodos(.delete(id: .init())))
+    XCTAssertNil(result2)
+
   }
   
   func testCasePathableRouter() async throws {
@@ -287,10 +294,52 @@ final class DatabaseClientTests: XCTestCase {
     }
   }
 
-  func testStructRouter() {
-    let router = TodoRouteStructRouter()
-    let r = router.route(for: \.delete)
-    let m = r(.init())
+  func testStructRouter() async throws {
+    struct TestError: Error { }
+    var router = GeneralRouter(
+      decoder: .init(),
+      encoder: .init(),
+      execute: { _ in
+        throw TestError()
+      }
+    )
+    let todosRoutes = TodoRouteStruct()
+    router.override(.method(.delete, in: "todos"))
+    var success = await execute(route: todosRoutes.delete(.init()), on: router)
+    XCTAssertTrue(success)
+
+    success = await execute(route: .delete(id: Todo.ID(), from: .todos), on: router)
+    XCTAssertTrue(success)
+
+    let mocks = Todo.mocks(date: date)
+    router.override(.method(.fetch, in: "todos", with: mocks))
+    let todos: [Todo] = try await execute(
+      route: todosRoutes.fetch(),
+      on: router
+    ).get()
+
+    XCTAssertEqual(todos, mocks)
+  }
+
+  func execute<R>(
+    route: DatabaseRoute,
+    on router: DatabaseRouter<R>
+  ) async -> Bool {
+    do {
+      try await router(route)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  func execute<R, T: Codable>(
+    route: DatabaseRoute,
+    on router: DatabaseRouter<R>
+  ) async -> Result<T, Error> {
+    await .init {
+      try await router(route)
+    }
   }
 }
 
@@ -343,11 +392,5 @@ struct TodoRouteStruct {
 }
 
 struct TodoRouteStructRouter {
-  private var route: TodoRouteStruct = .init()
-
-  func route<T>(
-    for keyPath: KeyPath<TodoRouteStruct, (T) -> DatabaseRoute>
-  ) -> (T) -> DatabaseRoute {
-    route[keyPath: keyPath]
-  }
+  var todos: TodoRouteStruct = .init()
 }

@@ -6,6 +6,7 @@ import OSLog
 import PostgREST
 
 public typealias DatabaseResult = Result<(any Codable), (any Error)>
+public typealias GeneralRouter = DatabaseRouter<Never>
 
 /// A database router that gives override hooks for routes for previews and tests.
 ///
@@ -71,8 +72,6 @@ public typealias DatabaseResult = Result<(any Codable), (any Error)>
 @dynamicMemberLookup
 public struct DatabaseRouter<Route>: Sendable {
   
-  // TODO: Explore removing RouteCollection conformance for struct based routes??
-  
   private var _overrides = LockIsolated([Override]())
   var overrides: [Override] {
     get { _overrides.value }
@@ -84,7 +83,6 @@ public struct DatabaseRouter<Route>: Sendable {
   }
   private let decoder: JSONDecoder
   private let encoder: JSONEncoder
-  // TODO: Make this take a DatabaseRoute??
   private let execute: @Sendable (DatabaseRoute) async throws -> Data
   @UncheckedSendable private var logger: Logger?
   
@@ -101,17 +99,15 @@ public struct DatabaseRouter<Route>: Sendable {
     encoder: JSONEncoder? = nil,
     logger: Logger? = nil
   ) {
-    self.init(
-      decoder: decoder ?? database.configuration.decoder,
-      encoder: encoder ?? database.configuration.encoder,
-      execute: { route in
-        try await route
-          .build({ database.from($0.name) })
-          .execute()
-          .data
-      },
-      logger: logger
-    )
+    self.decoder = decoder ?? database.configuration.decoder
+    self.encoder = encoder ?? database.configuration.encoder
+    self.logger = logger
+    self.execute = { route in
+      try await route
+        .build({ database.from($0.name) })
+        .execute()
+        .data
+    }
   }
   
   /// Create a new database router.
@@ -127,24 +123,10 @@ public struct DatabaseRouter<Route>: Sendable {
     logger: Logger? = nil,
     execute: @escaping @Sendable (DatabaseRoute) async throws -> DatabaseResult
   ) {
-    self.init(
-      decoder: decoder,
-      encoder: encoder,
-      execute: { try await execute($0).data(encoder) },
-      logger: logger
-    )
-  }
-
-  internal init(
-    decoder: JSONDecoder,
-    encoder: JSONEncoder,
-    execute: @escaping @Sendable (DatabaseRoute) async throws -> Data,
-    logger: Logger? = nil
-  ) {
     self.decoder = decoder
     self.encoder = encoder
-    self.execute = execute
     self.logger = logger
+    self.execute = { try await execute($0).data(encoder) }
   }
 
   /// Removes all overrides currently set on the router.
@@ -163,6 +145,51 @@ public struct DatabaseRouter<Route>: Sendable {
       let message = prefix != nil ? "\(prefix!) \(error)" : "\(error)"
       logger?.error("\(message)")
       throw error
+    }
+  }
+}
+
+extension DatabaseRouter {
+
+  /// Call the database route, respecting any overrides and return the decoded result.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
+  @discardableResult
+  public func callAsFunction<A: Decodable>(
+    _ route: DatabaseRoute
+  ) async throws -> A {
+    try await logIfError("Run Route:") {
+      try await decoder.decode(A.self, from: data(for: route))
+    }
+  }
+
+  /// Call the database route, respecting any overrides ignoring any output.
+  ///
+  /// - Parameters:
+  ///   - route: The route to call on the database.
+  public func callAsFunction(
+    _ route: DatabaseRoute
+  ) async throws {
+    try await logIfError("Run Route:") {
+      try await data(for: route)
+    }
+  }
+
+  // Checks if there's an override for the given route, returning the
+  // override data otherwise executes the route returning the data from
+  // the database.
+  @discardableResult
+  private func data(for route: DatabaseRoute) async throws -> Data {
+    guard let match = try await overrides.firstMatch(of: route) else {
+      logger?.debug("No match found for route.")
+      return try await logIfError("Execute Route:") {
+        try await execute(route)
+      }
+    }
+    return try await logIfError("Decode Override Data:") {
+      logger?.debug("Match found for route.")
+      return try match.data(encoder)
     }
   }
 }
@@ -325,7 +352,7 @@ extension DatabaseRouter: TestDependencyKey {
     .init(
       decoder: JSONDecoder(),
       encoder: JSONEncoder(),
-      execute: XCTestDynamicOverlay.unimplemented("\(Self.self).execute", placeholder: Data())
+      execute: XCTestDynamicOverlay.unimplemented("\(Self.self).execute", placeholder: .success(Data()))
     )
   }
 }
@@ -363,13 +390,24 @@ extension Array {
     of route: Route
   ) async throws -> DatabaseResult? where Element == DatabaseRouter<Route>.Override {
     for override in self {
-      if try await override.match(route) {
-        return try await override.result(route)
+      if let result = try await override(route) {
+        return result
       }
     }
     return nil
   }
-  
+
+  func firstMatch<Route>(
+    of route: DatabaseRoute
+  ) async throws -> DatabaseResult? where Element == DatabaseRouter<Route>.Override {
+    for override in self {
+      if let result = try await override(route) {
+        return result
+      }
+    }
+    return nil
+  }
+
   mutating func insert<Route>(
     _ override: DatabaseRouter<Route>.Override
   ) where Element == DatabaseRouter<Route>.Override {
@@ -377,4 +415,4 @@ extension Array {
   }
 }
 
-fileprivate struct EmptyEncodable: Codable { }
+struct EmptyEncodable: Codable { }

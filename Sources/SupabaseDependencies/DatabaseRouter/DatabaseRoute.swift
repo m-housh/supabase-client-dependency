@@ -131,12 +131,13 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   ///   - build: The operation used to buld the final query.
   public static func custom(
-    _ table: DatabaseRoute.Table,
+    on table: DatabaseRoute.Table,
     routeId: String? = nil,
     build: @escaping (PostgrestQueryBuilder) throws -> PostgrestBuilder
   ) -> Self {
     .init(id: routeId, table: table, method: .custom, returning: .representation, customBuilder: build)
   }
+
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -150,6 +151,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .init(id: routeId, table: table, method: .delete, filters: filters, returning: .minimal)
   }
+
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -163,6 +165,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .delete(from: table, filteredBy: filters, routeId: routeId)
   }
+
   /// Create a route container that generates a delete query.
   ///
   /// - Parameters:
@@ -176,6 +179,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .delete(from: table, filteredBy: .id(id), routeId: routeId)
   }
+
   /// Create a route container that generates a fetch query.
   ///
   /// - Parameters:
@@ -185,7 +189,7 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetch(
     from table: DatabaseRoute.Table,
-    filteredBy filters: [DatabaseRoute.Filter],
+    filteredBy filters: [DatabaseRoute.Filter] = [],
     order: Order? = nil,
     routeId: String? = nil
   ) -> Self {
@@ -198,6 +202,7 @@ extension DatabaseRoute {
       returning: .representation
     )
   }
+
   /// Create a route container that generates a fetch query.
   ///
   /// - Parameters:
@@ -213,6 +218,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .fetch(from: table, filteredBy: filters, order: order, routeId: routeId)
   }
+
   /// Create a route container that generates a fetch query for a single row.
   ///
   /// - Parameters:
@@ -221,11 +227,12 @@ extension DatabaseRoute {
   ///   - routeId: An optional id that can be used to differentiate queries in overrides.
   public static func fetchOne(
     from table: DatabaseRoute.Table,
-    filteredBy filters: [DatabaseRoute.Filter],
+    filteredBy filters: [DatabaseRoute.Filter] = [],
     routeId: String? = nil
   ) -> Self {
     return .init(id: routeId, table: table, method: .fetchOne, filters: filters, returning: .representation)
   }
+
   /// Create a route container that generates a fetch query for a single row.
   ///
   /// - Parameters:
@@ -239,6 +246,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .fetchOne(from: table, filteredBy: filters, routeId: routeId)
   }
+
   /// Create a route container that generates a fetch query for a single row.
   ///
   /// - Parameters:
@@ -252,6 +260,7 @@ extension DatabaseRoute {
   ) -> Self {
     return .fetchOne(from: table, filteredBy: .id(id), routeId: routeId)
   }
+
   /// Create a route container that generates an insert query.
   ///
   /// - Parameters:
@@ -267,6 +276,7 @@ extension DatabaseRoute {
   ) throws -> Self where V: Codable, V: Sendable {
     return try .init(id: routeId, table: table, method: .insert, data: .init(value), returning: returning)
   }
+
   /// Create a route container that generates an update query.
   ///
   /// - Parameters:
@@ -284,6 +294,7 @@ extension DatabaseRoute {
   ) throws -> Self where V: Codable, V: Sendable {
     return try .init(id: routeId, table: table, method: .update, data: .init(value), filters: filters, returning: returning)
   }
+
   /// Create a route container that generates an update query.
   ///
   /// - Parameters:
@@ -301,6 +312,7 @@ extension DatabaseRoute {
   ) throws -> Self where V: Codable, V: Sendable {
     try .update(value, in: table, filteredBy: .id(id), returning: returning, routeId: routeId)
   }
+
   /// Create a route container that generates an upsert query.
   ///
   /// - Parameters:
