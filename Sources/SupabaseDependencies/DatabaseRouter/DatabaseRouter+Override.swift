@@ -21,7 +21,7 @@ extension DatabaseRouter {
   /// - Parameters:
   ///   - caseKeyPath: The case key path used to match a route.
   ///   - result: The result handler to use when the route is called.
-  public mutating func override<T>(
+  public mutating func override<T: Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: @escaping @Sendable (T) async throws -> DatabaseResult
   ) where Route: CasePathable {
@@ -41,7 +41,7 @@ extension DatabaseRouter {
   /// - Parameters:
   ///   - caseKeyPath: The case key path used to match a route.
   ///   - result: The result handler to use when the route is called.
-  public mutating func override<T>(
+  public mutating func override<T: Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: DatabaseResult = .success()
   ) where Route: CasePathable {
@@ -61,7 +61,7 @@ extension DatabaseRouter {
   /// - Parameters:
   ///   - caseKeyPath: The case key path used to match a route.
   ///   - result: The result handler to use when the route is called.
-  public mutating func override<T, A: Codable>(
+  public mutating func override<T: Sendable, A: Codable & Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: A
   ) where Route: CasePathable {
@@ -86,19 +86,19 @@ extension DatabaseRouter {
     overrides.insert(override)
   }
 
-  public struct Override {
+  public struct Override: Sendable {
 
     private let container: Container
 
-    private enum Container {
+    private enum Container: Sendable {
       case databaseRoute(
-        match: (DatabaseRoute) async throws -> Bool,
-        result: (DatabaseRoute) async throws -> DatabaseResult
+        match: @Sendable (DatabaseRoute) async throws -> Bool,
+        result: @Sendable (DatabaseRoute) async throws -> DatabaseResult
       )
 
       case collectionRoute(
-        match: (Route) async throws -> Bool,
-        result: (Route) async throws -> DatabaseResult
+        match: @Sendable (Route) async throws -> Bool,
+        result: @Sendable (Route) async throws -> DatabaseResult
       )
     }
 
@@ -133,7 +133,7 @@ extension DatabaseRouter {
       self.init(matching: match, with: { _ in result })
     }
 
-    public init<A: Codable>(
+    public init<A: Codable & Sendable>(
       matching match: @escaping @Sendable (Route) async throws -> Bool,
       with result: A
     ) {
@@ -154,7 +154,7 @@ extension DatabaseRouter {
       self.init(matching: match, with: { _ in result })
     }
 
-    public init<A: Codable>(
+    public init<A: Codable & Sendable>(
       matching match: @escaping @Sendable (DatabaseRoute) async throws -> Bool,
       with result: A
     ) {
@@ -191,10 +191,10 @@ extension DatabaseRouter.Override where Route: CasePathable {
   /// - Parameters:
   ///   - caseKeyPath: The case key path to the route to override.
   ///   - result: The result to return when the route is called.
-  public static func `case`<T>(
+  public static func `case`<T: Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: @escaping @Sendable (T) async throws -> DatabaseResult
-  ) -> Self where Route: CasePathable {
+  ) -> Self where Route: CasePathable, Route: Sendable {
     .init(
       matching: { AnyCasePath(caseKeyPath).extract(from: $0) != nil },
       with: { route in
@@ -211,7 +211,7 @@ extension DatabaseRouter.Override where Route: CasePathable {
   /// - Parameters:
   ///   - caseKeyPath: The case key path to the route to override.
   ///   - result: The result to return when the route is called.
-  public static func `case`<T>(
+  public static func `case`<T: Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: DatabaseResult = .success()
   ) -> Self where Route: CasePathable {
@@ -223,7 +223,7 @@ extension DatabaseRouter.Override where Route: CasePathable {
   /// - Parameters:
   ///   - caseKeyPath: The case key path to the route to override.
   ///   - result: The result to return when the route is called.
-  public static func `case`<T, A: Codable>(
+  public static func `case`<T: Sendable, A: Codable & Sendable>(
     _ caseKeyPath: CaseKeyPath<Route, T>,
     with result: A
   ) -> Self where Route: CasePathable {
@@ -298,7 +298,7 @@ extension DatabaseRouter.Override {
   ///   - id: The id used to match the route to override.
   ///   - table: An optional table used to match the override to.
   ///   - result: The result to return when the route is called.
-  public static func id<A: Codable>(
+  public static func id<A: Codable & Sendable>(
     _ id: String,
     in table: DatabaseRoute.Table? = nil,
     with result: A
@@ -351,7 +351,7 @@ extension DatabaseRouter.Override {
   /// - Parameters:
   ///   - method: The database route method used to match the route to override.
   ///   - table: An optional table used to match the override to.
-  public static func method<A: Codable>(
+  public static func method<A: Codable & Sendable>(
     _ method: DatabaseRoute.Method,
     in table: DatabaseRoute.Table? = nil,
     with result: A
@@ -425,7 +425,7 @@ extension DatabaseRouter.Override {
   ///
   /// - Parameters:
   ///   - route: The route to override.
-  public static func route<A: Codable>(
+  public static func route<A: Codable & Sendable>(
     _ route: DatabaseRoute,
     with result: A
   ) -> Self where Route: RouteCollection {

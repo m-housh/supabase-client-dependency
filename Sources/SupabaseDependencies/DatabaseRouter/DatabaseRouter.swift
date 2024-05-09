@@ -5,7 +5,7 @@ import Foundation
 import OSLog
 import PostgREST
 
-public typealias DatabaseResult = Result<(any Codable), (any Error)>
+public typealias DatabaseResult = Result<(any Codable & Sendable), (any Error)>
 public typealias GeneralRouter = DatabaseRouter<Never>
 
 /// A database router that gives override hooks for routes for previews and tests.
@@ -70,7 +70,7 @@ public typealias GeneralRouter = DatabaseRouter<Never>
 /// ```
 ///
 @dynamicMemberLookup
-public struct DatabaseRouter<Route>: Sendable {
+public struct DatabaseRouter<Route: Sendable>: Sendable {
   
   private var _overrides = LockIsolated([Override]())
   var overrides: [Override] {
