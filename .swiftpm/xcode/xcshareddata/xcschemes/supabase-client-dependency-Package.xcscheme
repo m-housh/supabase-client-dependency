@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
-   version = "2.1">
+   LastUpgradeVersion = "1530"
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -12,9 +13,13 @@
             buildForProfiling = "YES"
             buildForArchiving = "YES"
             buildForAnalyzing = "YES">
-            <TestPlanReference
-               reference = "container:Tests/TestPlans/supabase-client-dependency.xctestplan">
-            </TestPlanReference>
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DatabaseRouterIntegrationTests"
+               BuildableName = "DatabaseRouterIntegrationTests"
+               BlueprintName = "DatabaseRouterIntegrationTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -27,20 +32,6 @@
                BlueprintIdentifier = "SupabaseDependencies"
                BuildableName = "SupabaseDependencies"
                BlueprintName = "SupabaseDependencies"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DatabaseRouterIntegrationTests"
-               BuildableName = "DatabaseRouterIntegrationTests"
-               BlueprintName = "DatabaseRouterIntegrationTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -67,7 +58,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:Tests/TestPlans/supabase-client-dependency.xctestplan"
+            reference = "container:Tests/TestPlans/supabase-client-dependency-Package.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -92,9 +83,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "SupabaseDependenciesTests"
-            BuildableName = "SupabaseDependenciesTests"
-            BlueprintName = "SupabaseDependenciesTests"
+            BlueprintIdentifier = "DatabaseRouterIntegrationTests"
+            BuildableName = "DatabaseRouterIntegrationTests"
+            BlueprintName = "DatabaseRouterIntegrationTests"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.9
 
 import PackageDescription
 
@@ -12,20 +12,32 @@ let package = Package(
     .watchOS(.v9),
   ],
   products: [
-    .library(name: "SupabaseClientDependencies", targets: ["SupabaseClientDependencies"])
+    .library(name: "SupabaseDependencies", targets: ["SupabaseDependencies"]),
   ],
   dependencies: [
+    .package(
+      url: "https://github.com/pointfreeco/swift-case-paths.git",
+      from: "1.0.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-concurrency-extras.git",
+      from: "1.0.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-custom-dump.git",
+      from: "1.0.0"
+    ),
     .package(
       url: "https://github.com/pointfreeco/swift-dependencies.git",
       from: "1.0.0"
     ),
     .package(
-      url: "https://github.com/supabase/supabase-swift.git",
-      from: "2.0.0"
+      url: "https://github.com/pointfreeco/swift-identified-collections.git",
+      from: "1.0.0"
     ),
     .package(
-      url: "https://github.com/m-housh/swift-identified-storage.git",
-      from: "0.1.0"
+      url: "https://github.com/supabase/supabase-swift.git",
+      from: "2.0.0"
     ),
     .package(
       url: "https://github.com/apple/swift-docc-plugin.git",
@@ -34,20 +46,31 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SupabaseClientDependencies",
+      name: "SupabaseDependencies",
       dependencies: [
+        .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "IdentifiedStorage", package: "swift-identified-storage"),
         .product(name: "Supabase", package: "supabase-swift"),
+      ],
+      swiftSettings: [
+        .enableExperimentalFeature("StrictConcurrency")
       ]
     ),
     .testTarget(
-      name: "SupabaseClientTests",
-      dependencies: ["SupabaseClientDependencies"]
+      name: "SupabaseDependenciesTests",
+      dependencies: [
+        "SupabaseDependencies"
+      ]
     ),
     .testTarget(
-      name: "SupabaseClientIntegrationTests",
-      dependencies: ["SupabaseClientDependencies"]
+      name: "DatabaseRouterIntegrationTests",
+      dependencies: [
+        "SupabaseDependencies",
+        .product(name: "CasePaths", package: "swift-case-paths"),
+        .product(name: "CustomDump", package: "swift-custom-dump"),
+        .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
+      ]
     ),
   ]
 )

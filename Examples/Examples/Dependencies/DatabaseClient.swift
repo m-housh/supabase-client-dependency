@@ -1,146 +1,111 @@
+import ComposableArchitecture
 import Dependencies
 import Foundation
 import IdentifiedStorage
-import SupabaseClientDependencies
+import SupabaseDependencies
 import XCTestDynamicOverlay
 
-extension DependencyValues {
-  var database: DatabaseClient {
-    get { self[DatabaseClient.self] }
-    set { self[DatabaseClient.self] = newValue }
-  }
-}
+@CasePathable
+enum DatabaseRoutes: RouteCollection {
 
-struct DatabaseClient {
+  case todos(TodoRoute)
   
-  var todos: Todos
-  
-  struct Todos {
-    var delete: (TodoModel.ID) async throws -> Void
-    var fetch: () async throws -> IdentifiedArrayOf<TodoModel>
-    var insert: (InsertRequest) async throws -> TodoModel
-    var update: (TodoModel.ID, UpdateRequest) async throws -> TodoModel
-   
-    struct InsertRequest: Encodable {
-      var description: String
-      var complete: Bool
+  func route() async throws -> DatabaseRoute {
+    switch self {
+    case let .todos(todos):
+      return try await todos.route()
     }
-    
-    struct UpdateRequest: Encodable {
-      var description: String?
-      var complete: Bool?
-      
-      var hasChanges: Bool {
-        description != nil || complete != nil
+  }
+  
+  @CasePathable
+  enum TodoRoute: RouteCollection {
+    case delete(id: TodoModel.ID)
+    case fetch
+    case insert(InsertRequest)
+    case update(id: TodoModel.ID, updates: UpdateRequest)
+
+
+    func route() async throws -> DatabaseRoute {
+      @Dependency(\.supabase.auth) var auth
+
+      switch self {
+      case let .delete(id: id):
+        return .delete(id: id, from: .todos)
+      case .fetch:
+        return .fetch(from: .todos)
+      case let .insert(request):
+
+        // A helper type that includes the authenticated user's
+        // id as the owner of the todo in the database, which is
+        // required by the row level security.
+        //
+        // This allows this implementation detail to be hidden away
+        // from the user and requires that the user is authenticated
+        // when inserting a todo.
+        struct InsertValues: Codable {
+          let complete: Bool
+          let description: String
+          let ownerId: UUID
+
+          enum CodingKeys: String, CodingKey {
+            case complete
+            case description
+            case ownerId = "owner_id"
+          }
+        }
+
+        return try await .insert(
+          InsertValues(
+            complete: request.complete,
+            description: request.description,
+            ownerId: auth.requireCurrentUser().id
+          ),
+          into: DatabaseRoute.Table.todos
+        )
+
+      case let .update(id: id, updates: updates):
+        return try .update(id: id, in: .todos, with: updates)
       }
     }
+
   }
 }
 
-extension DatabaseClient: DependencyKey {
-  
-  static var liveValue: Self {
-    @Dependency(\.supabaseClient) var client;
-    let database = client.database
-    return Self.init(
-      todos: DatabaseClient.Todos(
-        delete: { try await database.delete(id: $0, from: .todos) },
-        fetch: {
-          
-          // get the current authenticated user.
-          let user = try await client.auth.requireCurrentUser()
-          
-          // Return the todos.
-          return try await database.fetch(
-            from: AnyTable.todos,
-//            filteredBy: TodoColumn.ownerId.equals(user.id),
-            filteredBy: .ownerId(equals: user.id),
-            orderBy: .complete
-          )
-        },
-        insert: { request in
-          
-          // A helper type that includes the authenticated user's
-          // id as the owner of the todo in the database, which is
-          // required by the row level security.
-          //
-          // This allows this implementation detail to be hidden away
-          // from the user and requires that the user is authenticated
-          // when inserting a todo.
-          struct InsertValues: Encodable {
-            let complete: Bool
-            let description: String
-            let ownerId: UUID
-            
-            enum CodingKeys: String, CodingKey {
-              case complete
-              case description
-              case ownerId = "owner_id"
-            }
-          }
-          
-          return try await database.insert(
-            InsertValues(
-              complete: request.complete,
-              description: request.description,
-              ownerId: client.auth.requireCurrentUser().id
-            ),
-            into: AnyTable.todos
-          )
-        },
-        update: { try await database.update(id: $0, in: AnyTable.todos, with: $1) }
-      )
-    )
-  }
-  
-  
-  static var previewValue: DatabaseClient {
-    let storage = IdentifiedStorageOf<TodoModel>(initialValues: TodoModel.mocks)
-    
-    return Self.init(
-      todos: DatabaseClient.Todos(
-        delete: { try await storage.delete(id: $0) },
-        fetch: { try await storage.fetch() },
-        insert: { try await storage.insert(request: $0) },
-        update: { try await storage.update(id: $0, request: $1) }
-      )
-    )
-  }
-  
-  static var testValue: DatabaseClient {
-    Self.init(
-      todos: DatabaseClient.Todos(
-        delete: unimplemented(),
-        fetch: unimplemented(placeholder: []),
-        insert: unimplemented(placeholder: TodoModel.mocks[0]),
-        update: unimplemented(placeholder: TodoModel.mocks[0])
-      )
-    )
-  }
-  
- 
+<<<<<<< HEAD
+struct InsertRequest {
+  var description: String
+  var complete: Bool
 }
 
-extension AnyTable {
+struct UpdateRequest: Codable {
+  var description: String?
+  var complete: Bool?
+  
+  var hasChanges: Bool {
+    description != nil || complete != nil
+  }
+}
+
+extension DatabaseRoute.Table {
   static let todos = Self.init("todos")
 }
 
-fileprivate enum TodoColumn: String, ColumnRepresentable {
+fileprivate enum TodoColumn: String {
   case complete
   case ownerId = "owner_id"
 }
 
-extension DatabaseRequest.Filter {
+extension DatabaseRoute.Filter {
   static func ownerId(equals value: User.ID) -> Self {
-    .equals(column: TodoColumn.ownerId, value: value)
+    .equals(column: TodoColumn.ownerId.column, value: value)
   }
 }
 
-extension DatabaseRequest.Order {
-  static var complete: Self { .init(column: TodoColumn.complete, ascending: true) }
+extension DatabaseRoute.Order {
+  static var complete: Self { .ascending(TodoColumn.complete.column) }
 }
 
-extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {
+extension InsertRequest: InsertRequestConvertible {
   typealias ID = TodoModel.ID
   
   func transform() -> TodoModel {
@@ -149,7 +114,7 @@ extension DatabaseClient.Todos.InsertRequest: InsertRequestConvertible {
   }
 }
 
-extension DatabaseClient.Todos.UpdateRequest: UpdateRequestConvertible {
+extension UpdateRequest: UpdateRequestConvertible {
   typealias ID = TodoModel.ID
   
   func apply(to state: inout TodoModel) {

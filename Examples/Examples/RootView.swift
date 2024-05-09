@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import SupabaseClientDependencies
+import SupabaseDependencies
 import Supabase
 import SwiftUI
 
@@ -30,7 +30,7 @@ struct RootFeature: Reducer {
     case loggedOut(AuthFeature)
   }
 
-  @Dependency(\.supabaseClient.auth) var auth;
+  @Dependency(\.supabase.auth) var auth;
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -51,15 +51,16 @@ struct RootFeature: Reducer {
 
       case .signOutButtonTapped:
         return .run { _ in
-          try await auth.logout()
+          try await auth.client.signOut()
         }
 
       case .task:
         return .run { send in
-          for await (event, _) in auth.events() {
+          for await (event, _) in auth.client.authStateChanges {
             await send(.receiveAuthEvent(event))
           }
-          await auth.initialize()
+          _ = await auth.login()
+//          await auth.client.initialize()
         }
       }
     }

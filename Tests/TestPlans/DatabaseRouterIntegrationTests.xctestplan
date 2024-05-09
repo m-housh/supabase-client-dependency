@@ -1,21 +1,29 @@
 {
   "configurations" : [
     {
-      "id" : "DF67C163-DFB8-4B7B-8773-E61BF3BBE8C9",
+      "id" : "FEA58D1D-BC46-47FF-9888-BBB09C2AD20F",
       "name" : "Test Scheme Action",
       "options" : {
-        "environmentVariableEntries" : [
 
-        ]
       }
     }
   ],
   "defaultOptions" : {
     "environmentVariableEntries" : [
-
+      {
+        "key" : "INTEGRATION_TESTS",
+        "value" : "1"
+      }
     ]
   },
   "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DatabaseRouterIntegrationTests",
+        "name" : "DatabaseRouterIntegrationTests"
+      }
+    },
     {
       "target" : {
         "containerPath" : "container:",

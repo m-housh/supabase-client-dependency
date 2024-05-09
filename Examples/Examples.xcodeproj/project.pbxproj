@@ -22,7 +22,9 @@
 		4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1B2A938C8E006A21FC /* TodoModel.swift */; };
 		4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1D2A93BCE7006A21FC /* AuthView.swift */; };
 		4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C467B1F2A93BF46006A21FC /* ErrorText.swift */; };
-		4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */; };
+		4C4B24322BE81FE500540FD0 /* SupabaseDependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 4C4B24312BE81FE500540FD0 /* SupabaseDependencies */; };
+		4CC037C62BE50E9A0053B8D0 /* IdentifiedStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */; };
+		4CC037C82BEA52D00053B8D0 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC037C72BEA52D00053B8D0 /* Constants.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +63,7 @@
 		4C467B1B2A938C8E006A21FC /* TodoModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TodoModel.swift; sourceTree = "<group>"; };
 		4C467B1D2A93BCE7006A21FC /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		4C467B1F2A93BF46006A21FC /* ErrorText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorText.swift; sourceTree = "<group>"; };
+		4CC037C72BEA52D00053B8D0 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,8 +71,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CED0D262A97A95B0083DFF8 /* SupabaseClientDependencies in Frameworks */,
 				4C0799B32A92FC4700699C91 /* ComposableArchitecture in Frameworks */,
+				4C4B24322BE81FE500540FD0 /* SupabaseDependencies in Frameworks */,
+				4CC037C62BE50E9A0053B8D0 /* IdentifiedStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +131,7 @@
 				4C467B1A2A938C8E006A21FC /* Models */,
 				4C0799832A92FBC500699C91 /* ExamplesApp.swift */,
 				4C0799C32A943E3900699C91 /* RootView.swift */,
+				4CC037C72BEA52D00053B8D0 /* Constants.swift */,
 				4C0799872A92FBC900699C91 /* Assets.xcassets */,
 				4C0799892A92FBC900699C91 /* Examples.entitlements */,
 				4C07998A2A92FBC900699C91 /* Preview Content */,
@@ -212,7 +217,8 @@
 			name = Examples;
 			packageProductDependencies = (
 				4C0799B22A92FC4700699C91 /* ComposableArchitecture */,
-				4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */,
+				4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */,
+				4C4B24312BE81FE500540FD0 /* SupabaseDependencies */,
 			);
 			productName = Examples;
 			productReference = 4C0799802A92FBC500699C91 /* Examples.app */;
@@ -289,6 +295,7 @@
 			packageReferences = (
 				4C0799AE2A92FC1300699C91 /* XCLocalSwiftPackageReference ".." */,
 				4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */,
 			);
 			productRefGroup = 4C0799812A92FBC500699C91 /* Products */;
 			projectDirPath = "";
@@ -337,6 +344,7 @@
 				4C0799C62A9440C400699C91 /* TodoListView.swift in Sources */,
 				4C0799C42A943E3900699C91 /* RootView.swift in Sources */,
 				4C467B202A93BF46006A21FC /* ErrorText.swift in Sources */,
+				4CC037C82BEA52D00053B8D0 /* Constants.swift in Sources */,
 				4C0799BC2A92FCF000699C91 /* SupabaseClient+Live.swift in Sources */,
 				4C467B1C2A938C8E006A21FC /* TodoModel.swift in Sources */,
 				4C467B1E2A93BCE7006A21FC /* AuthView.swift in Sources */,
@@ -714,6 +722,14 @@
 				minimumVersion = 1.1.0;
 			};
 		};
+		4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/m-housh/swift-identified-storage.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -722,9 +738,14 @@
 			package = 4C0799B12A92FC4700699C91 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
 		};
-		4CED0D252A97A95B0083DFF8 /* SupabaseClientDependencies */ = {
+		4C4B24312BE81FE500540FD0 /* SupabaseDependencies */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = SupabaseClientDependencies;
+			productName = SupabaseDependencies;
+		};
+		4CC037C52BE50E9A0053B8D0 /* IdentifiedStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CC037C42BE50E9A0053B8D0 /* XCRemoteSwiftPackageReference "swift-identified-storage" */;
+			productName = IdentifiedStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

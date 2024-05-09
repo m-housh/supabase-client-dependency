@@ -1,17 +1,6 @@
-# supabase-client-dependency
+# GettingStarted
 
-[![CI](https://github.com/m-housh/supabase-client-dependency/actions/workflows/ci.yml/badge.svg)](https://github.com/m-housh/supabase-client-dependency/actions/workflows/ci.yml)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fm-housh%2Fsupabase-client-dependency%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/m-housh/supabase-client-dependency)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fm-housh%2Fsupabase-client-dependency%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/m-housh/supabase-client-dependency)
-
-A [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) client for supabase integrations.
-
-This dependency wraps the [supabase-swift](https://github.com/supabase/supabase-swift) client,
-database, and auth for convenience methods for use in `TCA` based apps.
-
-This package adds some niceties around database queries as well as holds onto an `authentication` client.
-In general you use this package / dependency to build your database clients for usage in a
-[swift-composable-architecture](https://github.com/pointfreeco/swift-composable-architecture) based application.
+This article explains how to integrate the supabase client dependency into your project.
 
 ## Installation
 
@@ -25,7 +14,7 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/m-housh/supabase-client-dependency.git",
-      from: "0.4.0"
+      from: "0.1.0"
     )
   ],
   targets: [
@@ -165,6 +154,8 @@ The supabase dependency contains an authentication controller that has some conv
 methods for interacting with the supabase authentication client. Providing hooks that can allow
 you to override the current user, session, and convenience methods for logging in users.
 
+See <doc:01_AuthControllerUsage> for more authentication methods.
+
 ```swift
 
 func login(credentials: Credentials) async throws -> Session {
@@ -194,15 +185,7 @@ func insertTodo(description: String, isComplete: Bool = false) -> Todo {
   )
 }
 ```
+See <doc:02_DatabaseRouterUsage> for more details about modeling and overriding your database routes.
 
-See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples)
+See the [Example](https://github.com/m-housh/supabase-client-dependency/tree/main/Examples/Examples) 
 project for a full working example.
-
-## Documentation
-
-The full documentation can be viewed [here](https://m-housh.github.io/supabase-client-dependency/documentation/supabasedependencies/)
-
-## License
-
-All modules are released under the MIT license. See [LICENSE](https://github.com/m-housh/supabase-client-dependency/blob/main/LICENSE) for details.
-
