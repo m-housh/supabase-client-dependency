@@ -60,6 +60,7 @@ public struct AuthController: Sendable {
   }
   
   /// Attempt to login with previously stored credentials, returning `nil` if it was un-successful.
+  @discardableResult
   public func login() async -> Session? {
     guard let loginHandler else {
       return await client.login()
